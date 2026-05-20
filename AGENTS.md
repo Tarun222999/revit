@@ -13,6 +13,13 @@ Before making product, architecture, or code decisions, read the project docs li
 3. `docs/react-native-guidelines.md`
 4. `docs/folder-structure.md`
 5. `docs/database-schema.md`
+6. `docs/feature-plan.md`
+
+## Additional Review Mode
+
+If the task is code review, PR review, or implementation review, also read:
+
+- `docs/reviewer-agent.md`
 
 ## Project Summary
 
