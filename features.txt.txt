@@ -1,0 +1,47 @@
+
+V1 Features
+
+Authentication
+User can sign up, log in, log out, and reset password.
+
+Basic onboarding
+User sets up a profile with name, username, and avatar.
+
+Universal search
+User can search across movies, series, anime, and games.
+
+Title details page
+Each title has a detail screen with artwork, summary, genre/category info, and release/platform details where available.
+
+Add to journal
+User can add any title to their personal journal.
+
+Status tracking
+Each entry can be marked as planned, in progress, completed, or dropped.
+
+Universal rating
+User can rate any title using one consistent rating system across all media.
+
+Short-form review
+User can add a quick review with optional spoiler toggle.
+
+Edit and delete entry
+User can update rating, review, and status later, or remove the entry.
+
+My journal screen
+User can browse all their entries and filter/sort by media type, status, rating, and recently added.
+
+Custom lists
+User can create personal lists like Favorites, Watch Next, or Best Endings and add titles to them.
+
+Home screen
+Shows recent entries, quick actions, and a simple summary of current activity.
+
+Profile screen
+Shows total entries, top-rated items, favorite categories, recent reviews, and created lists.
+
+Basic settings
+Profile edit, avatar update, password/account settings, and sign out.
+
+Usability essentials
+Loading states, empty states, validation, error messages, and smooth create/edit flows.
