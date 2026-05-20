@@ -150,12 +150,16 @@ The final v1 structure is:
 - Search
 - Journal
 - Lists
+
+### Top-Right Avatar Entry
+
 - Profile
 
 ### Shared Push Screens
 
 - Title Details
 - Single List Details
+- Profile
 - Settings
 
 ### Modal
@@ -196,7 +200,7 @@ The final v1 structure is:
 
 ### 4. Home
 
-- Header with greeting and avatar
+- Header with greeting and avatar/profile action
 - Segmented switch:
   - Discover
   - Dashboard
@@ -276,6 +280,7 @@ Lists should support mixed media by default.
 
 ### 8. Profile
 
+- Accessed from the top-right avatar/profile action, not the bottom tab bar
 - Settings icon
 - Avatar
 - Display name

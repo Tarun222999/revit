@@ -66,11 +66,11 @@ app/
     search.tsx
     journal.tsx
     lists.tsx
-    profile.tsx
   title/
     [id].tsx
   lists/
     [id].tsx
+  profile.tsx
   settings.tsx
   modals/
     journal-entry.tsx
@@ -79,7 +79,8 @@ app/
 Notes:
 
 - `(auth)` contains auth flow screens
-- `(tabs)` contains primary destinations
+- `(tabs)` contains primary destinations: Home, Search, Journal, and Lists
+- `profile.tsx` is a shared pushed screen accessed from the top-right avatar/profile action
 - `modals/` contains modal routes such as add/edit journal entry
 
 ### `components/`

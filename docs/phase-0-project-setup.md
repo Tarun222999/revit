@@ -145,11 +145,11 @@ app/
     search.tsx
     journal.tsx
     lists.tsx
-    profile.tsx
   title/
     [id].tsx
   lists/
     [id].tsx
+  profile.tsx
   settings.tsx
   modals/
     journal-entry.tsx
@@ -532,9 +532,9 @@ Phase 0 is complete when:
 1. `npm install` or the chosen package install command succeeds.
 2. The app starts through Expo without configuration errors.
 3. Expo Router recognizes the planned route structure.
-4. The bottom tab shell exists with Home, Search, Journal, Lists, and Profile.
+4. The bottom tab shell exists with Home, Search, Journal, and Lists.
 5. Auth placeholder routes exist for Welcome, Email Code, and Onboarding.
-6. Shared pushed routes exist for Title Details, List Details, and Settings.
+6. Shared pushed routes exist for Title Details, List Details, Profile, and Settings.
 7. The Add/Edit Journal Entry modal route exists as a modal route.
 8. NativeWind styling works on at least one shared component and one screen.
 9. TanStack Query provider wraps the app.
