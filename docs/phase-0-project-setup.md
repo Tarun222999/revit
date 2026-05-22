@@ -272,7 +272,42 @@ Important:
 - Service role keys must never be used in the mobile app.
 - Third-party API keys such as TMDB keys should not go into the mobile client.
 
-### 6. Create Base Folder Structure
+### 6. Add Environment Docs And Initial Tokens
+
+Document environment configuration and add stable app/domain tokens before building real features.
+
+Expected outcome:
+
+- required public environment variables are documented
+- private values are clearly marked as server-only
+- initial app constants exist
+- initial domain constants exist
+- shared domain types exist
+- theme values are aligned between React Navigation and NativeWind
+
+Likely files introduced or updated:
+
+```text
+docs/environment.md
+constants/app.ts
+constants/media.ts
+constants/journal.ts
+constants/ratings.ts
+constants/reviews.ts
+constants/tokens.js
+constants/theme.ts
+types/media.ts
+types/journal.ts
+types/profile.ts
+```
+
+Guidance:
+
+- Use `EXPO_PUBLIC_*` only for values that are safe to bundle into the app.
+- Keep service role keys, TMDB keys, and other private secrets out of the mobile client.
+- Include games in media constants for model extensibility, but keep IGDB integration deferred.
+
+### 7. Create Base Folder Structure
 
 Create the feature-oriented folder structure described in `docs/folder-structure.md`.
 
@@ -338,7 +373,7 @@ Guidance:
 - Avoid adding vague folders like `services`, `common`, or generic `helpers`.
 - Keep feature ownership clear from the start.
 
-### 7. Add Shared Constants And Types
+### 8. Add Shared Constants And Types
 
 Add initial domain constants and shared types that are stable across features.
 
@@ -370,7 +405,7 @@ Notes:
 - Game API integration remains deferred.
 - Keep constants small and clearly owned.
 
-### 8. Add Basic UI Primitives
+### 9. Add Basic UI Primitives
 
 Create a small custom component layer for future screens.
 
@@ -406,7 +441,7 @@ Guidance:
 
 Phase 0 components should be enough to style placeholders and support Phase 1 screens, but they should not try to solve every future design case.
 
-### 9. Add Feature Placeholder Screens
+### 10. Add Feature Placeholder Screens
 
 Create placeholder screen components inside feature folders so routes do not become the app architecture.
 
@@ -439,7 +474,7 @@ Expected behavior:
 - placeholder screens show simple content proving route ownership
 - no real data fetching is required
 
-### 10. Prepare Supabase Backend Folders
+### 11. Prepare Supabase Backend Folders
 
 Create Supabase project structure without implementing full backend features yet.
 
@@ -464,7 +499,7 @@ Reason:
 - database migrations are important, but Phase 0's core deliverable is the bootable app foundation
 - schema implementation can be handled as part of Phase 1 or a dedicated backend setup task
 
-### 11. Add Project Scripts
+### 12. Add Project Scripts
 
 Add useful scripts for development and verification.
 
@@ -493,7 +528,7 @@ Guidance:
 - Keep scripts conventional.
 - Avoid adding complex custom tooling before it is needed.
 
-### 12. Verify The App Boots
+### 13. Verify The App Boots
 
 Run the app or at least run local checks that prove the foundation is sound.
 

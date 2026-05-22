@@ -1,0 +1,2 @@
+export const REVIEW_HEADLINE_MAX_LENGTH = 80;
+export const REVIEW_BODY_MAX_LENGTH = 500;
