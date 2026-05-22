@@ -511,6 +511,8 @@ Expected scripts:
 - run web if useful
 - lint
 - typecheck
+- dependency compatibility check
+- production-style web export check
 
 Example script names:
 
@@ -521,6 +523,9 @@ ios
 web
 lint
 typecheck
+doctor
+export:web
+check
 ```
 
 Guidance:
