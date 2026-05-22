@@ -1,5 +1,5 @@
 import { WelcomeAuthScreen } from '@/features/auth/components/WelcomeAuthScreen';
 
-export default function AuthRoute() {
+export default function WelcomeAuthRoute() {
   return <WelcomeAuthScreen />;
 }

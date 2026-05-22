@@ -136,7 +136,7 @@ Initial route shape:
 app/
   _layout.tsx
   (auth)/
-    index.tsx
+    welcome.tsx
     email-code.tsx
     onboarding.tsx
   (tabs)/
@@ -164,6 +164,7 @@ Route responsibilities:
 Placeholder behavior:
 
 - Auth routes can show simple screen names and buttons
+- The auth welcome route should not be named `index.tsx` during Phase 0 because it conflicts with the root `/` redirect into the tab shell
 - Tab routes can show simple screen shells
 - Detail and modal routes can show route labels
 - No real auth guard is required yet

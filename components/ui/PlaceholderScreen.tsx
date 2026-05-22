@@ -1,7 +1,4 @@
-import { StyleSheet } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Text, View } from 'react-native';
 
 type PlaceholderScreenProps = {
   title: string;
@@ -10,27 +7,11 @@ type PlaceholderScreenProps = {
 
 export function PlaceholderScreen({ title, description }: PlaceholderScreenProps) {
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.content}>
-        <ThemedText type="title">{title}</ThemedText>
-        <ThemedText style={styles.description}>{description}</ThemedText>
-      </ThemedView>
-    </ThemedView>
+    <View className="flex-1 bg-ink-50 px-6 py-8 dark:bg-ink-900">
+      <View className="flex-1 justify-center gap-3">
+        <Text className="text-4xl font-bold text-ink-900 dark:text-ink-50">{title}</Text>
+        <Text className="text-base leading-6 text-ink-500 dark:text-ink-300">{description}</Text>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-  },
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 12,
-  },
-  description: {
-    lineHeight: 22,
-  },
-});

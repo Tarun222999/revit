@@ -57,7 +57,7 @@ Example shape:
 app/
   _layout.tsx
   (auth)/
-    index.tsx
+    welcome.tsx
     email-code.tsx
     onboarding.tsx
   (tabs)/
@@ -79,6 +79,7 @@ app/
 Notes:
 
 - `(auth)` contains auth flow screens
+- `/welcome` is the auth entry route, while `/` redirects into the main tab shell during Phase 0
 - `(tabs)` contains primary destinations: Home, Search, Journal, and Lists
 - `profile.tsx` is a shared pushed screen accessed from the top-right avatar/profile action
 - `modals/` contains modal routes such as add/edit journal entry
