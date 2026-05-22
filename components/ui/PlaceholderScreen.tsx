@@ -1,4 +1,8 @@
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
+
+import { Card } from '@/components/ui/Card';
+import { Screen } from '@/components/ui/Screen';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 
 type PlaceholderScreenProps = {
   title: string;
@@ -7,12 +11,13 @@ type PlaceholderScreenProps = {
 
 export function PlaceholderScreen({ title, description }: PlaceholderScreenProps) {
   return (
-    <View className="flex-1 bg-archive-900 px-6 py-8">
-      <View className="flex-1 justify-center gap-3">
-        <Text className="text-4xl font-bold text-archive-50">{title}</Text>
-        <Text className="text-base leading-6 text-archive-200">{description}</Text>
+    <Screen>
+      <View className="flex-1 justify-center">
+        <Card className="gap-4">
+          <SectionHeader title={title} subtitle={description} />
+        </Card>
         <View className="h-1 w-16 rounded-full bg-gold-400" />
       </View>
-    </View>
+    </Screen>
   );
 }
