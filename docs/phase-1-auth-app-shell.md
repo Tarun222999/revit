@@ -922,6 +922,17 @@ Decision:
 - handle magic-link callback
 - document the required Supabase template setup
 
+### Production Email Delivery
+
+Supabase's built-in email service is acceptable for Phase 1 development and testing, but it has rate limits and is not intended for production app email delivery.
+
+Decision:
+
+- do not treat custom SMTP as a Phase 1 blocker
+- keep using the built-in email service for local auth testing
+- configure custom SMTP before production release
+- revisit this during production hardening or launch preparation
+
 ### Username Uniqueness
 
 Username checks can race if done only on the client.
