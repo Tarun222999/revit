@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -9,22 +9,39 @@ export function WelcomeAuthScreen() {
   return (
     <Screen>
       <View className="flex-1 justify-between gap-8">
-        <View className="gap-4 pt-10">
-          <View className="h-16 w-16 items-center justify-center rounded-app bg-gold-400">
-            <Text className="text-3xl font-bold text-archive-900">R</Text>
+        <View className="gap-6 pt-10">
+          <View className="h-20 w-20 items-center justify-center rounded-app border border-gold-300 bg-gold-400">
+            <Text className="text-4xl font-bold text-archive-900">R</Text>
           </View>
           <View className="gap-3">
             <Text className="text-4xl font-bold text-archive-50">Revit</Text>
-            <Text className="text-lg leading-7 text-archive-200">Your personal entertainment journal.</Text>
+            <Text className="text-lg leading-7 text-archive-200">
+              Your personal entertainment journal for movies, series, anime, and games.
+            </Text>
           </View>
         </View>
 
-        <Card className="gap-3">
-          <Button title="Continue with Email" onPress={() => router.push('/email-code')} />
+        <Card className="gap-4">
+          <View className="gap-2">
+            <Text className="text-lg font-semibold text-archive-50">Start your shelf</Text>
+            <Text className="text-sm leading-5 text-archive-300">
+              Sign in to track what you watch, play, rate, and remember.
+            </Text>
+          </View>
+
+          <View className="gap-3">
+            <Button title="Continue with Email" onPress={() => router.push('/email-code')} />
+            <Button title="Continue with Google" variant="secondary" disabled />
+            {Platform.OS === 'ios' ? <Button title="Continue with Apple" variant="secondary" disabled /> : null}
+          </View>
+
+          <Text className="text-xs leading-5 text-archive-300">
+            Google and Apple sign-in will be enabled after provider credentials are configured.
+          </Text>
         </Card>
 
         <Text className="text-center text-xs leading-5 text-archive-300">
-          Google and Apple sign-in will be added after provider credentials are configured.
+          By continuing, you agree to Revit&apos;s Terms and Privacy Policy.
         </Text>
       </View>
     </Screen>
