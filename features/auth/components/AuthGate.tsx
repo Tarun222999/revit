@@ -1,57 +1,58 @@
-import { Redirect, useSegments } from 'expo-router';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { router, usePathname } from 'expo-router';
+import { useEffect } from 'react';
 import type { PropsWithChildren } from 'react';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentProfile } from '@/features/profile/hooks/useCurrentProfile';
 
-function AuthLoadingScreen() {
-  return (
-    <View className="flex-1 items-center justify-center gap-4 bg-archive-900 px-6">
-      <ActivityIndicator color="#d7a94d" />
-      <Text className="text-center text-sm text-archive-200">Opening your shelf...</Text>
-    </View>
-  );
-}
-
 export function AuthGate({ children }: PropsWithChildren) {
-  const segments = useSegments();
+  const pathname = usePathname();
   const { user, loading: authLoading } = useAuth();
   const profileQuery = useCurrentProfile(user?.id);
 
-  const rootSegment = segments[0];
-  const leafSegment = segments[segments.length - 1];
-  const isAuthRoute = rootSegment === '(auth)';
-  const isCallbackRoute = isAuthRoute && leafSegment === 'callback';
-  const isOnboardingRoute = isAuthRoute && leafSegment === 'onboarding';
+  const isWelcomeRoute = pathname === '/welcome';
+  const isEmailCodeRoute = pathname === '/email-code';
+  const isCallbackRoute = pathname === '/callback';
+  const isOnboardingRoute = pathname === '/onboarding';
+  const isAuthRoute = isWelcomeRoute || isEmailCodeRoute || isCallbackRoute || isOnboardingRoute;
 
-  if (authLoading || (user && profileQuery.isLoading && !isCallbackRoute)) {
-    return <AuthLoadingScreen />;
-  }
+  useEffect(() => {
+    if (authLoading || (user && profileQuery.isLoading && !isCallbackRoute)) {
+      return;
+    }
 
-  if (!user) {
+    if (!user) {
+      if (!isAuthRoute) {
+        router.replace('/welcome');
+      }
+
+      return;
+    }
+
+    if (isCallbackRoute) {
+      return;
+    }
+
+    if (!profileQuery.data) {
+      if (!isOnboardingRoute) {
+        router.replace('/onboarding');
+      }
+
+      return;
+    }
+
     if (isAuthRoute) {
-      return <>{children}</>;
+      router.replace('/home');
     }
-
-    return <Redirect href="/(auth)/welcome" />;
-  }
-
-  if (isCallbackRoute) {
-    return <>{children}</>;
-  }
-
-  if (!profileQuery.data) {
-    if (isOnboardingRoute) {
-      return <>{children}</>;
-    }
-
-    return <Redirect href="/(auth)/onboarding" />;
-  }
-
-  if (isAuthRoute) {
-    return <Redirect href="/(tabs)/home" />;
-  }
+  }, [
+    authLoading,
+    isAuthRoute,
+    isCallbackRoute,
+    isOnboardingRoute,
+    profileQuery.data,
+    profileQuery.isLoading,
+    user,
+  ]);
 
   return <>{children}</>;
 }

@@ -965,3 +965,60 @@ Phase 2 can then add:
 - media item upsert strategy
 
 Phase 1 should leave the app ready for that work without any direct TMDB calls from the mobile client.
+
+## Current Phase 1 Status
+
+As of the current implementation pass:
+
+- Supabase project is connected through local `.env`.
+- `profiles` table exists in Supabase and RLS has been verified.
+- Supabase database types are generated into `lib/supabase/types.ts`.
+- Email provider is enabled.
+- Email template supports both magic link and OTP token.
+- Email OTP API helpers exist.
+- Email Code screen can send and verify OTP.
+- Auth callback route exchanges auth codes for sessions.
+- AuthProvider tracks session state.
+- Route guard directs users based on session/profile state.
+- Onboarding screen creates profile rows.
+- Google provider has been configured in Supabase.
+- Google sign-in works in browser and Expo Go after local redirect configuration.
+- Profile screen has minimal identity and sign-out support.
+- Top-right profile action is available in the app tab shell.
+- `npm run check` has passed.
+- `npm run export:web` has passed.
+
+Known release blockers and production-readiness follow-ups are tracked in:
+
+```text
+docs/release-blockers.md
+```
+
+## Current Development Caveats
+
+### Expo Go Google Redirects
+
+For local Expo Go testing, the Supabase Site URL may need to temporarily point at the current Expo callback URL:
+
+```text
+exp://<local-ip>:8081/--/callback
+```
+
+This is a development workaround only.
+
+Before release:
+
+- replace Site URL with the production URL
+- remove stale local IP redirects
+- verify final auth redirects on web and native builds
+
+### Branding And Email Production Readiness
+
+The current auth setup is good enough for Phase 1 development testing, but not production-ready.
+
+Before release, resolve the release blockers for:
+
+- Google OAuth consent branding
+- Supabase/custom auth domain strategy
+- custom SMTP
+- branded auth email templates

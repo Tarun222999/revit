@@ -1,11 +1,29 @@
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
+import { signInWithGoogle } from '@/features/auth/api/google-auth-api';
 
 export function WelcomeAuthScreen() {
+  const [loadingProvider, setLoadingProvider] = useState<'google' | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleGoogleSignIn() {
+    setError(null);
+    setLoadingProvider('google');
+
+    try {
+      await signInWithGoogle();
+    } catch (signInError) {
+      setError(signInError instanceof Error ? signInError.message : 'Google sign-in failed.');
+    } finally {
+      setLoadingProvider(null);
+    }
+  }
+
   return (
     <Screen>
       <View className="flex-1 justify-between gap-8">
@@ -31,12 +49,19 @@ export function WelcomeAuthScreen() {
 
           <View className="gap-3">
             <Button title="Continue with Email" onPress={() => router.push('/email-code')} />
-            <Button title="Continue with Google" variant="secondary" disabled />
+            <Button
+              title="Continue with Google"
+              variant="secondary"
+              onPress={handleGoogleSignIn}
+              loading={loadingProvider === 'google'}
+            />
             {Platform.OS === 'ios' ? <Button title="Continue with Apple" variant="secondary" disabled /> : null}
           </View>
 
+          {error ? <Text className="text-sm leading-5 text-reel-400">{error}</Text> : null}
+
           <Text className="text-xs leading-5 text-archive-300">
-            Google and Apple sign-in will be enabled after provider credentials are configured.
+            Apple sign-in will be enabled after Apple Developer credentials are configured.
           </Text>
         </Card>
 
