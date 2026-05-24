@@ -55,7 +55,7 @@ export function EmailCodeScreen() {
 
     try {
       await verifyEmailOtp(email, token);
-      router.replace('/onboarding');
+      router.replace('/(auth)/onboarding');
     } catch (verifyError) {
       setError(verifyError instanceof Error ? verifyError.message : 'Could not verify that code.');
     } finally {

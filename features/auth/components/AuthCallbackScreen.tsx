@@ -34,7 +34,7 @@ export function AuthCallbackScreen() {
         return;
       }
 
-      router.replace('/onboarding');
+      router.replace('/(auth)/onboarding');
     }
 
     finishCallback();
