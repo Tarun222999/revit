@@ -983,6 +983,8 @@ As of the current implementation pass:
 - Onboarding screen creates profile rows.
 - Google provider has been configured in Supabase.
 - Google sign-in works in browser and Expo Go after local redirect configuration.
+- Apple provider has been enabled in Supabase and native iOS Apple auth code has been added.
+- Apple sign-in still needs verification on a supported iOS device or iOS dev build with Apple Sign-In capability.
 - Profile screen has minimal identity and sign-out support.
 - Top-right profile action is available in the app tab shell.
 - `npm run check` has passed.
@@ -1022,3 +1024,4 @@ Before release, resolve the release blockers for:
 - Supabase/custom auth domain strategy
 - custom SMTP
 - branded auth email templates
+- Apple sign-in verification on production-like iOS builds

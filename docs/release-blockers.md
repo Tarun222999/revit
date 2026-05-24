@@ -127,3 +127,25 @@ Release requirement:
 - Replace Site URL with the final production URL before release.
 - Keep only appropriate production redirect URLs.
 - Remove stale local IP redirect URLs before release.
+
+## Apple Sign-In Needs Production-Like iOS Verification
+
+Status: open
+Severity: release blocker
+Area: authentication, iOS release readiness
+
+Issue:
+
+Native iOS Apple sign-in code has been added and the Supabase Apple provider has been enabled, but the flow has not yet been verified on a supported iOS device or iOS dev/release build with the Apple Sign-In capability.
+
+Current workaround:
+
+- Android and web hide native Apple sign-in.
+- Email and Google auth are available for current development testing.
+
+Release requirement:
+
+- Verify Apple sign-in on a real iOS device or production-like iOS build.
+- Confirm the configured bundle identifier matches Apple Developer and Supabase Client IDs.
+- Confirm Apple sign-in creates or resumes the correct Supabase user session.
+- Confirm Apple users without a profile route to onboarding and users with profiles route home.

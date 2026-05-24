@@ -1,15 +1,21 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
+import { isAppleSignInAvailable, signInWithApple } from '@/features/auth/api/apple-auth-api';
 import { signInWithGoogle } from '@/features/auth/api/google-auth-api';
 
 export function WelcomeAuthScreen() {
-  const [loadingProvider, setLoadingProvider] = useState<'google' | null>(null);
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  const [loadingProvider, setLoadingProvider] = useState<'google' | 'apple' | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    isAppleSignInAvailable().then(setAppleAvailable).catch(() => setAppleAvailable(false));
+  }, []);
 
   async function handleGoogleSignIn() {
     setError(null);
@@ -19,6 +25,19 @@ export function WelcomeAuthScreen() {
       await signInWithGoogle();
     } catch (signInError) {
       setError(signInError instanceof Error ? signInError.message : 'Google sign-in failed.');
+    } finally {
+      setLoadingProvider(null);
+    }
+  }
+
+  async function handleAppleSignIn() {
+    setError(null);
+    setLoadingProvider('apple');
+
+    try {
+      await signInWithApple();
+    } catch (signInError) {
+      setError(signInError instanceof Error ? signInError.message : 'Apple sign-in failed.');
     } finally {
       setLoadingProvider(null);
     }
@@ -55,14 +74,18 @@ export function WelcomeAuthScreen() {
               onPress={handleGoogleSignIn}
               loading={loadingProvider === 'google'}
             />
-            {Platform.OS === 'ios' ? <Button title="Continue with Apple" variant="secondary" disabled /> : null}
+            {Platform.OS === 'ios' && appleAvailable ? (
+              <Button
+                title="Continue with Apple"
+                variant="secondary"
+                onPress={handleAppleSignIn}
+                loading={loadingProvider === 'apple'}
+              />
+            ) : null}
           </View>
 
           {error ? <Text className="text-sm leading-5 text-reel-400">{error}</Text> : null}
 
-          <Text className="text-xs leading-5 text-archive-300">
-            Apple sign-in will be enabled after Apple Developer credentials are configured.
-          </Text>
         </Card>
 
         <Text className="text-center text-xs leading-5 text-archive-300">

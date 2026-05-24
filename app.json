@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "bundleIdentifier": "com.yourname.revit",
+      "bundleIdentifier": "com.tarun.revit",
       "supportsTablet": true
     },
     "android": {
