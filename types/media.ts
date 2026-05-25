@@ -18,4 +18,6 @@ export type MediaItem = {
   metadata: Record<string, unknown>;
 };
 
-export type NormalizedMediaItem = MediaItem;
+export type NormalizedMediaItem = Omit<MediaItem, 'id'> & {
+  id?: string;
+};
