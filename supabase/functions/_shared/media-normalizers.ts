@@ -19,6 +19,21 @@ export type NormalizedMediaItem = {
   metadata: Record<string, unknown>;
 };
 
+export type MediaItemRow = {
+  id: string;
+  source: MediaSource;
+  source_id: string;
+  media_type: MediaType;
+  title: string;
+  original_title: string | null;
+  description: string | null;
+  release_date: string | null;
+  image_url: string | null;
+  backdrop_url: string | null;
+  genres: unknown;
+  metadata: unknown;
+};
+
 type TmdbGenre = {
   id: number;
   name: string;
@@ -188,20 +203,7 @@ export function toMediaItemRow(item: NormalizedMediaItem) {
   };
 }
 
-export function fromMediaItemRow(row: {
-  id: string;
-  source: MediaSource;
-  source_id: string;
-  media_type: MediaType;
-  title: string;
-  original_title: string | null;
-  description: string | null;
-  release_date: string | null;
-  image_url: string | null;
-  backdrop_url: string | null;
-  genres: string[] | unknown;
-  metadata: Record<string, unknown> | unknown;
-}): NormalizedMediaItem {
+export function fromMediaItemRow(row: MediaItemRow): NormalizedMediaItem {
   return {
     id: row.id,
     source: row.source,

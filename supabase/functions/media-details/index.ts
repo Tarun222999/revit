@@ -8,6 +8,7 @@ import { createServiceClient, requireAuth } from '../_shared/auth.ts';
 import { fetchTmdb } from '../_shared/tmdb.ts';
 import {
   fromMediaItemRow,
+  type MediaItemRow,
   normalizeTmdbMovie,
   normalizeTmdbTv,
   toMediaItemRow,
@@ -92,7 +93,7 @@ async function loadMediaItemById(mediaItemId: string) {
     throw new HttpError(404, 'Media item was not found.');
   }
 
-  return fromMediaItemRow(data);
+  return fromMediaItemRow(data as MediaItemRow);
 }
 
 async function upsertMediaItem(item: NormalizedMediaItem) {
@@ -110,7 +111,7 @@ async function upsertMediaItem(item: NormalizedMediaItem) {
     throw new HttpError(500, 'Unable to save media details.');
   }
 
-  return fromMediaItemRow(data);
+  return fromMediaItemRow(data as MediaItemRow);
 }
 
 Deno.serve(async (request) => {
