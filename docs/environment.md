@@ -47,6 +47,26 @@ Do not put these values in `EXPO_PUBLIC_*` variables:
 
 Private credentials belong in Supabase Edge Functions or other server-side environments.
 
+## Supabase Edge Function Secrets
+
+Phase 2 media integration uses Supabase Edge Functions as the trusted TMDB boundary.
+
+Configure these values as Supabase function secrets, not Expo public variables:
+
+```text
+TMDB_ACCESS_TOKEN=
+```
+
+Supabase automatically provides project runtime values such as the project URL, anon key, and service role key to Edge Functions. The app should never read or bundle the service role key.
+
+Use the Supabase CLI to set the TMDB secret when the real token is available:
+
+```text
+npx supabase secrets set TMDB_ACCESS_TOKEN=<token>
+```
+
+Do not commit TMDB tokens, service role keys, database passwords, or OAuth client secrets to source control.
+
 ## Current Phase 0 Status
 
 During Phase 0, real Supabase values are optional.
