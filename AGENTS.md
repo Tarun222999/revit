@@ -92,6 +92,15 @@ Before implementing major changes:
 2. align the task with the locked product and stack decisions
 3. avoid introducing conflicting patterns
 
+## Phase Implementation Rule
+
+When a phase document includes an `Implementation Sequence`, work through it strictly one step at a time.
+
+- Do not start coding or planning later implementation-sequence steps until the user explicitly says to proceed to that step.
+- After completing or discussing a step, stop and wait for the user's approval before moving on.
+- If a later step seems technically related, mention it as a future step instead of implementing it early.
+- This rule applies to every phase, including Phase 3 and future phases.
+
 ## If A Decision Seems To Conflict
 
 If current code, older notes, or a new request conflicts with the locked docs:
