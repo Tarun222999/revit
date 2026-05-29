@@ -9,6 +9,20 @@ declare namespace Deno {
 }
 
 declare module 'npm:@supabase/supabase-js@2.106.1' {
+  type QueryResult = Promise<{
+    data: unknown;
+    error: unknown;
+  }>;
+
+  type PostgrestFilterBuilder = {
+    eq: (
+      column: string,
+      value: string | number | boolean,
+    ) => PostgrestFilterBuilder;
+    maybeSingle: () => QueryResult;
+    single: () => QueryResult;
+  };
+
   export function createClient(
     supabaseUrl: string,
     supabaseKey: string,
@@ -32,29 +46,7 @@ declare module 'npm:@supabase/supabase-js@2.106.1' {
       }>;
     };
     from: (table: string) => {
-      select: (columns?: string) => {
-        eq: (
-          column: string,
-          value: string | number | boolean,
-        ) => {
-          eq: (
-            column: string,
-            value: string | number | boolean,
-          ) => ReturnType<ReturnType<ReturnType<typeof createClient>['from']>['select']>;
-          maybeSingle: () => Promise<{
-            data: unknown;
-            error: unknown;
-          }>;
-          single: () => Promise<{
-            data: unknown;
-            error: unknown;
-          }>;
-        };
-        single: () => Promise<{
-          data: unknown;
-          error: unknown;
-        }>;
-      };
+      select: (columns?: string) => PostgrestFilterBuilder;
       upsert: (
         values: Record<string, unknown>,
         options?: {
