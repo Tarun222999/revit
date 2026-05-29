@@ -35,9 +35,17 @@ declare module 'npm:@supabase/supabase-js@2.106.1' {
       select: (columns?: string) => {
         eq: (
           column: string,
-          value: string,
+          value: string | number | boolean,
         ) => {
+          eq: (
+            column: string,
+            value: string | number | boolean,
+          ) => ReturnType<ReturnType<ReturnType<typeof createClient>['from']>['select']>;
           maybeSingle: () => Promise<{
+            data: unknown;
+            error: unknown;
+          }>;
+          single: () => Promise<{
             data: unknown;
             error: unknown;
           }>;

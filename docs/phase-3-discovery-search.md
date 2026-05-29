@@ -277,6 +277,71 @@ Cache invalidation should be time-based for v1. Manual invalidation or richer fr
 
 The app can still use TanStack Query caching on top of the server cache, but client caching should not be the only protection against repeated TMDB calls because these rails are shared across users.
 
+### Discovery Cache Storage Strategy
+
+Use a small Supabase Postgres table for the v1 discovery cache. This is more explicit and durable than relying only on Edge Function memory, which may be cold-started or isolated across runtimes.
+
+Recommended table:
+
+```text
+media_discovery_cache
+```
+
+Recommended columns:
+
+```text
+mode text not null
+media_type text not null
+page integer not null
+response jsonb not null
+cached_at timestamptz not null default now()
+expires_at timestamptz not null
+```
+
+Recommended primary key:
+
+```text
+(mode, media_type, page)
+```
+
+Recommended constraints:
+
+```text
+mode in ('trending', 'new_releases', 'top_rated')
+media_type in ('movie', 'series', 'anime')
+page between 1 and 500
+jsonb_typeof(response) = 'object'
+```
+
+Recommended index:
+
+```text
+expires_at
+```
+
+Access boundary:
+
+- enable RLS on `media_discovery_cache`
+- do not add client read or write policies in v1
+- `media-discover` should read/write this table with the service role inside the Edge Function only
+- mobile app clients should receive cached discovery data only through `media-discover`
+
+Cache behavior:
+
+1. `media-discover` receives `(mode, mediaType, page)`.
+2. Function checks `media_discovery_cache` for the key.
+3. If a row exists and `expires_at > now()`, return `response`.
+4. If missing or expired, fetch TMDB, normalize results, write a fresh cache row, then return the fresh response.
+5. Expired rows can be overwritten lazily; no cleanup worker is required for v1.
+
+TTL decision for v1:
+
+- `trending`: 3 hours
+- `new_releases`: 12 hours
+- `top_rated`: 24 hours
+
+These TTLs are intentionally simple. If usage grows, later phases can add scheduled cleanup, manual invalidation, or stale-while-revalidate behavior.
+
 ## Implementation Sequence
 
 ### 1. Finalize Discover UX Contract
