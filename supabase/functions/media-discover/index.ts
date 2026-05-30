@@ -60,6 +60,8 @@ const CACHE_TTL_MS: Record<DiscoverMode, number> = {
   new_releases: 12 * 60 * 60 * 1000,
   top_rated: 24 * 60 * 60 * 1000,
 };
+const ANIME_TRENDING_PAGE_SCAN_LIMIT = 4;
+const DISCOVER_PAGE_SIZE = 20;
 
 function parsePage(value: unknown) {
   if (typeof value !== 'number' || !Number.isInteger(value)) {
@@ -128,6 +130,21 @@ function normalizeAnimeResults(results: TmdbTvResult[]) {
   return results.map((result) => normalizeTmdbTv(result, { forceAnime: true }));
 }
 
+function dedupeMediaItems(items: NormalizedMediaItem[]) {
+  const seen = new Set<string>();
+
+  return items.filter((item) => {
+    const key = `${item.source}:${item.sourceId}`;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 async function fetchMovieDiscover(mode: DiscoverMode, page: number) {
   if (mode === 'trending') {
     const response = await fetchTmdb<TmdbPagedResponse<TmdbMovieResult>>(
@@ -136,7 +153,7 @@ async function fetchMovieDiscover(mode: DiscoverMode, page: number) {
     );
 
     return {
-      results: normalizeMovieResults(response.results),
+      results: dedupeMediaItems(normalizeMovieResults(response.results)),
       totalPages: response.total_pages,
     };
   }
@@ -148,7 +165,7 @@ async function fetchMovieDiscover(mode: DiscoverMode, page: number) {
     );
 
     return {
-      results: normalizeMovieResults(response.results),
+      results: dedupeMediaItems(normalizeMovieResults(response.results)),
       totalPages: response.total_pages,
     };
   }
@@ -159,7 +176,7 @@ async function fetchMovieDiscover(mode: DiscoverMode, page: number) {
   );
 
   return {
-    results: normalizeMovieResults(response.results),
+    results: dedupeMediaItems(normalizeMovieResults(response.results)),
     totalPages: response.total_pages,
   };
 }
@@ -172,7 +189,7 @@ async function fetchSeriesDiscover(mode: DiscoverMode, page: number) {
     );
 
     return {
-      results: normalizeSeriesResults(response.results),
+      results: dedupeMediaItems(normalizeSeriesResults(response.results)),
       totalPages: response.total_pages,
     };
   }
@@ -184,7 +201,7 @@ async function fetchSeriesDiscover(mode: DiscoverMode, page: number) {
     );
 
     return {
-      results: normalizeSeriesResults(response.results),
+      results: dedupeMediaItems(normalizeSeriesResults(response.results)),
       totalPages: response.total_pages,
     };
   }
@@ -195,21 +212,36 @@ async function fetchSeriesDiscover(mode: DiscoverMode, page: number) {
   );
 
   return {
-    results: normalizeSeriesResults(response.results),
+    results: dedupeMediaItems(normalizeSeriesResults(response.results)),
     totalPages: response.total_pages,
   };
 }
 
 async function fetchAnimeDiscover(mode: DiscoverMode, page: number) {
   if (mode === 'trending') {
-    const response = await fetchTmdb<TmdbPagedResponse<TmdbTvResult>>(
-      '/trending/tv/week',
-      { language: 'en-US', page },
+    const startPage = (page - 1) * ANIME_TRENDING_PAGE_SCAN_LIMIT + 1;
+    const scannedResponses = await Promise.all(
+      Array.from({ length: ANIME_TRENDING_PAGE_SCAN_LIMIT }, (_, index) =>
+        fetchTmdb<TmdbPagedResponse<TmdbTvResult>>('/trending/tv/week', {
+          language: 'en-US',
+          page: startPage + index,
+        }),
+      ),
     );
+    const animeResults = scannedResponses
+      .flatMap((response) => response.results)
+      .filter(isLikelyAnime)
+      .slice(0, DISCOVER_PAGE_SIZE);
 
     return {
-      results: normalizeAnimeResults(response.results.filter(isLikelyAnime)),
-      totalPages: response.total_pages,
+      results: dedupeMediaItems(normalizeAnimeResults(animeResults)),
+      totalPages: Math.max(
+        1,
+        Math.floor(
+          Math.max(...scannedResponses.map((response) => response.total_pages)) /
+            ANIME_TRENDING_PAGE_SCAN_LIMIT,
+        ),
+      ),
     };
   }
 
@@ -228,7 +260,7 @@ async function fetchAnimeDiscover(mode: DiscoverMode, page: number) {
     );
 
     return {
-      results: normalizeAnimeResults(response.results),
+      results: dedupeMediaItems(normalizeAnimeResults(response.results)),
       totalPages: response.total_pages,
     };
   }
@@ -247,7 +279,7 @@ async function fetchAnimeDiscover(mode: DiscoverMode, page: number) {
   );
 
   return {
-    results: normalizeAnimeResults(response.results),
+    results: dedupeMediaItems(normalizeAnimeResults(response.results)),
     totalPages: response.total_pages,
   };
 }

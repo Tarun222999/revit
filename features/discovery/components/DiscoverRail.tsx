@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { DiscoverPosterCard } from '@/features/discovery/components/DiscoverPosterCard';
 import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
+import { dedupeMediaItems } from '@/features/discovery/utils/dedupeMediaItems';
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import type { DiscoveryMediaType, DiscoveryMode } from '@/types/discovery';
 
@@ -23,7 +24,7 @@ export function DiscoverRail({
   onSeeAll,
 }: DiscoverRailProps) {
   const railQuery = useDiscoverRail(mode, mediaType);
-  const results = railQuery.data?.results ?? [];
+  const results = dedupeMediaItems(railQuery.data?.results ?? []);
 
   return (
     <View className="gap-3">

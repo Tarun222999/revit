@@ -453,7 +453,12 @@ Expected outcome:
 - Dashboard remains a non-personalized shell until Phase 7.
 - No journal CRUD or personalized dashboard data is introduced.
 
-### 10. Polish Search Screen
+### 10. Polish Search And Discovery Lists
+
+Before starting this step, read:
+
+- React Native FlatList optimization guide: `https://reactnative.dev/docs/optimizing-flatlist-configuration`
+- Large-list optimization reference: `https://gabrielvrl.medium.com/large-list-optimization-techniques-with-flatlist-in-react-native-ab7c651746a5`
 
 Expected outcome:
 
@@ -462,6 +467,12 @@ Expected outcome:
 - Search result cards show poster, title, year, media type, and useful metadata.
 - Search shows clear loading, empty, and error states.
 - Search result taps continue to open Title Details through the existing route id flow.
+- Discover Listing screens feel complete enough for v1 browse flows, not just technically routed.
+- Discover rails and Discover Listing use production-minded `FlatList` configuration.
+- Media list item components are lightweight and memoized where useful.
+- `renderItem`, `keyExtractor`, and separator callbacks are stable rather than recreated inline where the list can grow.
+- Fixed-size rail cards use `getItemLayout` where practical.
+- `initialNumToRender`, `windowSize`, `maxToRenderPerBatch`, and `updateCellsBatchingPeriod` are tuned conservatively for the list type.
 
 ### 11. Verify No Direct TMDB Client Calls
 
@@ -505,11 +516,12 @@ Phase 3 is complete when:
 15. Search shows loading, empty, error, and result states clearly.
 16. Search result cards show poster artwork when available.
 17. Search result taps still open Title Details through the existing media route id.
-18. Opening a previously saved TMDB title by `source/sourceId` returns the existing `media_items` row instead of calling TMDB again.
-19. No client code calls TMDB directly.
-20. `npm run typecheck` passes.
-21. `npm run lint` passes.
-22. `npm run check` passes when environment permissions allow.
+18. Discover and Search list components use stable keys, stable render callbacks where useful, and tuned `FlatList` configuration.
+19. Opening a previously saved TMDB title by `source/sourceId` returns the existing `media_items` row instead of calling TMDB again.
+20. No client code calls TMDB directly.
+21. `npm run typecheck` passes.
+22. `npm run lint` passes.
+23. `npm run check` passes when environment permissions allow.
 
 ## Verification Checklist
 

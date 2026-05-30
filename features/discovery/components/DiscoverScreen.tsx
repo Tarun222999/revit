@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 
-import { Screen } from '@/components/ui/Screen';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { DiscoverModeBar } from '@/features/discovery/components/DiscoverModeBar';
 import { DiscoverRail } from '@/features/discovery/components/DiscoverRail';
@@ -24,15 +23,12 @@ export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
   const [mode, setMode] = useState<DiscoveryMode>('trending');
 
   return (
-    <Screen scroll className="gap-7">
+    <View className="gap-7">
       <View className="gap-2">
         <SectionHeader
           title="Discover"
-          subtitle="Browse real media rails powered by the app media layer."
+          subtitle="Movies, series, and anime worth browsing now."
         />
-        <Text className="text-sm leading-5 text-archive-300">
-          Hidden Gems is intentionally deferred until the ranking rule is ready.
-        </Text>
       </View>
 
       <DiscoverModeBar value={mode} onChange={setMode} />
@@ -46,6 +42,6 @@ export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
           onSeeAll={onSeeAll}
         />
       ))}
-    </Screen>
+    </View>
   );
 }
