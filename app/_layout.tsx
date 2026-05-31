@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import * as WebBrowser from 'expo-web-browser';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -8,6 +9,8 @@ import { AuthGate } from '@/features/auth/components/AuthGate';
 import { AuthProvider } from '@/features/auth/context/AuthProvider';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { QueryProvider } from '@/lib/query/QueryProvider';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',

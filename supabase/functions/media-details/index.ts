@@ -96,6 +96,23 @@ async function loadMediaItemById(mediaItemId: string) {
   return fromMediaItemRow(data as MediaItemRow);
 }
 
+async function loadMediaItemBySourceId(source: MediaSource, sourceId: string) {
+  const supabase = createServiceClient();
+  const { data, error } = await supabase
+    .from('media_items')
+    .select('*')
+    .eq('source', source)
+    .eq('source_id', sourceId)
+    .maybeSingle();
+
+  if (error) {
+    console.error(error);
+    throw new HttpError(500, 'Unable to load media details.');
+  }
+
+  return data ? fromMediaItemRow(data as MediaItemRow) : null;
+}
+
 async function upsertMediaItem(item: NormalizedMediaItem) {
   const supabase = createServiceClient();
   const { data, error } = await supabase
@@ -134,6 +151,15 @@ Deno.serve(async (request) => {
     if (parsedRequest.kind === 'mediaItemId') {
       const item = await loadMediaItemById(parsedRequest.mediaItemId);
       return jsonResponse({ item });
+    }
+
+    const existingItem = await loadMediaItemBySourceId(
+      parsedRequest.source,
+      parsedRequest.sourceId,
+    );
+
+    if (existingItem) {
+      return jsonResponse({ item: existingItem });
     }
 
     const item = await fetchTmdbDetails(parsedRequest.sourceId);
