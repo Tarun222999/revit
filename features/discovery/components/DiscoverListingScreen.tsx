@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -10,7 +10,10 @@ import { Screen } from '@/components/ui/Screen';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { DiscoverPosterCard } from '@/features/discovery/components/DiscoverPosterCard';
 import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
-import { dedupeMediaItems } from '@/features/discovery/utils/dedupeMediaItems';
+import {
+  dedupeMediaItems,
+  mediaItemKey,
+} from '@/features/discovery/utils/dedupeMediaItems';
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import type { NormalizedMediaItem } from '@/types/media';
 import {
@@ -36,6 +39,10 @@ const mediaTypeLabels: Record<DiscoveryMediaType, string> = {
   series: 'Series',
   anime: 'Anime',
 };
+
+function ListingItemSeparator() {
+  return <View className="h-5" />;
+}
 
 function DiscoverListingContent({
   mode,
@@ -76,15 +83,37 @@ function DiscoverListingContent({
   const title = `${modeLabels[mode]} ${mediaTypeLabels[mediaType]}`;
   const totalPages = listingQuery.data?.totalPages ?? page;
   const canLoadMore = page < totalPages;
+  const keyExtractor = useCallback((item: NormalizedMediaItem) => mediaItemKey(item), []);
+  const renderItem = useCallback(
+    ({ item }: { item: NormalizedMediaItem }) => (
+      <DiscoverPosterCard
+        item={item}
+        onPress={() =>
+          router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`)
+        }
+      />
+    ),
+    [],
+  );
+  const loadMore = useCallback(() => {
+    setPage((current) => current + 1);
+  }, []);
 
   return (
     <Screen padded={false}>
       <FlatList
         data={results}
-        keyExtractor={(item) => `${item.source}:${item.sourceId}`}
+        initialNumToRender={8}
+        keyExtractor={keyExtractor}
+        maxToRenderPerBatch={8}
         numColumns={2}
+        removeClippedSubviews
+        renderItem={renderItem}
+        updateCellsBatchingPeriod={80}
+        windowSize={7}
         columnWrapperClassName="gap-4"
         contentContainerClassName="gap-5 px-5 py-6"
+        ItemSeparatorComponent={ListingItemSeparator}
         ListHeaderComponent={
           <View className="gap-4">
             <SectionHeader
@@ -113,14 +142,6 @@ function DiscoverListingContent({
             />
           )
         }
-        renderItem={({ item }) => (
-          <DiscoverPosterCard
-            item={item}
-            onPress={() =>
-              router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`)
-            }
-          />
-        )}
         ListFooterComponent={
           results.length > 0 ? (
             <View className="gap-3 pb-4 pt-1">
@@ -141,7 +162,7 @@ function DiscoverListingContent({
                   title="Load more"
                   variant="secondary"
                   loading={listingQuery.isFetching}
-                  onPress={() => setPage((current) => current + 1)}
+                  onPress={loadMore}
                 />
               ) : (
                 <Text className="text-center text-sm text-archive-300">

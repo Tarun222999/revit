@@ -467,7 +467,7 @@ Expected outcome:
 - Search result cards show poster, title, year, media type, and useful metadata.
 - Search shows clear loading, empty, and error states.
 - Search result taps continue to open Title Details through the existing route id flow.
-- Discover Listing screens feel complete enough for v1 browse flows, not just technically routed.
+- Discover Listing screens remain functional and performant, while deeper visual polish moves to Phase 3.1.
 - Discover rails and Discover Listing use production-minded `FlatList` configuration.
 - Media list item components are lightweight and memoized where useful.
 - `renderItem`, `keyExtractor`, and separator callbacks are stable rather than recreated inline where the list can grow.
@@ -563,3 +563,18 @@ Phase 4 can then build:
 - status, rating, review, spoiler, and completed date handling
 
 Phase 3 should leave Phase 4 with a reliable path from discovery/search into a specific normalized media item.
+
+## Handoff To Phase 3.1
+
+Phase 3.1 should polish the full Discover Listing pages created in this phase.
+
+Phase 3.1 can then improve:
+
+- listing page visual hierarchy
+- grid/list card sizing and spacing
+- mode and media context in the header
+- load-more interaction design
+- browse-page empty, loading, and error presentation
+- performance behavior on real devices
+
+Phase 3 should keep those screens functional and safe, but they do not need to be visually final before Phase 3 verification is complete.

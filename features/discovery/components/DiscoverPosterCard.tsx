@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
@@ -9,7 +10,7 @@ type DiscoverPosterCardProps = {
   onPress: () => void;
 };
 
-export function DiscoverPosterCard({ item, onPress }: DiscoverPosterCardProps) {
+function DiscoverPosterCardComponent({ item, onPress }: DiscoverPosterCardProps) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -41,3 +42,5 @@ export function DiscoverPosterCard({ item, onPress }: DiscoverPosterCardProps) {
     </Pressable>
   );
 }
+
+export const DiscoverPosterCard = memo(DiscoverPosterCardComponent);

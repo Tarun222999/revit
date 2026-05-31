@@ -110,6 +110,26 @@ Deliverable:
 
 - user can discover and search media content in the app
 
+## Phase 3.1: Discover Listing Polish
+
+Goal:
+
+- make the full `See all` discovery listing pages feel intentional and v1-ready
+
+Outline:
+
+- refine full Discover listing page layout
+- improve poster grid/list card sizing and spacing
+- improve page titles and mode/media context
+- polish load-more behavior
+- tune empty, loading, and error states for browse pages
+- verify FlatList performance on the full listing screens
+- keep the pages browse-only, with no journal CRUD or personalization
+
+Deliverable:
+
+- user can open `See all` from Discover and browse a polished full listing page for one mode and media type
+
 ## Phase 4: Title Details and Journal Entry Flow
 
 Goal:
@@ -258,13 +278,14 @@ Deliverable:
 2. Auth and app shell
 3. Core TMDB integration
 4. Discovery and search
-5. Title details and journal entry flow
-6. Journal screen
-7. Lists
-8. Profile and dashboard
-9. Settings and account management
-10. Quality hardening
-11. Launch preparation
+5. Discover listing polish
+6. Title details and journal entry flow
+7. Journal screen
+8. Lists
+9. Profile and dashboard
+10. Settings and account management
+11. Quality hardening
+12. Launch preparation
 
 ## What Is Intentionally Deferred
 

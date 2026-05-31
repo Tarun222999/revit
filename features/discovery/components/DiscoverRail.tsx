@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 
@@ -6,9 +7,13 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { DiscoverPosterCard } from '@/features/discovery/components/DiscoverPosterCard';
 import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
-import { dedupeMediaItems } from '@/features/discovery/utils/dedupeMediaItems';
+import {
+  dedupeMediaItems,
+  mediaItemKey,
+} from '@/features/discovery/utils/dedupeMediaItems';
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import type { DiscoveryMediaType, DiscoveryMode } from '@/types/discovery';
+import type { NormalizedMediaItem } from '@/types/media';
 
 type DiscoverRailProps = {
   title: string;
@@ -17,6 +22,14 @@ type DiscoverRailProps = {
   onSeeAll?: (mode: DiscoveryMode, mediaType: DiscoveryMediaType) => void;
 };
 
+const RAIL_CARD_WIDTH = 112;
+const RAIL_CARD_GAP = 12;
+const RAIL_ITEM_LENGTH = RAIL_CARD_WIDTH + RAIL_CARD_GAP;
+
+function RailSeparator() {
+  return <View className="w-3" />;
+}
+
 export function DiscoverRail({
   title,
   mode,
@@ -24,7 +37,30 @@ export function DiscoverRail({
   onSeeAll,
 }: DiscoverRailProps) {
   const railQuery = useDiscoverRail(mode, mediaType);
-  const results = dedupeMediaItems(railQuery.data?.results ?? []);
+  const results = useMemo(
+    () => dedupeMediaItems(railQuery.data?.results ?? []).slice(0, 10),
+    [railQuery.data?.results],
+  );
+  const keyExtractor = useCallback((item: NormalizedMediaItem) => mediaItemKey(item), []);
+  const renderItem = useCallback(
+    ({ item }: { item: NormalizedMediaItem }) => (
+      <DiscoverPosterCard
+        item={item}
+        onPress={() =>
+          router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`)
+        }
+      />
+    ),
+    [],
+  );
+  const getItemLayout = useCallback(
+    (_: ArrayLike<NormalizedMediaItem> | null | undefined, index: number) => ({
+      length: RAIL_ITEM_LENGTH,
+      offset: RAIL_ITEM_LENGTH * index,
+      index,
+    }),
+    [],
+  );
 
   return (
     <View className="gap-3">
@@ -68,18 +104,17 @@ export function DiscoverRail({
       {results.length > 0 ? (
         <FlatList
           horizontal
-          data={results.slice(0, 10)}
-          keyExtractor={(item) => `${item.source}:${item.sourceId}`}
-          renderItem={({ item }) => (
-            <DiscoverPosterCard
-              item={item}
-              onPress={() =>
-                router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`)
-              }
-            />
-          )}
-          ItemSeparatorComponent={() => <View className="w-3" />}
+          data={results}
+          getItemLayout={getItemLayout}
+          initialNumToRender={5}
+          ItemSeparatorComponent={RailSeparator}
+          keyExtractor={keyExtractor}
+          maxToRenderPerBatch={5}
+          removeClippedSubviews
+          renderItem={renderItem}
           showsHorizontalScrollIndicator={false}
+          updateCellsBatchingPeriod={80}
+          windowSize={5}
         />
       ) : null}
     </View>
