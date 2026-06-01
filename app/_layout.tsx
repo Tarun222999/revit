@@ -28,6 +28,7 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="title/[id]" options={{ title: 'Title Details' }} />
+              <Stack.Screen name="discover/[mode]/[mediaType]" options={{ title: 'Discovery' }} />
               <Stack.Screen name="lists/[id]" options={{ title: 'List Details' }} />
               <Stack.Screen name="profile" options={{ title: 'Profile' }} />
               <Stack.Screen name="settings" options={{ title: 'Settings' }} />
