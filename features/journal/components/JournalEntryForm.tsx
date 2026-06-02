@@ -1,0 +1,132 @@
+import { Switch, Text, View } from 'react-native';
+
+import { MediaPoster } from '@/components/media/MediaPoster';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { TextField } from '@/components/ui/TextField';
+import type { JournalStatus } from '@/constants/journal';
+import {
+  REVIEW_BODY_MAX_LENGTH,
+  REVIEW_HEADLINE_MAX_LENGTH,
+} from '@/constants/reviews';
+import { JournalStatusSelector } from '@/features/journal/components/JournalStatusSelector';
+import { RatingInput } from '@/features/journal/components/RatingInput';
+import type { JournalEntryFormErrors } from '@/features/journal/model/journalEntryForm';
+import type { JournalEntryFormValues } from '@/features/journal/types';
+import type { NormalizedMediaItem } from '@/types/media';
+
+type JournalEntryFormProps = {
+  errors: JournalEntryFormErrors;
+  isEditMode: boolean;
+  item?: NormalizedMediaItem;
+  onChange: <Key extends keyof JournalEntryFormValues>(
+    key: Key,
+    value: JournalEntryFormValues[Key],
+  ) => void;
+  onStatusChange: (status: JournalStatus) => void;
+  values: JournalEntryFormValues;
+};
+
+export function JournalEntryForm({
+  errors,
+  isEditMode,
+  item,
+  onChange,
+  onStatusChange,
+  values,
+}: JournalEntryFormProps) {
+  const hasErrors = Object.keys(errors).length > 0;
+
+  return (
+    <>
+      {item ? (
+        <Card className="flex-row gap-3">
+          <MediaPoster imageUrl={item.imageUrl} size="sm" />
+          <View className="min-w-0 flex-1 justify-center gap-1">
+            <Text className="text-xl font-bold text-archive-50" numberOfLines={2}>
+              {item.title}
+            </Text>
+            <Text className="text-sm text-archive-300">
+              {item.year ? `${item.year} - ` : ''}
+              {item.mediaType}
+            </Text>
+          </View>
+        </Card>
+      ) : null}
+
+      <JournalStatusSelector value={values.status} onChange={onStatusChange} />
+
+      <RatingInput
+        value={values.rating}
+        onChange={(rating) => onChange('rating', rating)}
+      />
+
+      {values.status === 'completed' ? (
+        <TextField
+          error={errors.completedOn}
+          label="Completed on"
+          onChangeText={(completedOn) =>
+            onChange('completedOn', completedOn || null)
+          }
+          placeholder="YYYY-MM-DD"
+          value={values.completedOn ?? ''}
+        />
+      ) : null}
+
+      <TextField
+        error={errors.reviewHeadline}
+        label={`Headline (${values.reviewHeadline.length}/${REVIEW_HEADLINE_MAX_LENGTH})`}
+        maxLength={REVIEW_HEADLINE_MAX_LENGTH}
+        onChangeText={(reviewHeadline) =>
+          onChange('reviewHeadline', reviewHeadline)
+        }
+        placeholder="Optional short headline"
+        value={values.reviewHeadline}
+      />
+
+      <TextField
+        className="min-h-32 py-3"
+        error={errors.reviewBody}
+        label={`Review (${values.reviewBody.length}/${REVIEW_BODY_MAX_LENGTH})`}
+        maxLength={REVIEW_BODY_MAX_LENGTH}
+        multiline
+        onChangeText={(reviewBody) => onChange('reviewBody', reviewBody)}
+        placeholder="Write a short review"
+        textAlignVertical="top"
+        value={values.reviewBody}
+      />
+
+      <View className="flex-row items-center justify-between gap-4 rounded-app border border-archive-700 bg-archive-800 p-4">
+        <View className="min-w-0 flex-1 gap-1">
+          <Text className="text-base font-bold text-archive-50">
+            Contains spoilers
+          </Text>
+          <Text className="text-sm leading-5 text-archive-300">
+            Hide review previews where needed.
+          </Text>
+        </View>
+        <Switch
+          onValueChange={(containsSpoilers) =>
+            onChange('containsSpoilers', containsSpoilers)
+          }
+          thumbColor="#fbf6ec"
+          trackColor={{ false: '#2a211a', true: '#4d9188' }}
+          value={values.containsSpoilers}
+        />
+      </View>
+
+      {hasErrors ? (
+        <Text className="text-sm leading-5 text-reel-400">
+          Fix the highlighted fields before saving.
+        </Text>
+      ) : null}
+
+      <View className="gap-2 pb-2">
+        <Button title={isEditMode ? 'Save Changes' : 'Save Entry'} disabled />
+        <Text className="text-center text-xs leading-4 text-archive-300">
+          Save will be wired in Step 7B.
+        </Text>
+      </View>
+    </>
+  );
+}

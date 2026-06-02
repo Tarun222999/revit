@@ -311,6 +311,20 @@ Validation:
 - review body max length is 500
 - completed date is optional, but should only be submitted when meaningful for completed entries
 
+## Phase 4.1 Modal UX Polish Backlog
+
+Keep these improvements out of the core Phase 4 implementation unless the user explicitly moves them forward. Phase 4 should finish the journal entry CRUD path first; Phase 4.1 should refine the modal interaction quality after the flow is working end to end.
+
+Phase 4.1 should address:
+
+- Replace the generic `Close` button with a more intentional modal dismiss control that matches the app's visual language.
+- Redesign the spoiler toggle so it feels integrated with the journal form instead of using a bland default switch treatment.
+- Fix mobile keyboard avoidance for the review text area so the keyboard does not cover the field while the user writes.
+- Improve the rating input affordance so users understand whether it is tap-based, draggable, or both.
+- Support a gesture-based modal dismiss path, such as dragging or swiping the modal down, instead of requiring only the close/back action.
+
+Phase 4.1 verification should include real mobile-device or emulator testing, because keyboard avoidance and gesture dismissal cannot be judged accurately from desktop web alone.
+
 ## Component Structure
 
 Keep route files thin and put feature work near the owning feature.
@@ -399,7 +413,7 @@ Expected outcome:
 - the screen shows a Your Entry section driven by the journal entry query
 - Add/Edit Journal Entry opens the modal with the agreed route params
 
-### 7. Build Journal Entry Modal Form
+### 7A. Build Journal Entry Modal Form UI And State
 
 Expected outcome:
 
@@ -407,8 +421,21 @@ Expected outcome:
 - modal loads media and existing entry data as needed
 - status, rating, headline, review body, spoiler flag, and completed date can be edited
 - validation is visible and calm
+- Save action can remain disabled or locally handled until Step 7B
+- no create/update mutation is required in this step
+
+Stop after this step and wait for explicit approval before implementing Step 7B.
+
+### 7B. Wire Journal Entry Save Flow
+
+Expected outcome:
+
+- create mode uses `useCreateJournalEntry`
+- edit mode uses `useUpdateJournalEntry`
+- form values map cleanly into mutation input
 - Save is disabled while submitting
 - successful save returns to Title Details and refreshes entry state
+- mutation failures show a useful error state
 
 ### 8. Add Delete Entry Flow
 
