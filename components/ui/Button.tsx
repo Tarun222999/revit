@@ -48,7 +48,15 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'primary' ? '#0d0b09' : '#fbf6ec'} />
       ) : (
-        <Text className={cn('text-base font-semibold', textClasses[variant])}>{title}</Text>
+        <Text
+          adjustsFontSizeToFit
+          className={cn(
+            'w-full text-center text-base font-semibold',
+            textClasses[variant],
+          )}
+          numberOfLines={1}>
+          {title}
+        </Text>
       )}
     </Pressable>
   );

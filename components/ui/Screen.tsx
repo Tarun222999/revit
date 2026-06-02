@@ -1,4 +1,4 @@
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import type { PropsWithChildren } from 'react';
 import { ScrollView, View, type ViewProps } from 'react-native';
 
@@ -8,18 +8,26 @@ type ScreenProps = PropsWithChildren<
   ViewProps & {
     scroll?: boolean;
     padded?: boolean;
+    safeAreaEdges?: Edge[];
   }
 >;
 
-export function Screen({ children, className, scroll = false, padded = true, ...props }: ScreenProps) {
+export function Screen({
+  children,
+  className,
+  scroll = false,
+  padded = true,
+  safeAreaEdges = ['right', 'bottom', 'left'],
+  ...props
+}: ScreenProps) {
   const contentClassName = cn('flex-1 bg-archive-900', padded && 'px-5 py-6', className);
 
   return (
-    <SafeAreaView className="flex-1 bg-archive-900">
+    <SafeAreaView className="flex-1 bg-archive-900" edges={safeAreaEdges}>
       {scroll ? (
         <ScrollView
           className="flex-1"
-          contentContainerClassName={cn(padded && 'px-5 py-6')}
+          contentContainerClassName={cn(padded && 'px-5 py-6', className)}
           showsVerticalScrollIndicator={false}
           {...props}>
           {children}
