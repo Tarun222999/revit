@@ -16,23 +16,37 @@ import type { JournalEntryFormValues } from '@/features/journal/types';
 import type { NormalizedMediaItem } from '@/types/media';
 
 type JournalEntryFormProps = {
+  canDelete: boolean;
+  deleteError?: string | null;
   errors: JournalEntryFormErrors;
   isEditMode: boolean;
+  isDeleting: boolean;
+  isSubmitting: boolean;
   item?: NormalizedMediaItem;
   onChange: <Key extends keyof JournalEntryFormValues>(
     key: Key,
     value: JournalEntryFormValues[Key],
   ) => void;
+  onDelete: () => void;
+  onSubmit: () => void;
   onStatusChange: (status: JournalStatus) => void;
+  submitError?: string | null;
   values: JournalEntryFormValues;
 };
 
 export function JournalEntryForm({
+  canDelete,
+  deleteError,
   errors,
   isEditMode,
+  isDeleting,
+  isSubmitting,
   item,
   onChange,
+  onDelete,
+  onSubmit,
   onStatusChange,
+  submitError,
   values,
 }: JournalEntryFormProps) {
   const hasErrors = Object.keys(errors).length > 0;
@@ -121,12 +135,42 @@ export function JournalEntryForm({
         </Text>
       ) : null}
 
+      {submitError ? (
+        <Text className="text-sm leading-5 text-reel-400">{submitError}</Text>
+      ) : null}
+
+      {deleteError ? (
+        <Text className="text-sm leading-5 text-reel-400">{deleteError}</Text>
+      ) : null}
+
       <View className="gap-2 pb-2">
-        <Button title={isEditMode ? 'Save Changes' : 'Save Entry'} disabled />
-        <Text className="text-center text-xs leading-4 text-archive-300">
-          Save will be wired in Step 7B.
-        </Text>
+        <Button
+          disabled={hasErrors || isDeleting}
+          loading={isSubmitting}
+          onPress={onSubmit}
+          title={isEditMode ? 'Save Changes' : 'Save Entry'}
+        />
       </View>
+
+      {canDelete ? (
+        <View className="gap-3 border-t border-archive-700 pt-5">
+          <View className="gap-1">
+            <Text className="text-base font-bold text-archive-50">
+              Remove from journal
+            </Text>
+            <Text className="text-sm leading-5 text-archive-300">
+              Delete this entry and return the title to the empty journal state.
+            </Text>
+          </View>
+          <Button
+            disabled={isSubmitting}
+            loading={isDeleting}
+            onPress={onDelete}
+            title="Delete Entry"
+            variant="danger"
+          />
+        </View>
+      ) : null}
     </>
   );
 }

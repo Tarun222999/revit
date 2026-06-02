@@ -318,6 +318,7 @@ Keep these improvements out of the core Phase 4 implementation unless the user e
 Phase 4.1 should address:
 
 - Replace the generic `Close` button with a more intentional modal dismiss control that matches the app's visual language.
+- Replace the generic native delete confirmation alert with a custom destructive confirmation modal that matches the journal flow.
 - Redesign the spoiler toggle so it feels integrated with the journal form instead of using a bland default switch treatment.
 - Fix mobile keyboard avoidance for the review text area so the keyboard does not cover the field while the user writes.
 - Improve the rating input affordance so users understand whether it is tap-based, draggable, or both.

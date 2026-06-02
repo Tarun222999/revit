@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -9,6 +9,11 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import type { JournalStatus } from '@/constants/journal';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { JournalEntryForm } from '@/features/journal/components/JournalEntryForm';
+import {
+  useCreateJournalEntry,
+  useDeleteJournalEntry,
+  useUpdateJournalEntry,
+} from '@/features/journal/hooks/useJournalEntryMutations';
 import { useJournalEntryForMedia } from '@/features/journal/hooks/useJournalEntryForMedia';
 import {
   defaultJournalEntryFormValues,
@@ -83,14 +88,23 @@ export function JournalEntryModalScreen({
   mediaItemId,
 }: JournalEntryModalScreenProps) {
   const { user } = useAuth();
-  const isEditMode = Boolean(entryId);
   const detailsQuery = useMediaDetails(mediaItemId);
   const entryQuery = useJournalEntryForMedia(user?.id, mediaItemId);
+  const createEntryMutation = useCreateJournalEntry();
+  const deleteEntryMutation = useDeleteJournalEntry();
+  const updateEntryMutation = useUpdateJournalEntry();
   const item = detailsQuery.data?.item;
   const entry = entryQuery.data ?? null;
+  const resolvedEntryId = entryId ?? entry?.id;
+  const isEditMode = Boolean(resolvedEntryId);
+  const isSubmitting =
+    createEntryMutation.isPending || updateEntryMutation.isPending;
+  const isDeleting = deleteEntryMutation.isPending;
   const [values, setValues] = useState<JournalEntryFormValues>(
     defaultJournalEntryFormValues,
   );
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const errors = useMemo(() => validateJournalEntryForm(values), [values]);
 
   useEffect(() => {
@@ -105,6 +119,8 @@ export function JournalEntryModalScreen({
     key: Key,
     value: JournalEntryFormValues[Key],
   ) => {
+    setDeleteError(null);
+    setSubmitError(null);
     setValues((current) => ({
       ...current,
       [key]: value,
@@ -112,12 +128,81 @@ export function JournalEntryModalScreen({
   };
 
   const updateStatus = (status: JournalStatus) => {
+    setDeleteError(null);
+    setSubmitError(null);
     setValues((current) => ({
       ...current,
       completedOn:
         status === 'completed' ? current.completedOn ?? todayString() : null,
       status,
     }));
+  };
+
+  const handleSubmit = async () => {
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    if (!user?.id) {
+      setSubmitError('Sign in before saving this journal entry.');
+      return;
+    }
+
+    if (!mediaItemId) {
+      setSubmitError('Open this modal from a title details page.');
+      return;
+    }
+
+    try {
+      setSubmitError(null);
+
+      if (resolvedEntryId) {
+        await updateEntryMutation.mutateAsync({
+          ...values,
+          entryId: resolvedEntryId,
+        });
+      } else {
+        await createEntryMutation.mutateAsync({
+          ...values,
+          mediaItemId,
+          userId: user.id,
+        });
+      }
+
+      router.back();
+    } catch (error) {
+      setSubmitError(errorMessage(error, 'Unable to save this journal entry.'));
+    }
+  };
+
+  const deleteEntry = async () => {
+    if (!resolvedEntryId) {
+      setDeleteError('This entry is not available to delete.');
+      return;
+    }
+
+    try {
+      setDeleteError(null);
+      await deleteEntryMutation.mutateAsync(resolvedEntryId);
+      router.back();
+    } catch (error) {
+      setDeleteError(errorMessage(error, 'Unable to delete this journal entry.'));
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete journal entry?',
+      'This removes your status, rating, and review for this title.',
+      [
+        { style: 'cancel', text: 'Cancel' },
+        {
+          onPress: deleteEntry,
+          style: 'destructive',
+          text: 'Delete',
+        },
+      ],
+    );
   };
 
   if (!mediaItemId) {
@@ -133,7 +218,7 @@ export function JournalEntryModalScreen({
     );
   }
 
-  if (detailsQuery.isLoading || (isEditMode && entryQuery.isLoading)) {
+  if (detailsQuery.isLoading || entryQuery.isLoading) {
     return (
       <JournalEntryModalFrame>
         <LoadingState message="Loading journal entry" />
@@ -187,11 +272,18 @@ export function JournalEntryModalScreen({
   return (
     <JournalEntryModalFrame scroll>
       <JournalEntryForm
+        canDelete={Boolean(resolvedEntryId)}
+        deleteError={deleteError}
         errors={errors}
         isEditMode={isEditMode}
+        isDeleting={isDeleting}
+        isSubmitting={isSubmitting}
         item={item}
         onChange={updateValue}
+        onDelete={handleDelete}
+        onSubmit={handleSubmit}
         onStatusChange={updateStatus}
+        submitError={submitError}
         values={values}
       />
     </JournalEntryModalFrame>
