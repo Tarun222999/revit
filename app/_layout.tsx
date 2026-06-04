@@ -34,7 +34,12 @@ export default function RootLayout() {
               <Stack.Screen name="settings" options={{ title: 'Settings' }} />
               <Stack.Screen
                 name="modals/journal-entry"
-                options={{ presentation: 'modal', title: 'Journal Entry' }}
+                options={{
+                  animation: 'fade',
+                  contentStyle: { backgroundColor: 'transparent' },
+                  headerShown: false,
+                  presentation: 'transparentModal',
+                }}
               />
             </Stack>
           </AuthGate>
