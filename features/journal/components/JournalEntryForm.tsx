@@ -1,4 +1,4 @@
-import { Switch, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
@@ -11,6 +11,7 @@ import {
 } from '@/constants/reviews';
 import { JournalStatusSelector } from '@/features/journal/components/JournalStatusSelector';
 import { RatingInput } from '@/features/journal/components/RatingInput';
+import { SpoilerToggle } from '@/features/journal/components/SpoilerToggle';
 import type { JournalEntryFormErrors } from '@/features/journal/model/journalEntryForm';
 import type { JournalEntryFormValues } from '@/features/journal/types';
 import type { NormalizedMediaItem } from '@/types/media';
@@ -110,24 +111,12 @@ export function JournalEntryForm({
         value={values.reviewBody}
       />
 
-      <View className="flex-row items-center justify-between gap-4 rounded-app border border-archive-700 bg-archive-800 p-4">
-        <View className="min-w-0 flex-1 gap-1">
-          <Text className="text-base font-bold text-archive-50">
-            Contains spoilers
-          </Text>
-          <Text className="text-sm leading-5 text-archive-300">
-            Hide review previews where needed.
-          </Text>
-        </View>
-        <Switch
-          onValueChange={(containsSpoilers) =>
-            onChange('containsSpoilers', containsSpoilers)
-          }
-          thumbColor="#fbf6ec"
-          trackColor={{ false: '#2a211a', true: '#4d9188' }}
-          value={values.containsSpoilers}
-        />
-      </View>
+      <SpoilerToggle
+        value={values.containsSpoilers}
+        onChange={(containsSpoilers) =>
+          onChange('containsSpoilers', containsSpoilers)
+        }
+      />
 
       {hasErrors ? (
         <Text className="text-sm leading-5 text-reel-400">
