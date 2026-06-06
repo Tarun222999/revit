@@ -9,10 +9,24 @@ export type JournalEntryFormErrors = Partial<
   Record<keyof JournalEntryFormValues, string>
 >;
 
+const ISO_DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const ISO_DATE_LENGTH = 10;
+const UTC_DATE_START_TIME = 'T00:00:00.000Z';
+
+/**
+ * Formats the current day for date inputs.
+ *
+ * @returns Today's date as `YYYY-MM-DD`.
+ */
 export function todayString() {
-  return new Date().toISOString().slice(0, 10);
+  return new Date().toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
+/**
+ * Creates a fresh set of default values for the journal entry form.
+ *
+ * @returns Default form values aligned with the configured default status.
+ */
 export function createDefaultJournalEntryFormValues(): JournalEntryFormValues {
   return {
     completedOn:
@@ -25,6 +39,12 @@ export function createDefaultJournalEntryFormValues(): JournalEntryFormValues {
   };
 }
 
+/**
+ * Converts a persisted journal entry into editable form values.
+ *
+ * @param entry - Existing journal entry returned by the data layer.
+ * @returns Form values with nullable review fields normalized to empty text.
+ */
 export function valuesFromJournalEntry(
   entry: JournalEntry,
 ): JournalEntryFormValues {
@@ -39,15 +59,25 @@ export function valuesFromJournalEntry(
 }
 
 function isValidDateInput(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (!ISO_DATE_INPUT_PATTERN.test(value)) {
     return false;
   }
 
-  const date = new Date(`${value}T00:00:00.000Z`);
+  const date = new Date(`${value}${UTC_DATE_START_TIME}`);
 
-  return !Number.isNaN(date.getTime()) && value === date.toISOString().slice(0, 10);
+  // Reject impossible dates like 2026-02-31 after JavaScript normalizes them.
+  return (
+    !Number.isNaN(date.getTime()) &&
+    value === date.toISOString().slice(0, ISO_DATE_LENGTH)
+  );
 }
 
+/**
+ * Validates journal entry form values before create/update mutations run.
+ *
+ * @param values - Current controlled form values.
+ * @returns Field-level validation errors keyed by form value name.
+ */
 export function validateJournalEntryForm(
   values: JournalEntryFormValues,
 ): JournalEntryFormErrors {

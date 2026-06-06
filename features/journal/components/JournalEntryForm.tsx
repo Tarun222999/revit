@@ -35,6 +35,42 @@ type JournalEntryFormProps = {
   values: JournalEntryFormValues;
 };
 
+const MEDIA_METADATA_SEPARATOR = ' - ';
+
+function getMediaMetadataLabel(item: NormalizedMediaItem) {
+  return item.year
+    ? `${item.year}${MEDIA_METADATA_SEPARATOR}${item.mediaType}`
+    : item.mediaType;
+}
+
+function JournalEntryMediaSummary({ item }: { item?: NormalizedMediaItem }) {
+  if (!item) {
+    return null;
+  }
+
+  return (
+    <Card className="flex-row gap-3">
+      <MediaPoster imageUrl={item.imageUrl} size="sm" />
+      <View className="min-w-0 flex-1 justify-center gap-1">
+        <Text className="text-xl font-bold text-archive-50" numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text className="text-sm text-archive-300">
+          {getMediaMetadataLabel(item)}
+        </Text>
+      </View>
+    </Card>
+  );
+}
+
+/**
+ * Renders the controlled journal entry form used by the add/edit modal.
+ *
+ * @param values - Current form values.
+ * @param errors - Field-level validation messages.
+ * @param item - Optional media item summary displayed above the form.
+ * @returns Status, rating, review, spoiler, save, and delete controls.
+ */
 export function JournalEntryForm({
   canDelete,
   deleteError,
@@ -50,24 +86,11 @@ export function JournalEntryForm({
   submitError,
   values,
 }: JournalEntryFormProps) {
-  const hasErrors = Object.keys(errors).length > 0;
+  const hasValidationErrors = Object.keys(errors).length > 0;
 
   return (
     <>
-      {item ? (
-        <Card className="flex-row gap-3">
-          <MediaPoster imageUrl={item.imageUrl} size="sm" />
-          <View className="min-w-0 flex-1 justify-center gap-1">
-            <Text className="text-xl font-bold text-archive-50" numberOfLines={2}>
-              {item.title}
-            </Text>
-            <Text className="text-sm text-archive-300">
-              {item.year ? `${item.year} - ` : ''}
-              {item.mediaType}
-            </Text>
-          </View>
-        </Card>
-      ) : null}
+      <JournalEntryMediaSummary item={item} />
 
       <JournalStatusSelector value={values.status} onChange={onStatusChange} />
 
@@ -118,7 +141,7 @@ export function JournalEntryForm({
         }
       />
 
-      {hasErrors ? (
+      {hasValidationErrors ? (
         <Text className="text-sm leading-5 text-reel-400">
           Fix the highlighted fields before saving.
         </Text>
@@ -134,7 +157,7 @@ export function JournalEntryForm({
 
       <View className="gap-2 pb-2">
         <Button
-          disabled={hasErrors || isDeleting}
+          disabled={hasValidationErrors || isDeleting}
           loading={isSubmitting}
           onPress={onSubmit}
           title={isEditMode ? 'Save Changes' : 'Save Entry'}

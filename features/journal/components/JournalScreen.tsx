@@ -28,7 +28,12 @@ import { cn } from '@/lib/utils/cn';
 
 type JournalView = 'timeline' | 'calendar';
 
-const journalViews: Array<{
+type JournalEntriesQuery = ReturnType<typeof useJournalEntries>;
+
+const JOURNAL_LOADING_PLACEHOLDER_COUNT = 2;
+const ACTIVE_JOURNAL_VIEW: JournalView = 'timeline';
+
+const JOURNAL_VIEW_OPTIONS: Array<{
   label: string;
   value: JournalView;
   disabled?: boolean;
@@ -37,7 +42,7 @@ const journalViews: Array<{
   { label: 'Calendar', value: 'calendar', disabled: true },
 ];
 
-function errorMessage(error: unknown) {
+function getJournalErrorMessage(error: unknown) {
   return error instanceof Error
     ? error.message
     : 'Unable to load your journal right now.';
@@ -48,23 +53,25 @@ function JournalLoadingState() {
     <View className="gap-4">
       <LoadingState message="Loading journal entries" />
 
-      {[0, 1].map((item) => (
-        <Card className="gap-3" key={item}>
-          <View className="flex-row gap-3">
-            <View className="h-24 w-16 rounded-app bg-shelf-700" />
-            <View className="min-w-0 flex-1 gap-3">
-              <View className="h-4 w-3/4 rounded-full bg-archive-700" />
-              <View className="h-3 w-1/2 rounded-full bg-archive-700" />
-              <View className="flex-row gap-2">
-                <View className="h-6 w-16 rounded-full bg-archive-700" />
-                <View className="h-6 w-20 rounded-full bg-archive-700" />
+      {Array.from({ length: JOURNAL_LOADING_PLACEHOLDER_COUNT }).map(
+        (_, placeholderIndex) => (
+          <Card className="gap-3" key={placeholderIndex}>
+            <View className="flex-row gap-3">
+              <View className="h-24 w-16 rounded-app bg-shelf-700" />
+              <View className="min-w-0 flex-1 gap-3">
+                <View className="h-4 w-3/4 rounded-full bg-archive-700" />
+                <View className="h-3 w-1/2 rounded-full bg-archive-700" />
+                <View className="flex-row gap-2">
+                  <View className="h-6 w-16 rounded-full bg-archive-700" />
+                  <View className="h-6 w-20 rounded-full bg-archive-700" />
+                </View>
+                <View className="h-3 w-full rounded-full bg-archive-700" />
+                <View className="h-3 w-2/3 rounded-full bg-archive-700" />
               </View>
-              <View className="h-3 w-full rounded-full bg-archive-700" />
-              <View className="h-3 w-2/3 rounded-full bg-archive-700" />
             </View>
-          </View>
-        </Card>
-      ))}
+          </Card>
+        ),
+      )}
     </View>
   );
 }
@@ -92,11 +99,11 @@ function CalendarDeferredNotice() {
   );
 }
 
-function JournalViewSegment() {
+function JournalViewSegment({ activeView }: { activeView: JournalView }) {
   return (
     <View className="flex-row rounded-app border border-archive-700 bg-archive-800 p-1">
-      {journalViews.map((view) => {
-        const selected = view.value === 'timeline';
+      {JOURNAL_VIEW_OPTIONS.map((view) => {
+        const selected = view.value === activeView;
 
         return (
           <Pressable
@@ -144,9 +151,164 @@ function TimelineShell({
   );
 }
 
+function JournalLoadedContent({
+  activeFilters,
+  entries,
+  filters,
+  sort,
+  visibleEntries,
+  onClearFilters,
+  onEntryPress,
+  onFiltersChange,
+  onSortChange,
+}: {
+  activeFilters: boolean;
+  entries: JournalListEntry[];
+  filters: JournalListFilters;
+  sort: JournalSort;
+  visibleEntries: JournalListEntry[];
+  onClearFilters: () => void;
+  onEntryPress: (entry: JournalListEntry) => void;
+  onFiltersChange: (filters: JournalListFilters) => void;
+  onSortChange: (sort: JournalSort) => void;
+}) {
+  return (
+    <>
+      <JournalFilterBoard
+        entries={entries}
+        filters={filters}
+        hasActiveFilters={activeFilters}
+        sort={sort}
+        visibleCount={visibleEntries.length}
+        onClearFilters={onClearFilters}
+        onFiltersChange={onFiltersChange}
+        onSortChange={onSortChange}
+      />
+
+      {visibleEntries.length > 0 ? (
+        <TimelineShell
+          entries={visibleEntries}
+          sort={sort}
+          onEntryPress={onEntryPress}
+        />
+      ) : (
+        <EmptyState
+          title="No matches"
+          message="Nothing matches the current journal lens. Clear filters to see every logged title."
+          actionLabel="Clear filters"
+          onAction={onClearFilters}
+        />
+      )}
+    </>
+  );
+}
+
+function JournalContent({
+  activeFilters,
+  authLoading,
+  entries,
+  filters,
+  isSignedIn,
+  journalQuery,
+  sort,
+  visibleEntries,
+  onClearFilters,
+  onEntryPress,
+  onFiltersChange,
+  onSortChange,
+}: {
+  activeFilters: boolean;
+  authLoading: boolean;
+  entries: JournalListEntry[];
+  filters: JournalListFilters;
+  isSignedIn: boolean;
+  journalQuery: JournalEntriesQuery;
+  sort: JournalSort;
+  visibleEntries: JournalListEntry[];
+  onClearFilters: () => void;
+  onEntryPress: (entry: JournalListEntry) => void;
+  onFiltersChange: (filters: JournalListFilters) => void;
+  onSortChange: (sort: JournalSort) => void;
+}) {
+  if (authLoading) {
+    return <LoadingState message="Loading journal" />;
+  }
+
+  if (!isSignedIn) {
+    return (
+      <EmptyState
+        title="Sign in to view your journal"
+        message="Your logged titles, ratings, and short reviews will appear here after you sign in."
+      />
+    );
+  }
+
+  if (journalQuery.isLoading) {
+    return <JournalLoadingState />;
+  }
+
+  if (journalQuery.isError) {
+    return (
+      <ErrorState
+        title="Journal unavailable"
+        message={getJournalErrorMessage(journalQuery.error)}
+        retryLabel="Reload journal"
+        onRetry={() => journalQuery.refetch()}
+      />
+    );
+  }
+
+  if (journalQuery.isSuccess && entries.length === 0) {
+    return (
+      <EmptyState
+        title="Your journal is ready"
+        message="Search for a title, add it to your journal, then come back here to manage the log."
+        actionLabel="Find titles"
+        onAction={() => router.push('/search')}
+      />
+    );
+  }
+
+  if (!journalQuery.isSuccess) {
+    return null;
+  }
+
+  return (
+    <JournalLoadedContent
+      activeFilters={activeFilters}
+      entries={entries}
+      filters={filters}
+      sort={sort}
+      visibleEntries={visibleEntries}
+      onClearFilters={onClearFilters}
+      onEntryPress={onEntryPress}
+      onFiltersChange={onFiltersChange}
+      onSortChange={onSortChange}
+    />
+  );
+}
+
+function openEntryTitleDetails(entry: JournalListEntry) {
+  const routeId = createMediaRouteId({
+    id: entry.mediaItemId,
+    source: entry.source,
+    sourceId: entry.sourceId,
+  });
+
+  router.push(`/title/${encodeURIComponent(routeId)}`);
+}
+
+/**
+ * Renders the journal management screen with auth, loading, empty, error,
+ * filter, and timeline states.
+ *
+ * @returns The user's journal timeline screen.
+ */
 export function JournalScreen() {
   const { loading: authLoading, user } = useAuth();
-  const [filters, setFilters] = useState<JournalListFilters>(JOURNAL_DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<JournalListFilters>(
+    JOURNAL_DEFAULT_FILTERS,
+  );
   const [sort, setSort] = useState<JournalSort>(JOURNAL_DEFAULT_SORT);
   const journalQuery = useJournalEntries(user?.id);
   const entries = journalQuery.data ?? [];
@@ -160,16 +322,7 @@ export function JournalScreen() {
     [entries, filters, sort],
   );
   const activeFilters = hasActiveJournalFilters(filters);
-  const clearFilters = () => setFilters(JOURNAL_DEFAULT_FILTERS);
-  const openEntryDetails = useCallback((entry: JournalListEntry) => {
-    const routeId = createMediaRouteId({
-      id: entry.mediaItemId,
-      source: entry.source,
-      sourceId: entry.sourceId,
-    });
-
-    router.push(`/title/${encodeURIComponent(routeId)}`);
-  }, []);
+  const clearFilters = useCallback(() => setFilters(JOURNAL_DEFAULT_FILTERS), []);
 
   return (
     <Screen scroll className="gap-5">
@@ -178,68 +331,22 @@ export function JournalScreen() {
         subtitle="Browse and manage the titles you have logged."
       />
 
-      <JournalViewSegment />
+      <JournalViewSegment activeView={ACTIVE_JOURNAL_VIEW} />
 
-      {authLoading ? <LoadingState message="Loading journal" /> : null}
-
-      {!authLoading && !user ? (
-        <EmptyState
-          title="Sign in to view your journal"
-          message="Your logged titles, ratings, and short reviews will appear here after you sign in."
-        />
-      ) : null}
-
-      {user && journalQuery.isLoading ? (
-        <JournalLoadingState />
-      ) : null}
-
-      {user && journalQuery.isError ? (
-        <ErrorState
-          title="Journal unavailable"
-          message={errorMessage(journalQuery.error)}
-          retryLabel="Reload journal"
-          onRetry={() => journalQuery.refetch()}
-        />
-      ) : null}
-
-      {user && journalQuery.isSuccess && entries.length === 0 ? (
-        <EmptyState
-          title="Your journal is ready"
-          message="Search for a title, add it to your journal, then come back here to manage the log."
-          actionLabel="Find titles"
-          onAction={() => router.push('/search')}
-        />
-      ) : null}
-
-      {user && journalQuery.isSuccess && entries.length > 0 ? (
-        <>
-          <JournalFilterBoard
-            entries={entries}
-            filters={filters}
-            hasActiveFilters={activeFilters}
-            sort={sort}
-            visibleCount={visibleEntries.length}
-            onClearFilters={clearFilters}
-            onFiltersChange={setFilters}
-            onSortChange={setSort}
-          />
-
-          {visibleEntries.length > 0 ? (
-            <TimelineShell
-              entries={visibleEntries}
-              sort={sort}
-              onEntryPress={openEntryDetails}
-            />
-          ) : (
-            <EmptyState
-              title="No matches"
-              message="Nothing matches the current journal lens. Clear filters to see every logged title."
-              actionLabel="Clear filters"
-              onAction={clearFilters}
-            />
-          )}
-        </>
-      ) : null}
+      <JournalContent
+        activeFilters={activeFilters}
+        authLoading={authLoading}
+        entries={entries}
+        filters={filters}
+        isSignedIn={Boolean(user)}
+        journalQuery={journalQuery}
+        sort={sort}
+        visibleEntries={visibleEntries}
+        onClearFilters={clearFilters}
+        onEntryPress={openEntryTitleDetails}
+        onFiltersChange={setFilters}
+        onSortChange={setSort}
+      />
     </Screen>
   );
 }

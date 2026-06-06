@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { JOURNAL_STATUS_LABELS, JOURNAL_STATUSES } from '@/constants/journal';
-import { MEDIA_TYPE_LABELS, type MediaType } from '@/constants/media';
+import { MEDIA_TYPE_LABELS } from '@/constants/media';
 import type {
   JournalListEntry,
   JournalListFilters,
@@ -40,14 +40,14 @@ type SortOption = {
   value: JournalSort;
 };
 
-const mediaOptions: MediaOption[] = [
+const MEDIA_FILTER_OPTIONS: MediaOption[] = [
   { label: 'All', value: 'all' },
   { label: MEDIA_TYPE_LABELS.movie, value: 'movie' },
   { label: MEDIA_TYPE_LABELS.series, value: 'series' },
   { label: MEDIA_TYPE_LABELS.anime, value: 'anime' },
 ];
 
-const statusOptions: Array<{ label: string; value: JournalStatusFilter }> = [
+const STATUS_FILTER_OPTIONS: Array<{ label: string; value: JournalStatusFilter }> = [
   { label: 'All', value: 'all' },
   ...JOURNAL_STATUSES.map((status) => ({
     label: JOURNAL_STATUS_LABELS[status],
@@ -55,7 +55,7 @@ const statusOptions: Array<{ label: string; value: JournalStatusFilter }> = [
   })),
 ];
 
-const ratingOptions: RatingOption[] = [
+const RATING_FILTER_OPTIONS: RatingOption[] = [
   { label: 'Any', value: 'any' },
   { label: 'Rated', value: 'rated' },
   { label: 'Unrated', value: 'unrated' },
@@ -63,14 +63,14 @@ const ratingOptions: RatingOption[] = [
   { label: '3+', value: 'gte_3' },
 ];
 
-const sortOptions: SortOption[] = [
+const SORT_OPTIONS: SortOption[] = [
   { label: 'Recent activity', value: 'recent_activity' },
   { label: 'Recently added', value: 'recently_added' },
   { label: 'Rating', value: 'rating' },
   { label: 'Title', value: 'title' },
 ];
 
-const statusDotClasses: Record<JournalStatusFilter, string> = {
+const STATUS_DOT_CLASSES: Record<JournalStatusFilter, string> = {
   all: 'bg-archive-300',
   planned: 'bg-archive-300',
   in_progress: 'bg-teal-500',
@@ -78,7 +78,10 @@ const statusDotClasses: Record<JournalStatusFilter, string> = {
   dropped: 'bg-reel-400',
 };
 
-function countEntriesForMedia(entries: JournalListEntry[], mediaType: JournalMediaFilter) {
+function countEntriesForMedia(
+  entries: JournalListEntry[],
+  mediaType: JournalMediaFilter,
+) {
   if (mediaType === 'all') {
     return entries.length;
   }
@@ -86,23 +89,28 @@ function countEntriesForMedia(entries: JournalListEntry[], mediaType: JournalMed
   return entries.filter((entry) => entry.mediaType === mediaType).length;
 }
 
-function filterLabel(filters: JournalListFilters) {
-  const parts = [];
+function getActiveFilterSummary(filters: JournalListFilters) {
+  const activeFilterLabels: string[] = [];
 
   if (filters.mediaType !== 'all') {
-    parts.push(MEDIA_TYPE_LABELS[filters.mediaType]);
+    activeFilterLabels.push(MEDIA_TYPE_LABELS[filters.mediaType]);
   }
 
   if (filters.status !== 'all') {
-    parts.push(JOURNAL_STATUS_LABELS[filters.status]);
+    activeFilterLabels.push(JOURNAL_STATUS_LABELS[filters.status]);
   }
 
   if (filters.rating !== 'any') {
-    const rating = ratingOptions.find((option) => option.value === filters.rating);
-    parts.push(rating?.label ?? 'Rating');
+    const rating = RATING_FILTER_OPTIONS.find(
+      (option) => option.value === filters.rating,
+    );
+
+    activeFilterLabels.push(rating?.label ?? 'Rating');
   }
 
-  return parts.length > 0 ? parts.join(' / ') : 'Everything active';
+  return activeFilterLabels.length > 0
+    ? activeFilterLabels.join(' / ')
+    : 'Everything active';
 }
 
 function FilterTile({
@@ -166,12 +174,12 @@ function OptionPill({
           : 'border-archive-700 bg-archive-900',
       )}>
       {status ? (
-        <View
-          className={cn(
-            'h-2 w-2 rounded-full',
-            selected ? 'bg-archive-900' : statusDotClasses[status],
-          )}
-        />
+          <View
+            className={cn(
+              'h-2 w-2 rounded-full',
+              selected ? 'bg-archive-900' : STATUS_DOT_CLASSES[status],
+            )}
+          />
       ) : null}
       <Text
         className={cn(
@@ -188,6 +196,42 @@ function LaneLabel({ title }: { title: string }) {
   return <Text className="text-xs font-bold uppercase text-archive-300">{title}</Text>;
 }
 
+function OptionPillGroup<Value extends string>({
+  options,
+  selectedValue,
+  statusForOption,
+  onSelect,
+}: {
+  options: Array<{ label: string; value: Value }>;
+  selectedValue: Value;
+  statusForOption?: (value: Value) => JournalStatusFilter | undefined;
+  onSelect: (value: Value) => void;
+}) {
+  return (
+    <View className="flex-row flex-wrap gap-2">
+      {options.map((option) => (
+        <OptionPill
+          key={option.value}
+          label={option.label}
+          selected={selectedValue === option.value}
+          status={statusForOption?.(option.value)}
+          onPress={() => onSelect(option.value)}
+        />
+      ))}
+    </View>
+  );
+}
+
+/**
+ * Renders the journal filtering and sorting controls for the Timeline view.
+ *
+ * @param entries - All loaded journal entries, used to show media counts.
+ * @param filters - Current active filter state.
+ * @param hasActiveFilters - Whether at least one non-default filter is applied.
+ * @param sort - Current sort selection.
+ * @param visibleCount - Count of entries visible after filtering.
+ * @returns The filter board UI and clear action when filters are active.
+ */
 export function JournalFilterBoard({
   entries,
   filters,
@@ -213,7 +257,7 @@ export function JournalFilterBoard({
             Current lens
           </Text>
           <Text className="text-lg font-bold text-archive-50">
-            {filterLabel(filters)}
+            {getActiveFilterSummary(filters)}
           </Text>
         </View>
         <View className="rounded-full bg-gold-400 px-3 py-2">
@@ -222,7 +266,7 @@ export function JournalFilterBoard({
       </View>
 
       <View className="flex-row gap-2">
-        {mediaOptions.map((option) => (
+        {MEDIA_FILTER_OPTIONS.map((option) => (
           <FilterTile
             count={countEntriesForMedia(entries, option.value)}
             key={option.value}
@@ -235,47 +279,32 @@ export function JournalFilterBoard({
 
       <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
         <LaneLabel title="Status track" />
-        <View className="flex-row flex-wrap gap-2">
-          {statusOptions.map((option) => (
-            <OptionPill
-              key={option.value}
-              label={option.label}
-              selected={filters.status === option.value}
-              status={option.value}
-              onPress={() => updateFilters({ status: option.value })}
-            />
-          ))}
-        </View>
+        <OptionPillGroup
+          options={STATUS_FILTER_OPTIONS}
+          selectedValue={filters.status}
+          statusForOption={(status) => status}
+          onSelect={(status) => updateFilters({ status })}
+        />
       </View>
 
       <View className="flex-row gap-3">
         <View className="flex-1 gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
           <LaneLabel title="Rating" />
-          <View className="flex-row flex-wrap gap-2">
-            {ratingOptions.map((option) => (
-              <OptionPill
-                key={option.value}
-                label={option.label}
-                selected={filters.rating === option.value}
-                onPress={() => updateFilters({ rating: option.value })}
-              />
-            ))}
-          </View>
+          <OptionPillGroup
+            options={RATING_FILTER_OPTIONS}
+            selectedValue={filters.rating}
+            onSelect={(rating) => updateFilters({ rating })}
+          />
         </View>
       </View>
 
       <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
         <LaneLabel title="Sort" />
-        <View className="flex-row flex-wrap gap-2">
-          {sortOptions.map((option) => (
-            <OptionPill
-              key={option.value}
-              label={option.label}
-              selected={sort === option.value}
-              onPress={() => onSortChange(option.value)}
-            />
-          ))}
-        </View>
+        <OptionPillGroup
+          options={SORT_OPTIONS}
+          selectedValue={sort}
+          onSelect={onSortChange}
+        />
       </View>
 
       {hasActiveFilters ? (
