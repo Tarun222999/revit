@@ -16,7 +16,7 @@ import {
 } from '@/features/journal/hooks/useJournalEntryMutations';
 import { useJournalEntryForMedia } from '@/features/journal/hooks/useJournalEntryForMedia';
 import {
-  defaultJournalEntryFormValues,
+  createDefaultJournalEntryFormValues,
   todayString,
   validateJournalEntryForm,
   valuesFromJournalEntry,
@@ -51,7 +51,7 @@ export function JournalEntryModalScreen({
     createEntryMutation.isPending || updateEntryMutation.isPending;
   const isDeleting = deleteEntryMutation.isPending;
   const [values, setValues] = useState<JournalEntryFormValues>(
-    defaultJournalEntryFormValues,
+    createDefaultJournalEntryFormValues,
   );
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] =
@@ -63,7 +63,7 @@ export function JournalEntryModalScreen({
     if (entry) {
       setValues(valuesFromJournalEntry(entry));
     } else if (!isEditMode) {
-      setValues(defaultJournalEntryFormValues);
+      setValues(createDefaultJournalEntryFormValues());
     }
   }, [entry, isEditMode]);
 

@@ -72,3 +72,20 @@ export type JournalListEntry = {
   updatedAt: string;
   lastActivityAt: string;
 };
+
+export type JournalMediaFilter = 'all' | MediaType;
+export type JournalStatusFilter = 'all' | JournalStatus;
+export type JournalRatingFilter = 'any' | 'rated' | 'unrated' | 'gte_4' | 'gte_3';
+export type JournalSort = 'recent_activity' | 'recently_added' | 'rating' | 'title';
+
+export type JournalListFilters = {
+  mediaType: JournalMediaFilter;
+  status: JournalStatusFilter;
+  rating: JournalRatingFilter;
+};
+
+export type JournalTimelineGroup = {
+  key: string;
+  title: string;
+  entries: JournalListEntry[];
+};

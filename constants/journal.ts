@@ -2,7 +2,7 @@ export const JOURNAL_STATUSES = ['planned', 'in_progress', 'completed', 'dropped
 
 export type JournalStatus = (typeof JOURNAL_STATUSES)[number];
 
-export const JOURNAL_DEFAULT_STATUS: JournalStatus = 'planned';
+export const JOURNAL_DEFAULT_STATUS: JournalStatus = 'completed';
 
 export const JOURNAL_STATUS_LABELS: Record<JournalStatus, string> = {
   planned: 'Planned',

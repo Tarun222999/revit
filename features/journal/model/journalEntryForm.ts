@@ -9,17 +9,20 @@ export type JournalEntryFormErrors = Partial<
   Record<keyof JournalEntryFormValues, string>
 >;
 
-export const defaultJournalEntryFormValues: JournalEntryFormValues = {
-  completedOn: null,
-  containsSpoilers: false,
-  rating: null,
-  reviewBody: '',
-  reviewHeadline: '',
-  status: JOURNAL_DEFAULT_STATUS,
-};
-
 export function todayString() {
   return new Date().toISOString().slice(0, 10);
+}
+
+export function createDefaultJournalEntryFormValues(): JournalEntryFormValues {
+  return {
+    completedOn:
+      JOURNAL_DEFAULT_STATUS === 'completed' ? todayString() : null,
+    containsSpoilers: false,
+    rating: null,
+    reviewBody: '',
+    reviewHeadline: '',
+    status: JOURNAL_DEFAULT_STATUS,
+  };
 }
 
 export function valuesFromJournalEntry(
