@@ -8,3 +8,7 @@ export const MEDIA_TYPE_LABELS: Record<MediaType, string> = {
   anime: 'Anime',
   game: 'Game',
 };
+
+export function isMediaType(value: string): value is MediaType {
+  return MEDIA_TYPES.includes(value as MediaType);
+}
