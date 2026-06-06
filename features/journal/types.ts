@@ -89,3 +89,24 @@ export type JournalTimelineGroup = {
   title: string;
   entries: JournalListEntry[];
 };
+
+export type JournalCalendarActivityLevel = 0 | 1 | 2 | 3;
+
+export type JournalCalendarDay = {
+  date: string;
+  isCurrentMonth: boolean;
+  entries: JournalListEntry[];
+  entryCount: number;
+  mediaTypes: MediaType[];
+  activityLevel: JournalCalendarActivityLevel;
+};
+
+export type JournalCalendarMonth = {
+  monthDate: string;
+  days: JournalCalendarDay[];
+  totalEntries: number;
+  activeDayCount: number;
+  bestDay: string | null;
+  averageRating: number | null;
+  maxEntriesInDay: number;
+};

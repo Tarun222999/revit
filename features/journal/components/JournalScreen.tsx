@@ -9,9 +9,14 @@ import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { JournalCalendarView } from '@/features/journal/components/JournalCalendarView';
 import { JournalFilterBoard } from '@/features/journal/components/JournalFilterBoard';
 import { JournalTimelineView } from '@/features/journal/components/JournalTimelineView';
 import { useJournalEntries } from '@/features/journal/hooks/useJournalEntries';
+import {
+  getJournalCalendarMonth,
+  getJournalCalendarMonthDate,
+} from '@/features/journal/model/journalCalendar';
 import {
   getVisibleJournalEntries,
   hasActiveJournalFilters,
@@ -31,15 +36,13 @@ type JournalView = 'timeline' | 'calendar';
 type JournalEntriesQuery = ReturnType<typeof useJournalEntries>;
 
 const JOURNAL_LOADING_PLACEHOLDER_COUNT = 2;
-const ACTIVE_JOURNAL_VIEW: JournalView = 'timeline';
 
 const JOURNAL_VIEW_OPTIONS: Array<{
   label: string;
   value: JournalView;
-  disabled?: boolean;
 }> = [
   { label: 'Timeline', value: 'timeline' },
-  { label: 'Calendar', value: 'calendar', disabled: true },
+  { label: 'Calendar', value: 'calendar' },
 ];
 
 function getJournalErrorMessage(error: unknown) {
@@ -76,30 +79,13 @@ function JournalLoadingState() {
   );
 }
 
-function CalendarDeferredNotice() {
-  return (
-    <Card className="gap-3 border-dashed">
-      <View className="flex-row items-center justify-between gap-3">
-        <View className="gap-1">
-          <Text className="text-base font-bold text-archive-50">Calendar</Text>
-          <Text className="text-xs font-bold uppercase text-gold-300">
-            Phase 5.1
-          </Text>
-        </View>
-        <View className="rounded-full border border-archive-500 px-3 py-1">
-          <Text className="text-xs font-bold text-archive-200">Deferred</Text>
-        </View>
-      </View>
-
-      <Text className="text-sm leading-5 text-archive-300">
-        The Calendar logbook will use these same journal entries after the
-        Timeline foundation is complete.
-      </Text>
-    </Card>
-  );
-}
-
-function JournalViewSegment({ activeView }: { activeView: JournalView }) {
+function JournalViewSegment({
+  activeView,
+  onViewChange,
+}: {
+  activeView: JournalView;
+  onViewChange: (view: JournalView) => void;
+}) {
   return (
     <View className="flex-row rounded-app border border-archive-700 bg-archive-800 p-1">
       {JOURNAL_VIEW_OPTIONS.map((view) => {
@@ -108,12 +94,11 @@ function JournalViewSegment({ activeView }: { activeView: JournalView }) {
         return (
           <Pressable
             accessibilityRole="button"
-            disabled={view.disabled}
             key={view.value}
+            onPress={() => onViewChange(view.value)}
             className={cn(
               'min-h-10 flex-1 items-center justify-center rounded-md px-3',
               selected && 'bg-gold-400',
-              view.disabled && 'opacity-50',
             )}>
             <Text
               className={cn(
@@ -139,19 +124,45 @@ function TimelineShell({
   sort: JournalSort;
 }) {
   return (
-    <View className="gap-4">
-      <JournalTimelineView
-        entries={entries}
-        sort={sort}
-        onEntryPress={onEntryPress}
-      />
-
-      <CalendarDeferredNotice />
-    </View>
+    <JournalTimelineView
+      entries={entries}
+      sort={sort}
+      onEntryPress={onEntryPress}
+    />
   );
 }
 
+function getDefaultCalendarMonthDate(entries: JournalListEntry[]) {
+  const currentMonthDate = getJournalCalendarMonthDate(new Date().toISOString());
+
+  if (
+    entries.some(
+      (entry) => getJournalCalendarMonthDate(entry.createdAt) === currentMonthDate,
+    )
+  ) {
+    return currentMonthDate;
+  }
+
+  const mostRecentEntry = entries.reduce<JournalListEntry | null>(
+    (mostRecent, entry) =>
+      !mostRecent || entry.createdAt > mostRecent.createdAt ? entry : mostRecent,
+    null,
+  );
+
+  return mostRecentEntry
+    ? getJournalCalendarMonthDate(mostRecentEntry.createdAt)
+    : currentMonthDate;
+}
+
+function CalendarShell({ entries }: { entries: JournalListEntry[] }) {
+  const monthDate = getDefaultCalendarMonthDate(entries);
+  const month = getJournalCalendarMonth(entries, monthDate);
+
+  return <JournalCalendarView month={month} />;
+}
+
 function JournalLoadedContent({
+  activeView,
   activeFilters,
   entries,
   filters,
@@ -162,6 +173,7 @@ function JournalLoadedContent({
   onFiltersChange,
   onSortChange,
 }: {
+  activeView: JournalView;
   activeFilters: boolean;
   entries: JournalListEntry[];
   filters: JournalListFilters;
@@ -186,11 +198,15 @@ function JournalLoadedContent({
       />
 
       {visibleEntries.length > 0 ? (
-        <TimelineShell
-          entries={visibleEntries}
-          sort={sort}
-          onEntryPress={onEntryPress}
-        />
+        activeView === 'timeline' ? (
+          <TimelineShell
+            entries={visibleEntries}
+            sort={sort}
+            onEntryPress={onEntryPress}
+          />
+        ) : (
+          <CalendarShell entries={visibleEntries} />
+        )
       ) : (
         <EmptyState
           title="No matches"
@@ -204,6 +220,7 @@ function JournalLoadedContent({
 }
 
 function JournalContent({
+  activeView,
   activeFilters,
   authLoading,
   entries,
@@ -217,6 +234,7 @@ function JournalContent({
   onFiltersChange,
   onSortChange,
 }: {
+  activeView: JournalView;
   activeFilters: boolean;
   authLoading: boolean;
   entries: JournalListEntry[];
@@ -275,6 +293,7 @@ function JournalContent({
 
   return (
     <JournalLoadedContent
+      activeView={activeView}
       activeFilters={activeFilters}
       entries={entries}
       filters={filters}
@@ -306,6 +325,7 @@ function openEntryTitleDetails(entry: JournalListEntry) {
  */
 export function JournalScreen() {
   const { loading: authLoading, user } = useAuth();
+  const [activeView, setActiveView] = useState<JournalView>('timeline');
   const [filters, setFilters] = useState<JournalListFilters>(
     JOURNAL_DEFAULT_FILTERS,
   );
@@ -331,9 +351,13 @@ export function JournalScreen() {
         subtitle="Browse and manage the titles you have logged."
       />
 
-      <JournalViewSegment activeView={ACTIVE_JOURNAL_VIEW} />
+      <JournalViewSegment
+        activeView={activeView}
+        onViewChange={setActiveView}
+      />
 
       <JournalContent
+        activeView={activeView}
         activeFilters={activeFilters}
         authLoading={authLoading}
         entries={entries}
