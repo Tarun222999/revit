@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -14,6 +14,7 @@ import { JournalFilterBoard } from '@/features/journal/components/JournalFilterB
 import { JournalTimelineView } from '@/features/journal/components/JournalTimelineView';
 import { useJournalEntries } from '@/features/journal/hooks/useJournalEntries';
 import {
+  addJournalCalendarMonths,
   getJournalCalendarMonth,
   getJournalCalendarMonthDate,
 } from '@/features/journal/model/journalCalendar';
@@ -154,11 +155,47 @@ function getDefaultCalendarMonthDate(entries: JournalListEntry[]) {
     : currentMonthDate;
 }
 
-function CalendarShell({ entries }: { entries: JournalListEntry[] }) {
-  const monthDate = getDefaultCalendarMonthDate(entries);
-  const month = getJournalCalendarMonth(entries, monthDate);
+function CalendarShell({
+  entries,
+  onEntryPress,
+}: {
+  entries: JournalListEntry[];
+  onEntryPress: (entry: JournalListEntry) => void;
+}) {
+  const defaultMonthDate = useMemo(
+    () => getDefaultCalendarMonthDate(entries),
+    [entries],
+  );
+  const [monthDate, setMonthDate] = useState(defaultMonthDate);
+  const month = useMemo(
+    () => getJournalCalendarMonth(entries, monthDate),
+    [entries, monthDate],
+  );
 
-  return <JournalCalendarView month={month} />;
+  useEffect(() => {
+    setMonthDate(defaultMonthDate);
+  }, [defaultMonthDate]);
+
+  const showPreviousMonth = useCallback(() => {
+    setMonthDate((currentMonthDate) =>
+      addJournalCalendarMonths(currentMonthDate, -1),
+    );
+  }, []);
+
+  const showNextMonth = useCallback(() => {
+    setMonthDate((currentMonthDate) =>
+      addJournalCalendarMonths(currentMonthDate, 1),
+    );
+  }, []);
+
+  return (
+    <JournalCalendarView
+      month={month}
+      onEntryPress={onEntryPress}
+      onNextMonth={showNextMonth}
+      onPreviousMonth={showPreviousMonth}
+    />
+  );
 }
 
 function JournalLoadedContent({
@@ -205,7 +242,10 @@ function JournalLoadedContent({
             onEntryPress={onEntryPress}
           />
         ) : (
-          <CalendarShell entries={visibleEntries} />
+          <CalendarShell
+            entries={visibleEntries}
+            onEntryPress={onEntryPress}
+          />
         )
       ) : (
         <EmptyState

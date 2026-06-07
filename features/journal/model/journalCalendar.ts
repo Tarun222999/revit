@@ -198,6 +198,26 @@ export function getJournalCalendarMonthDate(date: string) {
 }
 
 /**
+ * Moves a calendar month key forward or backward by whole months.
+ *
+ * @param monthDate - Any date inside the month to move from.
+ * @param monthOffset - Number of months to move, negative for previous months.
+ * @returns The first day of the target month as `YYYY-MM-01`.
+ */
+export function addJournalCalendarMonths(
+  monthDate: string,
+  monthOffset: number,
+) {
+  const normalizedMonthDate = getJournalCalendarMonthDate(monthDate);
+  const { monthIndex, year } = parseDateKey(normalizedMonthDate);
+  const date = new Date(
+    Date.UTC(year, monthIndex + monthOffset, CALENDAR_MONTH_START_DAY),
+  );
+
+  return formatUtcDateKey(date);
+}
+
+/**
  * Builds a month grid and summary values from already-filtered journal entries.
  *
  * Calendar activity is intentionally based on `JournalListEntry.createdAt`,
