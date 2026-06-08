@@ -162,6 +162,7 @@ function CalendarShell({
   entries: JournalListEntry[];
   onEntryPress: (entry: JournalListEntry) => void;
 }) {
+  const currentMonthDate = getJournalCalendarMonthDate(new Date().toISOString());
   const defaultMonthDate = useMemo(
     () => getDefaultCalendarMonthDate(entries),
     [entries],
@@ -187,9 +188,11 @@ function CalendarShell({
       addJournalCalendarMonths(currentMonthDate, 1),
     );
   }, []);
+  const disableNextMonth = month.monthDate >= currentMonthDate;
 
   return (
     <JournalCalendarView
+      disableNextMonth={disableNextMonth}
       month={month}
       onEntryPress={onEntryPress}
       onNextMonth={showNextMonth}
@@ -221,6 +224,15 @@ function JournalLoadedContent({
   onFiltersChange: (filters: JournalListFilters) => void;
   onSortChange: (sort: JournalSort) => void;
 }) {
+  if (activeView === 'calendar') {
+    return (
+      <CalendarShell
+        entries={entries}
+        onEntryPress={onEntryPress}
+      />
+    );
+  }
+
   return (
     <>
       <JournalFilterBoard
@@ -235,24 +247,17 @@ function JournalLoadedContent({
       />
 
       {visibleEntries.length > 0 ? (
-        activeView === 'timeline' ? (
-          <TimelineShell
-            entries={visibleEntries}
-            sort={sort}
-            onEntryPress={onEntryPress}
-          />
-        ) : (
-          <CalendarShell
-            entries={visibleEntries}
-            onEntryPress={onEntryPress}
-          />
-        )
+        <TimelineShell
+          entries={visibleEntries}
+          sort={sort}
+          onEntryPress={onEntryPress}
+        />
       ) : (
         <EmptyState
           title="No matches"
           message="Nothing matches the current journal lens. Clear filters to see every logged title."
-          actionLabel="Clear filters"
-          onAction={onClearFilters}
+          actionLabel={activeFilters ? 'Clear filters' : undefined}
+          onAction={activeFilters ? onClearFilters : undefined}
         />
       )}
     </>

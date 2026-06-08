@@ -76,7 +76,8 @@ export function JournalCalendarDayPanel({
       ) : (
         <View className="rounded-app border border-dashed border-archive-700 bg-archive-800 p-4">
           <Text className="text-sm leading-5 text-archive-300">
-            No entries logged on this date.
+            No entries were created on this date. Pick an active day to review
+            what you logged then.
           </Text>
         </View>
       )}

@@ -218,12 +218,12 @@ export function addJournalCalendarMonths(
 }
 
 /**
- * Builds a month grid and summary values from already-filtered journal entries.
+ * Builds a month grid and summary values from loaded journal entries.
  *
  * Calendar activity is intentionally based on `JournalListEntry.createdAt`,
  * matching the v1 created-date contract.
  *
- * @param entries - Filtered journal entries for the Calendar view.
+ * @param entries - Loaded journal entries for the Calendar view.
  * @param monthDate - Any date inside the month to model.
  * @returns A six-week calendar grid plus current-month summary values.
  */

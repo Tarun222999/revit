@@ -4,7 +4,7 @@
 
 This document defines the Calendar follow-up after Phase 5 Journal Timeline.
 
-Phase 5.1 should add the Calendar view to the Journal screen using the list query, entry view model, filter model, and navigation foundations established in Phase 5.
+Phase 5.1 should add the Calendar view to the Journal screen using the list query, entry view model, and navigation foundations established in Phase 5.
 
 ## Phase Goal
 
@@ -17,7 +17,7 @@ By the end of Phase 5.1:
 - Active days should communicate activity density.
 - Active days may show media-type markers.
 - Selecting a day should reveal entries created on that day.
-- Calendar should reuse Phase 5 journal entries, filters, and navigation where practical.
+- Calendar should reuse Phase 5 journal entries and navigation where practical.
 - Calendar should feel like a logbook/activity map, not a plain date picker.
 
 ## Visual Direction
@@ -64,7 +64,7 @@ Phase 5.1 should begin only after Phase 5 has completed:
 - `JournalListEntry` view model
 - `getJournalEntries(userId)` API helper
 - `useJournalEntries(userId)` hook
-- reusable filter and sort helpers
+- reusable Timeline filter and sort helpers
 - Timeline entry navigation to Title Details
 - loading, empty, filtered empty, and error state patterns
 
@@ -115,7 +115,7 @@ Completion dates can still appear inside entry details or Timeline cards where r
 
 ## Calendar View Model
 
-Build Calendar models from filtered `JournalListEntry` values.
+Build Calendar models from loaded `JournalListEntry` values.
 
 Recommended model:
 
@@ -169,9 +169,9 @@ Entry behavior:
 
 Filter behavior:
 
-- Calendar should respect the same active filters as Timeline.
-- Calendar summary and active days should be based on the filtered entry set.
-- Filtered empty state should let users clear filters.
+- Calendar should not show the Timeline `Current lens` / filter board.
+- Calendar should show all loaded journal entries by `created_at`.
+- Timeline filters and sort remain Timeline-only management tools.
 
 Sort behavior:
 
@@ -189,9 +189,9 @@ No entries state:
 
 - If the user has no journal entries, reuse the Phase 5 no-entries empty state.
 
-Filtered empty state:
+Timeline filtered empty state:
 
-- If filters remove all Calendar activity, show clear-filter behavior.
+- If Timeline filters remove all visible entries, show clear-filter behavior.
 
 No activity in selected month:
 
@@ -259,7 +259,7 @@ Stop after this step and wait for explicit approval before implementing Step 2.
 
 Expected outcome:
 
-- filtered `JournalListEntry` values can be grouped into month/day models
+- loaded `JournalListEntry` values can be grouped into month/day models
 - activity density data exists
 - media-type marker data exists
 - month summary values are computed safely
@@ -305,7 +305,7 @@ Expected outcome:
 
 Expected outcome:
 
-- month-level summary tiles render from filtered entries
+- month-level summary tiles render from loaded Calendar entries
 - summaries stay screen-local and do not become Profile stats
 - null/empty values are handled cleanly
 
@@ -314,7 +314,7 @@ Expected outcome:
 Expected outcome:
 
 - no entries state reuses Phase 5 behavior
-- filtered empty state includes clear filters
+- Timeline filtered empty state includes clear filters
 - no activity month state is useful
 - loading and error states remain consistent
 
@@ -329,7 +329,7 @@ Expected outcome:
 - Timeline still works
 - Calendar activity is based on `created_at`
 - selected-day entries are correct
-- filters affect Calendar activity
+- Timeline filters do not affect Calendar activity
 - entry navigation works from Calendar
 
 ## Acceptance Criteria
@@ -344,8 +344,8 @@ Phase 5.1 is complete when:
 6. Active days communicate activity density.
 7. Active days can show media-type markers.
 8. Selecting a day reveals entries created on that date.
-9. Calendar respects Phase 5 filters.
-10. Calendar has loading, empty, filtered empty, no-month-activity, and error handling.
+9. Calendar ignores Timeline filters and shows all journal entries by created date.
+10. Calendar has loading, empty, no-month-activity, selected-day empty, and error handling.
 11. Tapping a Calendar entry navigates to Title Details.
 12. Lists and Add to List remain deferred.
 13. Profile and Dashboard summary work remains deferred.
@@ -374,9 +374,7 @@ Manual checks:
 - Select a date with multiple entries.
 - Select a date with no entries.
 - Move to previous and next months.
-- Apply media type filter and confirm Calendar activity changes.
-- Apply status filter and confirm Calendar activity changes.
-- Apply rating filter and confirm Calendar activity changes.
+- Apply media type, status, and rating filters in Timeline and confirm Calendar activity is unchanged.
 - Tap a Calendar entry and confirm Title Details opens.
 - Confirm completed date does not drive Calendar activity.
 - Confirm Add to List remains deferred.
@@ -388,7 +386,7 @@ Phase 5.1 should leave the app with the full v1 Journal browsing surface:
 
 - Timeline view
 - Calendar view
-- shared filters
+- Timeline filters
 - entry navigation
 - Supabase-backed journal list data
 
