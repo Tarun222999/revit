@@ -1,0 +1,1278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Phase 5 Journal Screen Mockups</title>
+    <style>
+      :root {
+        --archive-50: #fbf6ec;
+        --archive-100: #efe4d0;
+        --archive-200: #d8c7a9;
+        --archive-300: #aa9473;
+        --archive-500: #6d583e;
+        --archive-700: #2a211a;
+        --archive-800: #171310;
+        --archive-900: #0d0b09;
+        --shelf-300: #b8895f;
+        --shelf-500: #7a4e32;
+        --shelf-700: #3a2419;
+        --gold-300: #e8c77d;
+        --gold-400: #d7a94d;
+        --gold-500: #b9842e;
+        --reel-400: #d46a55;
+        --reel-500: #b94b3b;
+        --teal-300: #8bc6bd;
+        --teal-500: #4d9188;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--archive-900);
+        color: var(--archive-50);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      .page {
+        padding: 28px;
+      }
+
+      .intro {
+        margin: 0 auto 28px;
+        max-width: 1120px;
+      }
+
+      .eyebrow {
+        color: var(--gold-300);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: 34px;
+        line-height: 1.1;
+        margin: 0 0 10px;
+      }
+
+      .intro p {
+        color: var(--archive-200);
+        font-size: 16px;
+        line-height: 1.6;
+        margin: 0;
+        max-width: 760px;
+      }
+
+      .mockup-grid {
+        align-items: start;
+        display: grid;
+        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+        margin: 0 auto;
+        max-width: 1120px;
+      }
+
+      .frame-wrap {
+        display: grid;
+        gap: 12px;
+      }
+
+      .caption {
+        color: var(--archive-100);
+        font-size: 14px;
+        font-weight: 750;
+        margin: 0;
+      }
+
+      .phone {
+        background: var(--archive-900);
+        border: 1px solid var(--archive-700);
+        border-radius: 28px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+        height: 760px;
+        margin: 0 auto;
+        max-width: 390px;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+      }
+
+      .phone.calendar-phone .screen {
+        padding-bottom: 230px;
+      }
+
+      .screen {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        height: 100%;
+        overflow: auto;
+        padding: 28px 20px 24px;
+        scrollbar-width: none;
+      }
+
+      .screen::-webkit-scrollbar {
+        display: none;
+      }
+
+      .top-row {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .title-block h2 {
+        font-size: 30px;
+        line-height: 1.1;
+        margin: 0;
+      }
+
+      .title-block p {
+        color: var(--archive-200);
+        font-size: 13px;
+        line-height: 1.35;
+        margin: 6px 0 0;
+      }
+
+      .icon-button {
+        align-items: center;
+        background: var(--archive-800);
+        border: 1px solid var(--archive-500);
+        border-radius: 999px;
+        color: var(--archive-50);
+        display: grid;
+        flex: 0 0 auto;
+        font-size: 18px;
+        height: 44px;
+        justify-content: center;
+        width: 44px;
+      }
+
+      .segmented {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        padding: 4px;
+      }
+
+      .segment {
+        border-radius: 6px;
+        color: var(--archive-200);
+        font-size: 14px;
+        font-weight: 750;
+        padding: 10px 12px;
+        text-align: center;
+      }
+
+      .segment.active {
+        background: var(--gold-400);
+        color: var(--archive-900);
+      }
+
+      .control-panel {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .control-label {
+        color: var(--archive-200);
+        font-size: 12px;
+        font-weight: 800;
+        margin: 0;
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-500);
+        border-radius: 999px;
+        color: var(--archive-100);
+        font-size: 12px;
+        font-weight: 750;
+        min-height: 34px;
+        padding: 8px 12px;
+      }
+
+      .chip.active {
+        background: var(--gold-400);
+        border-color: var(--gold-400);
+        color: var(--archive-900);
+      }
+
+      .select-row {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .select-pill {
+        background: var(--archive-700);
+        border-radius: 8px;
+        color: var(--archive-50);
+        font-size: 13px;
+        font-weight: 750;
+        padding: 10px 12px;
+      }
+
+      .filter-board {
+        background:
+          linear-gradient(145deg, rgba(215, 169, 77, 0.12), rgba(77, 145, 136, 0.08)),
+          var(--archive-800);
+        border: 1px solid rgba(216, 199, 169, 0.18);
+        border-radius: 8px;
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .filter-summary {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .filter-summary div {
+        display: grid;
+        gap: 3px;
+      }
+
+      .filter-kicker {
+        color: var(--archive-300);
+        font-size: 11px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .filter-summary strong {
+        color: var(--archive-50);
+        font-size: 18px;
+        line-height: 1.1;
+      }
+
+      .filter-count {
+        background: var(--gold-400);
+        border-radius: 999px;
+        color: var(--archive-900);
+        flex: 0 0 auto;
+        font-size: 12px;
+        font-weight: 900;
+        padding: 8px 10px;
+      }
+
+      .media-switch {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 1.1fr repeat(3, 1fr);
+      }
+
+      .media-tile {
+        background: rgba(13, 11, 9, 0.58);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        color: var(--archive-100);
+        display: grid;
+        gap: 6px;
+        min-height: 58px;
+        padding: 10px;
+      }
+
+      .media-tile.active {
+        background: var(--archive-50);
+        border-color: var(--archive-50);
+        color: var(--archive-900);
+      }
+
+      .media-tile b {
+        font-size: 12px;
+        line-height: 1;
+      }
+
+      .media-tile small {
+        color: inherit;
+        font-size: 16px;
+        font-weight: 900;
+        opacity: 0.78;
+      }
+
+      .filter-lanes {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .lane-card {
+        background: rgba(13, 11, 9, 0.48);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .lane-card.wide {
+        grid-column: 1 / -1;
+      }
+
+      .lane-title {
+        color: var(--archive-300);
+        font-size: 11px;
+        font-weight: 850;
+        margin: 0;
+        text-transform: uppercase;
+      }
+
+      .status-strip,
+      .rating-strip {
+        display: flex;
+        gap: 6px;
+      }
+
+      .status-pill {
+        align-items: center;
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 999px;
+        color: var(--archive-100);
+        display: flex;
+        flex: 1;
+        font-size: 11px;
+        font-weight: 800;
+        gap: 5px;
+        justify-content: center;
+        min-height: 30px;
+        padding: 7px 8px;
+      }
+
+      .status-pill.active {
+        background: rgba(77, 145, 136, 0.22);
+        border-color: var(--teal-500);
+        color: var(--archive-50);
+      }
+
+      .status-dot {
+        border-radius: 999px;
+        height: 7px;
+        width: 7px;
+      }
+
+      .status-dot.teal {
+        background: var(--teal-500);
+      }
+
+      .status-dot.gold {
+        background: var(--gold-400);
+      }
+
+      .status-dot.reel {
+        background: var(--reel-400);
+      }
+
+      .rating-step {
+        align-items: center;
+        background: var(--archive-800);
+        border-radius: 7px;
+        color: var(--archive-300);
+        display: grid;
+        flex: 1;
+        font-size: 11px;
+        font-weight: 900;
+        min-height: 28px;
+        place-items: center;
+      }
+
+      .rating-step.active {
+        background: var(--gold-400);
+        color: var(--archive-900);
+      }
+
+      .sort-card {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+      }
+
+      .sort-value {
+        color: var(--archive-50);
+        font-size: 13px;
+        font-weight: 850;
+      }
+
+      .filter-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .filter-tag {
+        background: rgba(215, 169, 77, 0.14);
+        border: 1px solid rgba(215, 169, 77, 0.34);
+        border-radius: 999px;
+        color: var(--gold-300);
+        font-size: 11px;
+        font-weight: 850;
+        padding: 6px 8px;
+      }
+
+      .month-group {
+        display: grid;
+        gap: 10px;
+      }
+
+      .month-title {
+        color: var(--gold-300);
+        font-size: 13px;
+        font-weight: 850;
+        margin: 0;
+      }
+
+      .entry-card {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 70px 1fr;
+        padding: 12px;
+      }
+
+      .poster {
+        align-items: end;
+        background:
+          linear-gradient(155deg, rgba(251, 246, 236, 0.12), rgba(13, 11, 9, 0.04)),
+          var(--shelf-700);
+        border: 1px solid rgba(251, 246, 236, 0.08);
+        border-radius: 8px;
+        display: flex;
+        height: 104px;
+        justify-content: center;
+        overflow: hidden;
+        padding: 8px;
+        width: 70px;
+      }
+
+      .poster-mark {
+        background: rgba(215, 169, 77, 0.92);
+        border-radius: 999px;
+        height: 10px;
+        width: 36px;
+      }
+
+      .entry-main {
+        min-width: 0;
+      }
+
+      .entry-title-row {
+        align-items: start;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+      }
+
+      .entry-title {
+        color: var(--archive-50);
+        font-size: 16px;
+        font-weight: 850;
+        line-height: 1.2;
+        margin: 0;
+      }
+
+      .entry-meta {
+        color: var(--archive-300);
+        font-size: 12px;
+        margin: 5px 0 0;
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .badge {
+        border-radius: 999px;
+        color: var(--archive-50);
+        font-size: 11px;
+        font-weight: 850;
+        padding: 5px 8px;
+      }
+
+      .badge.media {
+        background: var(--archive-700);
+      }
+
+      .badge.progress {
+        background: var(--teal-500);
+      }
+
+      .badge.completed {
+        background: var(--gold-500);
+      }
+
+      .badge.planned {
+        background: var(--archive-700);
+      }
+
+      .badge.dropped {
+        background: var(--reel-500);
+      }
+
+      .rating {
+        background: var(--gold-400);
+        border-radius: 999px;
+        color: var(--archive-900);
+        flex: 0 0 auto;
+        font-size: 12px;
+        font-weight: 900;
+        padding: 5px 9px;
+      }
+
+      .review {
+        color: var(--archive-100);
+        font-size: 13px;
+        line-height: 1.4;
+        margin: 10px 0 0;
+      }
+
+      .activity {
+        color: var(--archive-300);
+        font-size: 12px;
+        margin: 10px 0 0;
+      }
+
+      .calendar-header {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .calendar-header h3 {
+        font-size: 18px;
+        margin: 0;
+      }
+
+      .calendar-nav {
+        display: flex;
+        gap: 8px;
+      }
+
+      .mini-icon {
+        align-items: center;
+        background: var(--archive-800);
+        border: 1px solid var(--archive-500);
+        border-radius: 999px;
+        color: var(--archive-50);
+        display: grid;
+        font-size: 16px;
+        height: 34px;
+        justify-content: center;
+        width: 34px;
+      }
+
+      .calendar {
+        background:
+          linear-gradient(180deg, rgba(139, 198, 189, 0.08), rgba(215, 169, 77, 0.08)),
+          var(--archive-800);
+        border: 1px solid rgba(216, 199, 169, 0.18);
+        border-radius: 8px;
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .calendar-summary {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .summary-tile {
+        background: rgba(13, 11, 9, 0.52);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        gap: 4px;
+        padding: 10px;
+      }
+
+      .summary-tile small {
+        color: var(--archive-300);
+        font-size: 10px;
+        font-weight: 850;
+        text-transform: uppercase;
+      }
+
+      .summary-tile strong {
+        color: var(--archive-50);
+        font-size: 16px;
+        line-height: 1;
+      }
+
+      .weekday-row,
+      .day-grid {
+        display: grid;
+        gap: 6px;
+        grid-template-columns: repeat(7, 1fr);
+      }
+
+      .weekday {
+        color: var(--archive-300);
+        font-size: 11px;
+        font-weight: 850;
+        text-align: center;
+      }
+
+      .day {
+        align-items: center;
+        aspect-ratio: 1;
+        background: rgba(13, 11, 9, 0.7);
+        border: 1px solid transparent;
+        border-radius: 8px;
+        color: var(--archive-100);
+        display: flex;
+        flex-direction: column;
+        font-size: 12px;
+        font-weight: 750;
+        justify-content: center;
+        min-width: 0;
+        position: relative;
+      }
+
+      .day.muted {
+        color: var(--archive-500);
+      }
+
+      .day.active {
+        border-color: rgba(215, 169, 77, 0.32);
+      }
+
+      .day.level-1 {
+        background: rgba(77, 145, 136, 0.16);
+      }
+
+      .day.level-2 {
+        background: rgba(215, 169, 77, 0.18);
+      }
+
+      .day.level-3 {
+        background: rgba(215, 169, 77, 0.28);
+      }
+
+      .day.selected {
+        background: var(--gold-400);
+        border-color: var(--gold-400);
+        color: var(--archive-900);
+      }
+
+      .dots {
+        display: flex;
+        gap: 2px;
+        margin-top: 4px;
+      }
+
+      .dot {
+        background: currentColor;
+        border-radius: 999px;
+        height: 4px;
+        width: 4px;
+      }
+
+      .media-bars {
+        bottom: 5px;
+        display: flex;
+        gap: 2px;
+        left: 7px;
+        position: absolute;
+        right: 7px;
+      }
+
+      .media-bar {
+        border-radius: 999px;
+        height: 3px;
+        flex: 1;
+      }
+
+      .media-bar.movie {
+        background: var(--gold-400);
+      }
+
+      .media-bar.series {
+        background: var(--teal-500);
+      }
+
+      .media-bar.anime {
+        background: var(--reel-400);
+      }
+
+      .selected-date {
+        display: grid;
+        gap: 10px;
+      }
+
+      .selected-day-panel {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .calendar-phone .selected-day-panel {
+        border-color: rgba(215, 169, 77, 0.3);
+        bottom: 18px;
+        box-shadow: 0 -18px 40px rgba(13, 11, 9, 0.76);
+        left: 18px;
+        position: absolute;
+        right: 18px;
+      }
+
+      .selected-day-head {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .date-stamp {
+        align-items: center;
+        background: var(--archive-50);
+        border-radius: 8px;
+        color: var(--archive-900);
+        display: grid;
+        height: 58px;
+        justify-items: center;
+        line-height: 1;
+        width: 58px;
+      }
+
+      .date-stamp small {
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .date-stamp strong {
+        font-size: 24px;
+        font-weight: 950;
+      }
+
+      .selected-copy {
+        flex: 1;
+        padding-left: 12px;
+      }
+
+      .selected-copy h3 {
+        font-size: 16px;
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      .selected-copy p {
+        color: var(--archive-300);
+        font-size: 12px;
+        margin: 5px 0 0;
+      }
+
+      .activity-rail {
+        display: grid;
+        gap: 8px;
+      }
+
+      .rail-item {
+        align-items: center;
+        background: rgba(13, 11, 9, 0.42);
+        border-radius: 8px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 42px 1fr auto;
+        padding: 8px;
+      }
+
+      .mini-poster {
+        background: var(--shelf-700);
+        border-radius: 6px;
+        height: 54px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .mini-poster::after {
+        background: var(--gold-400);
+        border-radius: 999px;
+        bottom: 7px;
+        content: "";
+        height: 5px;
+        left: 8px;
+        position: absolute;
+        width: 24px;
+      }
+
+      .rail-title {
+        color: var(--archive-50);
+        font-size: 13px;
+        font-weight: 850;
+        margin: 0;
+      }
+
+      .rail-meta {
+        color: var(--archive-300);
+        font-size: 11px;
+        margin: 3px 0 0;
+      }
+
+      .state-card {
+        align-content: center;
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        gap: 12px;
+        min-height: 260px;
+        padding: 24px;
+        text-align: center;
+      }
+
+      .state-icon {
+        align-items: center;
+        background: var(--archive-700);
+        border-radius: 999px;
+        color: var(--gold-300);
+        display: grid;
+        font-size: 24px;
+        height: 58px;
+        justify-content: center;
+        margin: 0 auto;
+        width: 58px;
+      }
+
+      .state-card h3 {
+        font-size: 20px;
+        line-height: 1.2;
+        margin: 0;
+      }
+
+      .state-card p {
+        color: var(--archive-200);
+        font-size: 14px;
+        line-height: 1.45;
+        margin: 0;
+      }
+
+      .primary-action {
+        background: var(--gold-400);
+        border-radius: 8px;
+        color: var(--archive-900);
+        display: inline-block;
+        font-size: 14px;
+        font-weight: 850;
+        justify-self: center;
+        min-height: 44px;
+        padding: 12px 18px;
+      }
+
+      .error-action {
+        background: var(--archive-700);
+        border: 1px solid var(--archive-500);
+        color: var(--archive-50);
+      }
+
+      .skeleton {
+        animation: pulse 1.4s ease-in-out infinite;
+        background: linear-gradient(
+          90deg,
+          var(--archive-800),
+          var(--archive-700),
+          var(--archive-800)
+        );
+        background-size: 220% 100%;
+        border-radius: 8px;
+      }
+
+      .skeleton.card {
+        height: 128px;
+      }
+
+      .skeleton.controls {
+        height: 118px;
+      }
+
+      @keyframes pulse {
+        0% {
+          background-position: 100% 0;
+        }
+
+        100% {
+          background-position: -100% 0;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          padding: 18px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .phone {
+          height: 720px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="intro">
+        <p class="eyebrow">Phase 5 Journal Screen</p>
+        <h1>Management-first journal mockups</h1>
+        <p>
+          Static planning screens for Timeline, Calendar, and core states. Calendar
+          activity uses entry created date, while Timeline defaults to recent activity.
+        </p>
+      </section>
+
+      <section class="mockup-grid">
+        <div class="frame-wrap">
+          <p class="caption">Timeline with filters and recent activity</p>
+          <article class="phone">
+            <div class="screen">
+              <header class="top-row">
+                <div class="title-block">
+                  <h2>My Journal</h2>
+                  <p>42 entries tracked across movies, series, and anime.</p>
+                </div>
+                <div class="icon-button" aria-label="Open journal filters">...</div>
+              </header>
+
+              <nav class="segmented" aria-label="Journal view">
+                <div class="segment active">Timeline</div>
+                <div class="segment">Calendar</div>
+              </nav>
+
+              <section class="filter-board">
+                <div class="filter-summary">
+                  <div>
+                    <span class="filter-kicker">Current lens</span>
+                    <strong>Everything active</strong>
+                  </div>
+                  <span class="filter-count">42</span>
+                </div>
+
+                <div class="media-switch" aria-label="Media filters">
+                  <span class="media-tile active"><b>All</b><small>42</small></span>
+                  <span class="media-tile"><b>Movies</b><small>18</small></span>
+                  <span class="media-tile"><b>Series</b><small>11</small></span>
+                  <span class="media-tile"><b>Anime</b><small>13</small></span>
+                </div>
+
+                <div class="filter-lanes">
+                  <div class="lane-card wide">
+                    <p class="lane-title">Status track</p>
+                    <div class="status-strip">
+                      <span class="status-pill active">
+                        <i class="status-dot teal"></i>
+                        Active
+                      </span>
+                      <span class="status-pill">
+                        <i class="status-dot gold"></i>
+                        Done
+                      </span>
+                      <span class="status-pill">
+                        <i class="status-dot reel"></i>
+                        Dropped
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="lane-card">
+                    <p class="lane-title">Rating</p>
+                    <div class="rating-strip">
+                      <span class="rating-step">Any</span>
+                      <span class="rating-step active">4+</span>
+                      <span class="rating-step">5</span>
+                    </div>
+                  </div>
+
+                  <div class="lane-card sort-card">
+                    <div>
+                      <p class="lane-title">Sort</p>
+                      <span class="sort-value">Recent activity</span>
+                    </div>
+                    <span class="mini-icon">v</span>
+                  </div>
+                </div>
+
+                <div class="filter-tags">
+                  <span class="filter-tag">in progress</span>
+                  <span class="filter-tag">rated 4+</span>
+                  <span class="filter-tag">all media</span>
+                </div>
+              </section>
+
+              <section class="month-group">
+                <h3 class="month-title">June 2026</h3>
+                <article class="entry-card">
+                  <div class="poster"><span class="poster-mark"></span></div>
+                  <div class="entry-main">
+                    <div class="entry-title-row">
+                      <div>
+                        <h4 class="entry-title">Dune: Part Two</h4>
+                        <p class="entry-meta">Movie &middot; 2024</p>
+                      </div>
+                      <span class="rating">4.5</span>
+                    </div>
+                    <div class="badge-row">
+                      <span class="badge media">Movie</span>
+                      <span class="badge completed">Completed</span>
+                    </div>
+                    <p class="review">Huge, patient, and weirdly elegant. The scale finally clicked.</p>
+                    <p class="activity">Updated Jun 4</p>
+                  </div>
+                </article>
+
+                <article class="entry-card">
+                  <div class="poster"><span class="poster-mark"></span></div>
+                  <div class="entry-main">
+                    <div class="entry-title-row">
+                      <div>
+                        <h4 class="entry-title">Frieren: Beyond Journey's End</h4>
+                        <p class="entry-meta">Anime &middot; 2023</p>
+                      </div>
+                      <span class="rating">5.0</span>
+                    </div>
+                    <div class="badge-row">
+                      <span class="badge media">Anime</span>
+                      <span class="badge progress">In Progress</span>
+                    </div>
+                    <p class="review">Quiet fantasy with a lot of emotional precision.</p>
+                    <p class="activity">Updated Jun 2</p>
+                  </div>
+                </article>
+              </section>
+
+              <section class="month-group">
+                <h3 class="month-title">May 2026</h3>
+                <article class="entry-card">
+                  <div class="poster"><span class="poster-mark"></span></div>
+                  <div class="entry-main">
+                    <div class="entry-title-row">
+                      <div>
+                        <h4 class="entry-title">Severance</h4>
+                        <p class="entry-meta">Series &middot; 2022</p>
+                      </div>
+                    </div>
+                    <div class="badge-row">
+                      <span class="badge media">Series</span>
+                      <span class="badge planned">Planned</span>
+                    </div>
+                    <p class="activity">Added May 28</p>
+                  </div>
+                </article>
+              </section>
+            </div>
+          </article>
+        </div>
+
+        <div class="frame-wrap">
+          <p class="caption">Calendar with created-date activity</p>
+          <article class="phone calendar-phone">
+            <div class="screen">
+              <header class="top-row">
+                <div class="title-block">
+                  <h2>My Journal</h2>
+                  <p>Calendar shows when entries were first logged.</p>
+                </div>
+              </header>
+
+              <nav class="segmented" aria-label="Journal view">
+                <div class="segment">Timeline</div>
+                <div class="segment active">Calendar</div>
+              </nav>
+
+              <section class="filter-board">
+                <div class="filter-summary">
+                  <div>
+                    <span class="filter-kicker">June activity</span>
+                    <strong>12 logged days</strong>
+                  </div>
+                  <span class="filter-count">24</span>
+                </div>
+                <div class="filter-tags">
+                  <span class="filter-tag">created date</span>
+                  <span class="filter-tag">movies + anime</span>
+                  <span class="filter-tag">4+ ratings</span>
+                </div>
+              </section>
+
+              <section class="calendar">
+                <div class="calendar-header">
+                  <h3>June logbook</h3>
+                  <div class="calendar-nav">
+                    <span class="mini-icon">&lt;</span>
+                    <span class="mini-icon">&gt;</span>
+                  </div>
+                </div>
+
+                <div class="calendar-summary">
+                  <span class="summary-tile"><small>Entries</small><strong>24</strong></span>
+                  <span class="summary-tile"><small>Best day</small><strong>17</strong></span>
+                  <span class="summary-tile"><small>Avg</small><strong>4.3</strong></span>
+                </div>
+
+                <div class="weekday-row">
+                  <span class="weekday">S</span>
+                  <span class="weekday">M</span>
+                  <span class="weekday">T</span>
+                  <span class="weekday">W</span>
+                  <span class="weekday">T</span>
+                  <span class="weekday">F</span>
+                  <span class="weekday">S</span>
+                </div>
+
+                <div class="day-grid">
+                  <span class="day muted">31</span>
+                  <span class="day active level-1">1<span class="media-bars"><i class="media-bar movie"></i></span></span>
+                  <span class="day active level-2">2<span class="media-bars"><i class="media-bar movie"></i><i class="media-bar anime"></i></span></span>
+                  <span class="day">3</span>
+                  <span class="day selected">4<span class="media-bars"><i class="media-bar movie"></i><i class="media-bar series"></i></span></span>
+                  <span class="day">5</span>
+                  <span class="day">6</span>
+                  <span class="day">7</span>
+                  <span class="day active level-1">8<span class="media-bars"><i class="media-bar anime"></i></span></span>
+                  <span class="day">9</span>
+                  <span class="day">10</span>
+                  <span class="day active level-1">11<span class="media-bars"><i class="media-bar series"></i></span></span>
+                  <span class="day">12</span>
+                  <span class="day">13</span>
+                  <span class="day">14</span>
+                  <span class="day">15</span>
+                  <span class="day">16</span>
+                  <span class="day active level-3">17<span class="media-bars"><i class="media-bar movie"></i><i class="media-bar series"></i><i class="media-bar anime"></i></span></span>
+                  <span class="day">18</span>
+                  <span class="day">19</span>
+                  <span class="day">20</span>
+                  <span class="day">21</span>
+                  <span class="day">22</span>
+                  <span class="day">23</span>
+                  <span class="day">24</span>
+                  <span class="day">25</span>
+                  <span class="day">26</span>
+                  <span class="day">27</span>
+                  <span class="day">28</span>
+                  <span class="day">29</span>
+                  <span class="day">30</span>
+                  <span class="day muted">1</span>
+                  <span class="day muted">2</span>
+                  <span class="day muted">3</span>
+                  <span class="day muted">4</span>
+                </div>
+              </section>
+
+              <section class="selected-day-panel">
+                <div class="selected-day-head">
+                  <div class="date-stamp">
+                    <small>Jun</small>
+                    <strong>04</strong>
+                  </div>
+                  <div class="selected-copy">
+                    <h3>2 titles started the shelf today</h3>
+                    <p>Activity is based on entry created date for v1.</p>
+                  </div>
+                </div>
+
+                <div class="activity-rail">
+                  <article class="rail-item">
+                    <span class="mini-poster"></span>
+                    <div>
+                      <h4 class="rail-title">Dune: Part Two</h4>
+                      <p class="rail-meta">Movie &middot; Completed</p>
+                    </div>
+                    <span class="rating">4.5</span>
+                  </article>
+
+                  <article class="rail-item">
+                    <span class="mini-poster"></span>
+                    <div>
+                      <h4 class="rail-title">Frieren</h4>
+                      <p class="rail-meta">Anime &middot; In Progress</p>
+                    </div>
+                    <span class="rating">5.0</span>
+                  </article>
+                </div>
+              </section>
+            </div>
+          </article>
+        </div>
+
+        <div class="frame-wrap">
+          <p class="caption">Empty, filtered, loading, and error states</p>
+          <article class="phone">
+            <div class="screen">
+              <header class="top-row">
+                <div class="title-block">
+                  <h2>My Journal</h2>
+                  <p>Core states for a production-ready surface.</p>
+                </div>
+              </header>
+
+              <nav class="segmented" aria-label="Journal view">
+                <div class="segment active">Timeline</div>
+                <div class="segment">Calendar</div>
+              </nav>
+
+              <div class="skeleton controls"></div>
+              <div class="skeleton card"></div>
+              <div class="skeleton card"></div>
+
+              <section class="state-card">
+                <div class="state-icon">+</div>
+                <h3>Your journal is ready</h3>
+                <p>Search for a title and add it to start building your personal log.</p>
+                <span class="primary-action">Find titles</span>
+              </section>
+
+              <section class="state-card">
+                <div class="state-icon">!</div>
+                <h3>No matches</h3>
+                <p>Nothing matches these filters yet. Clear filters to see everything.</p>
+                <span class="primary-action error-action">Clear filters</span>
+              </section>
+
+              <section class="state-card">
+                <div class="state-icon">!</div>
+                <h3>Journal unavailable</h3>
+                <p>Unable to load entries right now. Try again when the connection settles.</p>
+                <span class="primary-action error-action">Retry</span>
+              </section>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -25,11 +25,35 @@ type DiscoverRailProps = {
 const RAIL_CARD_WIDTH = 112;
 const RAIL_CARD_GAP = 12;
 const RAIL_ITEM_LENGTH = RAIL_CARD_WIDTH + RAIL_CARD_GAP;
+const RAIL_RESULT_LIMIT = 10;
+const RAIL_INITIAL_RENDER_COUNT = 5;
+const RAIL_MAX_RENDER_BATCH = 5;
+const RAIL_UPDATE_BATCH_MS = 80;
+const RAIL_WINDOW_SIZE = 5;
+
+function getRailErrorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message
+    : 'Discovery data is unavailable right now.';
+}
+
+function openRailTitleDetails(item: NormalizedMediaItem) {
+  router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`);
+}
 
 function RailSeparator() {
   return <View className="w-3" />;
 }
 
+/**
+ * Renders one horizontal discovery shelf for a mode/media pair.
+ *
+ * @param title - Section title shown above the shelf.
+ * @param mode - Discovery mode used by the rail query.
+ * @param mediaType - Media category used by the rail query.
+ * @param onSeeAll - Optional navigation handler for full listing pages.
+ * @returns A loading, error, empty, or horizontal poster rail state.
+ */
 export function DiscoverRail({
   title,
   mode,
@@ -38,18 +62,20 @@ export function DiscoverRail({
 }: DiscoverRailProps) {
   const railQuery = useDiscoverRail(mode, mediaType);
   const results = useMemo(
-    () => dedupeMediaItems(railQuery.data?.results ?? []).slice(0, 10),
+    () =>
+      dedupeMediaItems(railQuery.data?.results ?? []).slice(
+        0,
+        RAIL_RESULT_LIMIT,
+      ),
     [railQuery.data?.results],
   );
-  const keyExtractor = useCallback((item: NormalizedMediaItem) => mediaItemKey(item), []);
+  const keyExtractor = useCallback(
+    (item: NormalizedMediaItem) => mediaItemKey(item),
+    [],
+  );
   const renderItem = useCallback(
     ({ item }: { item: NormalizedMediaItem }) => (
-      <DiscoverPosterCard
-        item={item}
-        onPress={() =>
-          router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`)
-        }
-      />
+      <DiscoverPosterCard item={item} onPress={() => openRailTitleDetails(item)} />
     ),
     [],
   );
@@ -85,11 +111,7 @@ export function DiscoverRail({
       {railQuery.isError ? (
         <ErrorState
           title={`Unable to load ${title.toLowerCase()}`}
-          message={
-            railQuery.error instanceof Error
-              ? railQuery.error.message
-              : 'Discovery data is unavailable right now.'
-          }
+          message={getRailErrorMessage(railQuery.error)}
           onRetry={() => railQuery.refetch()}
         />
       ) : null}
@@ -106,15 +128,15 @@ export function DiscoverRail({
           horizontal
           data={results}
           getItemLayout={getItemLayout}
-          initialNumToRender={5}
+          initialNumToRender={RAIL_INITIAL_RENDER_COUNT}
           ItemSeparatorComponent={RailSeparator}
           keyExtractor={keyExtractor}
-          maxToRenderPerBatch={5}
+          maxToRenderPerBatch={RAIL_MAX_RENDER_BATCH}
           removeClippedSubviews
           renderItem={renderItem}
           showsHorizontalScrollIndicator={false}
-          updateCellsBatchingPeriod={80}
-          windowSize={5}
+          updateCellsBatchingPeriod={RAIL_UPDATE_BATCH_MS}
+          windowSize={RAIL_WINDOW_SIZE}
         />
       ) : null}
     </View>

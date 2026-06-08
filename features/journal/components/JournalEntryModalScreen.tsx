@@ -16,7 +16,7 @@ import {
 } from '@/features/journal/hooks/useJournalEntryMutations';
 import { useJournalEntryForMedia } from '@/features/journal/hooks/useJournalEntryForMedia';
 import {
-  defaultJournalEntryFormValues,
+  createDefaultJournalEntryFormValues,
   todayString,
   validateJournalEntryForm,
   valuesFromJournalEntry,
@@ -29,10 +29,78 @@ type JournalEntryModalScreenProps = {
   entryId?: string;
 };
 
-function errorMessage(error: unknown, fallback: string) {
+const SIGN_IN_REQUIRED_MESSAGE = 'Sign in before saving this journal entry.';
+const MISSING_MEDIA_ITEM_MESSAGE = 'Open this modal from a title details page.';
+const MISSING_DELETE_ENTRY_MESSAGE = 'This entry is not available to delete.';
+const SAVE_ENTRY_FALLBACK_MESSAGE = 'Unable to save this journal entry.';
+const DELETE_ENTRY_FALLBACK_MESSAGE = 'Unable to delete this journal entry.';
+const LOAD_TITLE_FALLBACK_MESSAGE =
+  'The title could not be loaded for this journal entry.';
+const LOAD_ENTRY_FALLBACK_MESSAGE = 'Your journal entry could not be loaded.';
+
+function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function hasFormErrors(errors: ReturnType<typeof validateJournalEntryForm>) {
+  return Object.keys(errors).length > 0;
+}
+
+function getCompletedOnForStatus(
+  status: JournalStatus,
+  currentCompletedOn: string | null,
+) {
+  return status === 'completed' ? currentCompletedOn ?? todayString() : null;
+}
+
+function ModalEmptyState({
+  message,
+  title,
+}: {
+  message: string;
+  title: string;
+}) {
+  return (
+    <JournalEntryModalFrame>
+      <EmptyState
+        title={title}
+        message={message}
+        actionLabel="Close"
+        onAction={() => router.back()}
+      />
+    </JournalEntryModalFrame>
+  );
+}
+
+function ModalErrorState({
+  error,
+  fallbackMessage,
+  title,
+  onRetry,
+}: {
+  error: unknown;
+  fallbackMessage: string;
+  title: string;
+  onRetry: () => void;
+}) {
+  return (
+    <JournalEntryModalFrame>
+      <ErrorState
+        title={title}
+        message={getErrorMessage(error, fallbackMessage)}
+        onRetry={onRetry}
+      />
+    </JournalEntryModalFrame>
+  );
+}
+
+/**
+ * Renders the add/edit journal entry modal for a title details page.
+ *
+ * @param entryId - Existing journal entry id when the modal edits an entry.
+ * @param mediaItemId - Media route id used to load the title and journal entry.
+ * @returns A modal form with save, edit, delete, loading, and error states.
+ */
 export function JournalEntryModalScreen({
   entryId,
   mediaItemId,
@@ -51,7 +119,7 @@ export function JournalEntryModalScreen({
     createEntryMutation.isPending || updateEntryMutation.isPending;
   const isDeleting = deleteEntryMutation.isPending;
   const [values, setValues] = useState<JournalEntryFormValues>(
-    defaultJournalEntryFormValues,
+    createDefaultJournalEntryFormValues,
   );
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] =
@@ -63,45 +131,47 @@ export function JournalEntryModalScreen({
     if (entry) {
       setValues(valuesFromJournalEntry(entry));
     } else if (!isEditMode) {
-      setValues(defaultJournalEntryFormValues);
+      setValues(createDefaultJournalEntryFormValues());
     }
   }, [entry, isEditMode]);
 
-  const updateValue = <Key extends keyof JournalEntryFormValues>(
+  const clearMutationErrors = () => {
+    setDeleteError(null);
+    setSubmitError(null);
+  };
+
+  const updateFormValue = <Key extends keyof JournalEntryFormValues>(
     key: Key,
     value: JournalEntryFormValues[Key],
   ) => {
-    setDeleteError(null);
-    setSubmitError(null);
+    clearMutationErrors();
     setValues((current) => ({
       ...current,
       [key]: value,
     }));
   };
 
-  const updateStatus = (status: JournalStatus) => {
-    setDeleteError(null);
-    setSubmitError(null);
+  const updateJournalStatus = (status: JournalStatus) => {
+    clearMutationErrors();
     setValues((current) => ({
       ...current,
-      completedOn:
-        status === 'completed' ? current.completedOn ?? todayString() : null,
+      completedOn: getCompletedOnForStatus(status, current.completedOn),
       status,
     }));
   };
 
   const handleSubmit = async () => {
-    if (Object.keys(errors).length > 0) {
+    if (hasFormErrors(errors)) {
       return;
     }
 
     if (!user?.id) {
-      setSubmitError('Sign in before saving this journal entry.');
+      setSubmitError(SIGN_IN_REQUIRED_MESSAGE);
       return;
     }
 
     if (!mediaItemId) {
-      setSubmitError('Open this modal from a title details page.');
+      setSubmitError(MISSING_MEDIA_ITEM_MESSAGE);
       return;
     }
 
@@ -123,13 +193,13 @@ export function JournalEntryModalScreen({
 
       router.back();
     } catch (error) {
-      setSubmitError(errorMessage(error, 'Unable to save this journal entry.'));
+      setSubmitError(getErrorMessage(error, SAVE_ENTRY_FALLBACK_MESSAGE));
     }
   };
 
-  const deleteEntry = async () => {
+  const confirmDeleteEntry = async () => {
     if (!resolvedEntryId) {
-      setDeleteError('This entry is not available to delete.');
+      setDeleteError(MISSING_DELETE_ENTRY_MESSAGE);
       return;
     }
 
@@ -138,11 +208,11 @@ export function JournalEntryModalScreen({
       await deleteEntryMutation.mutateAsync(resolvedEntryId);
       router.back();
     } catch (error) {
-      setDeleteError(errorMessage(error, 'Unable to delete this journal entry.'));
+      setDeleteError(getErrorMessage(error, DELETE_ENTRY_FALLBACK_MESSAGE));
     }
   };
 
-  const handleDelete = () => {
+  const showDeleteConfirmation = () => {
     setDeleteError(null);
     setIsDeleteConfirmationVisible(true);
   };
@@ -158,14 +228,10 @@ export function JournalEntryModalScreen({
 
   if (!mediaItemId) {
     return (
-      <JournalEntryModalFrame>
-        <EmptyState
-          title="Missing title"
-          message="Open this modal from a title details page."
-          actionLabel="Close"
-          onAction={() => router.back()}
-        />
-      </JournalEntryModalFrame>
+      <ModalEmptyState
+        title="Missing title"
+        message={MISSING_MEDIA_ITEM_MESSAGE}
+      />
     );
   }
 
@@ -179,44 +245,32 @@ export function JournalEntryModalScreen({
 
   if (detailsQuery.isError) {
     return (
-      <JournalEntryModalFrame>
-        <ErrorState
-          title="Unable to load title"
-          message={errorMessage(
-            detailsQuery.error,
-            'The title could not be loaded for this journal entry.',
-          )}
-          onRetry={() => detailsQuery.refetch()}
-        />
-      </JournalEntryModalFrame>
+      <ModalErrorState
+        title="Unable to load title"
+        error={detailsQuery.error}
+        fallbackMessage={LOAD_TITLE_FALLBACK_MESSAGE}
+        onRetry={() => detailsQuery.refetch()}
+      />
     );
   }
 
   if (entryQuery.isError) {
     return (
-      <JournalEntryModalFrame>
-        <ErrorState
-          title="Unable to load entry"
-          message={errorMessage(
-            entryQuery.error,
-            'Your journal entry could not be loaded.',
-          )}
-          onRetry={() => entryQuery.refetch()}
-        />
-      </JournalEntryModalFrame>
+      <ModalErrorState
+        title="Unable to load entry"
+        error={entryQuery.error}
+        fallbackMessage={LOAD_ENTRY_FALLBACK_MESSAGE}
+        onRetry={() => entryQuery.refetch()}
+      />
     );
   }
 
   if (isEditMode && !entry) {
     return (
-      <JournalEntryModalFrame>
-        <EmptyState
-          title="Entry not found"
-          message="This journal entry is not available."
-          actionLabel="Close"
-          onAction={() => router.back()}
-        />
-      </JournalEntryModalFrame>
+      <ModalEmptyState
+        title="Entry not found"
+        message="This journal entry is not available."
+      />
     );
   }
 
@@ -231,10 +285,10 @@ export function JournalEntryModalScreen({
           isDeleting={isDeleting}
           isSubmitting={isSubmitting}
           item={item}
-          onChange={updateValue}
-          onDelete={handleDelete}
+          onChange={updateFormValue}
+          onDelete={showDeleteConfirmation}
           onSubmit={handleSubmit}
-          onStatusChange={updateStatus}
+          onStatusChange={updateJournalStatus}
           submitError={submitError}
           values={values}
         />
@@ -245,7 +299,7 @@ export function JournalEntryModalScreen({
           error={deleteError}
           isDeleting={isDeleting}
           onCancel={handleCancelDelete}
-          onConfirm={deleteEntry}
+          onConfirm={confirmDeleteEntry}
           title={item?.title}
         />
       ) : null}

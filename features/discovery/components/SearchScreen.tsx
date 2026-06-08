@@ -20,17 +20,147 @@ import {
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import type { NormalizedMediaItem } from '@/types/media';
 
-const mediaFilters: Array<{ label: string; value: SearchMediaType }> = [
+const SEARCH_MIN_QUERY_LENGTH = 2;
+const SEARCH_INITIAL_RENDER_COUNT = 8;
+const SEARCH_MAX_RENDER_BATCH = 8;
+const SEARCH_UPDATE_BATCH_MS = 80;
+const SEARCH_WINDOW_SIZE = 7;
+
+const SEARCH_MEDIA_FILTERS: Array<{ label: string; value: SearchMediaType }> = [
   { label: 'All', value: 'all' },
   { label: 'Movies', value: 'movie' },
   { label: 'Series', value: 'series' },
   { label: 'Anime', value: 'anime' },
 ];
 
+function getSearchErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unable to search right now.';
+}
+
+function getResultCountLabel(resultCount: number) {
+  return resultCount === 1 ? '1 result' : `${resultCount} results`;
+}
+
+function openSearchResult(item: NormalizedMediaItem) {
+  router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`);
+}
+
 function SearchItemSeparator() {
   return <View className="h-3" />;
 }
 
+function SearchHeader({
+  isSearchSuccess,
+  mediaType,
+  query,
+  resultCount,
+  onClearSearch,
+  onMediaTypeChange,
+  onQueryChange,
+}: {
+  isSearchSuccess: boolean;
+  mediaType: SearchMediaType;
+  query: string;
+  resultCount: number;
+  onClearSearch: () => void;
+  onMediaTypeChange: (mediaType: SearchMediaType) => void;
+  onQueryChange: (query: string) => void;
+}) {
+  return (
+    <View className="gap-5">
+      <SectionHeader
+        title="Search"
+        subtitle="Find movies, series, and anime by title."
+      />
+
+      <View className="gap-4">
+        <TextField
+          label="Title"
+          value={query}
+          onChangeText={onQueryChange}
+          placeholder="Search movies, series, or anime"
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+
+        <View className="flex-row flex-wrap gap-2">
+          {SEARCH_MEDIA_FILTERS.map((filter) => (
+            <Chip
+              key={filter.value}
+              label={filter.label}
+              selected={mediaType === filter.value}
+              onPress={() => onMediaTypeChange(filter.value)}
+            />
+          ))}
+        </View>
+      </View>
+
+      {isSearchSuccess && resultCount > 0 ? (
+        <View className="flex-row items-center justify-between gap-3">
+          <Text className="text-sm font-semibold text-archive-200">
+            {getResultCountLabel(resultCount)}
+          </Text>
+          <Button title="Clear" variant="ghost" onPress={onClearSearch} />
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function SearchEmptyContent({
+  canSearch,
+  error,
+  isError,
+  isLoading,
+  onClearSearch,
+  onRetry,
+}: {
+  canSearch: boolean;
+  error: unknown;
+  isError: boolean;
+  isLoading: boolean;
+  onClearSearch: () => void;
+  onRetry: () => void;
+}) {
+  if (!canSearch) {
+    return (
+      <EmptyState
+        title="Start with a title"
+        message="Enter at least two characters, then narrow the results by media type."
+      />
+    );
+  }
+
+  if (isLoading) {
+    return <LoadingState message="Searching titles" />;
+  }
+
+  if (isError) {
+    return (
+      <ErrorState
+        title="Search failed"
+        message={getSearchErrorMessage(error)}
+        onRetry={onRetry}
+      />
+    );
+  }
+
+  return (
+    <EmptyState
+      title="No results"
+      message="Try a different title or media filter."
+      actionLabel="Clear search"
+      onAction={onClearSearch}
+    />
+  );
+}
+
+/**
+ * Renders universal search for normalized movies, series, and anime results.
+ *
+ * @returns Search input, media filters, and a virtualized result list.
+ */
 export function SearchScreen() {
   const [query, setQuery] = useState('');
   const [mediaType, setMediaType] = useState<SearchMediaType>('all');
@@ -39,16 +169,14 @@ export function SearchScreen() {
     () => dedupeMediaItems(searchQuery.data?.results ?? []),
     [searchQuery.data?.results],
   );
-  const canSearch = query.trim().length >= 2;
-  const keyExtractor = useCallback((item: NormalizedMediaItem) => mediaItemKey(item), []);
+  const canSearch = query.trim().length >= SEARCH_MIN_QUERY_LENGTH;
+  const keyExtractor = useCallback(
+    (item: NormalizedMediaItem) => mediaItemKey(item),
+    [],
+  );
   const renderItem = useCallback(
     ({ item }: { item: NormalizedMediaItem }) => (
-      <SearchResultCard
-        item={item}
-        onPress={() =>
-          router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`)
-        }
-      />
+      <SearchResultCard item={item} onPress={() => openSearchResult(item)} />
     ),
     [],
   );
@@ -61,82 +189,36 @@ export function SearchScreen() {
     <Screen padded={false}>
       <FlatList
         data={results}
-        initialNumToRender={8}
+        initialNumToRender={SEARCH_INITIAL_RENDER_COUNT}
         ItemSeparatorComponent={SearchItemSeparator}
         keyExtractor={keyExtractor}
-        maxToRenderPerBatch={8}
+        maxToRenderPerBatch={SEARCH_MAX_RENDER_BATCH}
         removeClippedSubviews
         renderItem={renderItem}
         showsVerticalScrollIndicator={false}
-        updateCellsBatchingPeriod={80}
-        windowSize={7}
+        updateCellsBatchingPeriod={SEARCH_UPDATE_BATCH_MS}
+        windowSize={SEARCH_WINDOW_SIZE}
         contentContainerClassName="gap-5 px-5 py-6"
         ListHeaderComponent={
-          <View className="gap-5">
-            <SectionHeader
-              title="Search"
-              subtitle="Find movies, series, and anime by title."
-            />
-
-            <View className="gap-4">
-              <TextField
-                label="Title"
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search movies, series, or anime"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="search"
-              />
-
-              <View className="flex-row flex-wrap gap-2">
-                {mediaFilters.map((filter) => (
-                  <Chip
-                    key={filter.value}
-                    label={filter.label}
-                    selected={mediaType === filter.value}
-                    onPress={() => setMediaType(filter.value)}
-                  />
-                ))}
-              </View>
-            </View>
-
-            {searchQuery.isSuccess && results.length > 0 ? (
-              <View className="flex-row items-center justify-between gap-3">
-                <Text className="text-sm font-semibold text-archive-200">
-                  {results.length === 1 ? '1 result' : `${results.length} results`}
-                </Text>
-                <Button title="Clear" variant="ghost" onPress={clearSearch} />
-              </View>
-            ) : null}
-          </View>
+          <SearchHeader
+            isSearchSuccess={searchQuery.isSuccess}
+            mediaType={mediaType}
+            query={query}
+            resultCount={results.length}
+            onClearSearch={clearSearch}
+            onMediaTypeChange={setMediaType}
+            onQueryChange={setQuery}
+          />
         }
         ListEmptyComponent={
-          !canSearch ? (
-            <EmptyState
-              title="Start with a title"
-              message="Enter at least two characters, then narrow the results by media type."
-            />
-          ) : searchQuery.isLoading ? (
-            <LoadingState message="Searching titles" />
-          ) : searchQuery.isError ? (
-            <ErrorState
-              title="Search failed"
-              message={
-                searchQuery.error instanceof Error
-                  ? searchQuery.error.message
-                  : 'Unable to search right now.'
-              }
-              onRetry={() => searchQuery.refetch()}
-            />
-          ) : (
-            <EmptyState
-              title="No results"
-              message="Try a different title or media filter."
-              actionLabel="Clear search"
-              onAction={clearSearch}
-            />
-          )
+          <SearchEmptyContent
+            canSearch={canSearch}
+            error={searchQuery.error}
+            isError={searchQuery.isError}
+            isLoading={searchQuery.isLoading}
+            onClearSearch={clearSearch}
+            onRetry={() => searchQuery.refetch()}
+          />
         }
       />
     </Screen>

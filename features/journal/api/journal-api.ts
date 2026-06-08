@@ -1,10 +1,12 @@
 import { isJournalStatus } from '@/constants/journal';
+import { toJournalListEntries } from '@/features/journal/model/journalList';
 import { supabase } from '@/lib/supabase/client';
 import type {
   CreateJournalEntryInput,
   JournalEntry,
   JournalEntryFormValues,
   JournalEntryInsert,
+  JournalListEntryRow,
   JournalEntryRow,
   JournalEntryUpdate,
   UpdateJournalEntryInput,
@@ -67,6 +69,40 @@ export async function getJournalEntryForMedia({
   }
 
   return data ? toJournalEntry(data) : null;
+}
+
+export async function getJournalEntries(userId: string) {
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select(
+      `
+        *,
+        media_items (
+          id,
+          source,
+          source_id,
+          media_type,
+          title,
+          original_title,
+          description,
+          release_date,
+          image_url,
+          backdrop_url,
+          genres,
+          metadata,
+          created_at,
+          updated_at
+        )
+      `,
+    )
+    .eq('user_id', userId)
+    .order('last_activity_at', { ascending: false });
+
+  if (error) {
+    throw error;
+  }
+
+  return toJournalListEntries((data ?? []) as JournalListEntryRow[]);
 }
 
 export async function createJournalEntry(input: CreateJournalEntryInput) {

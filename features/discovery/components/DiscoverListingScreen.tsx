@@ -31,31 +31,41 @@ type DiscoverListingScreenProps = {
   mediaType?: string;
 };
 
-const modeLabels: Record<DiscoveryMode, string> = {
+type ListingResultsByPage = Record<number, NormalizedMediaItem[]>;
+
+const LISTING_FIRST_PAGE = 1;
+const LISTING_COLUMN_COUNT = 2;
+const LISTING_INITIAL_RENDER_COUNT = 8;
+const LISTING_MAX_RENDER_BATCH = 8;
+const LISTING_END_REACHED_THRESHOLD = 0.45;
+const LISTING_UPDATE_BATCH_MS = 80;
+const LISTING_WINDOW_SIZE = 7;
+
+const DISCOVERY_MODE_LABELS: Record<DiscoveryMode, string> = {
   trending: 'Trending',
   new_releases: 'New Releases',
   top_rated: 'Top Rated',
 };
 
-const mediaTypeLabels: Record<DiscoveryMediaType, string> = {
+const DISCOVERY_MEDIA_TYPE_LABELS: Record<DiscoveryMediaType, string> = {
   movie: 'Movies',
   series: 'Series',
   anime: 'Anime',
 };
 
-const modeDescriptions: Record<DiscoveryMode, string> = {
+const DISCOVERY_MODE_DESCRIPTIONS: Record<DiscoveryMode, string> = {
   trending: 'Fresh activity from the wider entertainment shelf.',
   new_releases: 'Recent releases gathered for quick browsing.',
   top_rated: 'High-rated titles surfaced for slower, pickier browsing.',
 };
 
-const mediaTypeDescriptions: Record<DiscoveryMediaType, string> = {
+const DISCOVERY_MEDIA_TYPE_DESCRIPTIONS: Record<DiscoveryMediaType, string> = {
   movie: 'Feature-length picks from TMDB.',
   series: 'Series and episodic titles ready to inspect.',
   anime: 'Anime-leaning series filtered from discovery data.',
 };
 
-function formatCachedAt(value?: string) {
+function formatCachedAtTime(value?: string) {
   if (!value) {
     return null;
   }
@@ -72,6 +82,45 @@ function formatCachedAt(value?: string) {
   });
 }
 
+function getDiscoveryErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function getOrderedListingResults(resultsByPage: ListingResultsByPage) {
+  return dedupeMediaItems(
+    Object.entries(resultsByPage)
+      .sort(([leftPage], [rightPage]) => Number(leftPage) - Number(rightPage))
+      .flatMap(([, pageResults]) => pageResults),
+  );
+}
+
+function canRequestNextListingPage({
+  currentPage,
+  isError,
+  isFetching,
+  requestedPages,
+  totalPages,
+}: {
+  currentPage: number;
+  isError: boolean;
+  isFetching: boolean;
+  requestedPages: Set<number>;
+  totalPages: number;
+}) {
+  const nextPage = currentPage + 1;
+
+  return (
+    !isFetching &&
+    !isError &&
+    currentPage < totalPages &&
+    !requestedPages.has(nextPage)
+  );
+}
+
+function openTitleDetails(item: NormalizedMediaItem) {
+  router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`);
+}
+
 function ListingHeader({
   cachedAt,
   mediaType,
@@ -83,7 +132,7 @@ function ListingHeader({
   mode: DiscoveryMode;
   resultCount: number;
 }) {
-  const refreshedAt = formatCachedAt(cachedAt);
+  const refreshedAt = formatCachedAtTime(cachedAt);
 
   return (
     <View className="gap-5">
@@ -91,22 +140,23 @@ function ListingHeader({
         <View className="flex-row flex-wrap gap-2">
           <View className="rounded-full bg-gold-400 px-3 py-1">
             <Text className="text-xs font-bold uppercase text-archive-900">
-              {modeLabels[mode]}
+              {DISCOVERY_MODE_LABELS[mode]}
             </Text>
           </View>
           <View className="rounded-full border border-teal-500 px-3 py-1">
             <Text className="text-xs font-bold uppercase text-teal-300">
-              {mediaTypeLabels[mediaType]}
+              {DISCOVERY_MEDIA_TYPE_LABELS[mediaType]}
             </Text>
           </View>
         </View>
 
         <View className="gap-2">
           <Text className="text-3xl font-bold leading-10 text-archive-50">
-            {modeLabels[mode]} {mediaTypeLabels[mediaType]}
+            {DISCOVERY_MODE_LABELS[mode]} {DISCOVERY_MEDIA_TYPE_LABELS[mediaType]}
           </Text>
           <Text className="text-sm leading-5 text-archive-200">
-            {modeDescriptions[mode]} {mediaTypeDescriptions[mediaType]}
+            {DISCOVERY_MODE_DESCRIPTIONS[mode]}{' '}
+            {DISCOVERY_MEDIA_TYPE_DESCRIPTIONS[mediaType]}
           </Text>
         </View>
 
@@ -122,6 +172,71 @@ function ListingHeader({
         </View>
       </View>
     </View>
+  );
+}
+
+function ListingEmptyContent({
+  error,
+  isError,
+  isLoading,
+  title,
+  onRetry,
+}: {
+  error: unknown;
+  isError: boolean;
+  isLoading: boolean;
+  title: string;
+  onRetry: () => void;
+}) {
+  if (isLoading) {
+    return (
+      <View className="pt-2">
+        <LoadingState message={`Loading ${title.toLowerCase()}`} />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View className="pt-2">
+        <ErrorState
+          title="Unable to load discovery"
+          message={getDiscoveryErrorMessage(
+            error,
+            'Discovery data is unavailable right now.',
+          )}
+          onRetry={onRetry}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View className="pt-2">
+      <EmptyState
+        title="Nothing here yet"
+        message="Try another discovery mode or media type."
+      />
+    </View>
+  );
+}
+
+function ListingLoadMoreError({
+  error,
+  onRetry,
+}: {
+  error: unknown;
+  onRetry: () => void;
+}) {
+  return (
+    <ErrorState
+      title="Unable to load more"
+      message={getDiscoveryErrorMessage(
+        error,
+        'More discovery results are unavailable right now.',
+      )}
+      onRetry={onRetry}
+    />
   );
 }
 
@@ -154,6 +269,14 @@ function ListingFooter({
   );
 }
 
+/**
+ * Renders a paginated, browse-only discovery listing for a validated mode and
+ * media type.
+ *
+ * @param mode - Discovery rail mode used to fetch the listing.
+ * @param mediaType - Media category used to fetch and label the listing.
+ * @returns A FlatList-based screen of normalized media results.
+ */
 function DiscoverListingContent({
   mode,
   mediaType,
@@ -161,19 +284,17 @@ function DiscoverListingContent({
   mode: DiscoveryMode;
   mediaType: DiscoveryMediaType;
 }) {
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [resultsByPage, setResultsByPage] = useState<
-    Record<number, NormalizedMediaItem[]>
-  >({});
-  const requestedPagesRef = useRef(new Set<number>([1]));
+  const [page, setPage] = useState(LISTING_FIRST_PAGE);
+  const [totalPages, setTotalPages] = useState(LISTING_FIRST_PAGE);
+  const [resultsByPage, setResultsByPage] = useState<ListingResultsByPage>({});
+  const requestedPagesRef = useRef(new Set<number>([LISTING_FIRST_PAGE]));
   const listingQuery = useDiscoverRail(mode, mediaType, page);
 
   useEffect(() => {
-    setPage(1);
-    setTotalPages(1);
+    setPage(LISTING_FIRST_PAGE);
+    setTotalPages(LISTING_FIRST_PAGE);
     setResultsByPage({});
-    requestedPagesRef.current = new Set([1]);
+    requestedPagesRef.current = new Set([LISTING_FIRST_PAGE]);
   }, [mode, mediaType]);
 
   useEffect(() => {
@@ -187,15 +308,10 @@ function DiscoverListingContent({
   }, [listingQuery.data]);
 
   const results = useMemo(
-    () =>
-      dedupeMediaItems(
-        Object.entries(resultsByPage)
-          .sort(([left], [right]) => Number(left) - Number(right))
-          .flatMap(([, pageResults]) => pageResults),
-      ),
+    () => getOrderedListingResults(resultsByPage),
     [resultsByPage],
   );
-  const title = `${modeLabels[mode]} ${mediaTypeLabels[mediaType]}`;
+  const title = `${DISCOVERY_MODE_LABELS[mode]} ${DISCOVERY_MEDIA_TYPE_LABELS[mediaType]}`;
   const canLoadMore = page < totalPages;
   const isLoadingNextPage = listingQuery.isFetching && results.length > 0;
   const keyExtractor = useCallback(
@@ -208,26 +324,26 @@ function DiscoverListingContent({
         className="flex-1"
         item={item}
         variant="listing"
-        onPress={() =>
-          router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`)
-        }
+        onPress={() => openTitleDetails(item)}
       />
     ),
     [],
   );
   const loadMore = useCallback(() => {
-    setPage((current) => {
-      const nextPage = current + 1;
-
+    setPage((currentPage) => {
       if (
-        listingQuery.isFetching ||
-        listingQuery.isError ||
-        current >= totalPages ||
-        requestedPagesRef.current.has(nextPage)
+        !canRequestNextListingPage({
+          currentPage,
+          isError: listingQuery.isError,
+          isFetching: listingQuery.isFetching,
+          requestedPages: requestedPagesRef.current,
+          totalPages,
+        })
       ) {
-        return current;
+        return currentPage;
       }
 
+      const nextPage = currentPage + 1;
       requestedPagesRef.current.add(nextPage);
 
       return nextPage;
@@ -238,16 +354,16 @@ function DiscoverListingContent({
     <Screen padded={false}>
       <FlatList
         data={results}
-        initialNumToRender={8}
+        initialNumToRender={LISTING_INITIAL_RENDER_COUNT}
         keyExtractor={keyExtractor}
-        maxToRenderPerBatch={8}
-        numColumns={2}
+        maxToRenderPerBatch={LISTING_MAX_RENDER_BATCH}
+        numColumns={LISTING_COLUMN_COUNT}
         removeClippedSubviews
         renderItem={renderItem}
         onEndReached={loadMore}
-        onEndReachedThreshold={0.45}
-        updateCellsBatchingPeriod={80}
-        windowSize={7}
+        onEndReachedThreshold={LISTING_END_REACHED_THRESHOLD}
+        updateCellsBatchingPeriod={LISTING_UPDATE_BATCH_MS}
+        windowSize={LISTING_WINDOW_SIZE}
         columnWrapperClassName="gap-3"
         contentContainerClassName="gap-3 px-5 py-6"
         ListHeaderComponent={
@@ -259,42 +375,20 @@ function DiscoverListingContent({
           />
         }
         ListEmptyComponent={
-          listingQuery.isLoading ? (
-            <View className="pt-2">
-              <LoadingState message={`Loading ${title.toLowerCase()}`} />
-            </View>
-          ) : listingQuery.isError ? (
-            <View className="pt-2">
-              <ErrorState
-                title="Unable to load discovery"
-                message={
-                  listingQuery.error instanceof Error
-                    ? listingQuery.error.message
-                    : 'Discovery data is unavailable right now.'
-                }
-                onRetry={() => listingQuery.refetch()}
-              />
-            </View>
-          ) : (
-            <View className="pt-2">
-              <EmptyState
-                title="Nothing here yet"
-                message="Try another discovery mode or media type."
-              />
-            </View>
-          )
+          <ListingEmptyContent
+            error={listingQuery.error}
+            isError={listingQuery.isError}
+            isLoading={listingQuery.isLoading}
+            title={title}
+            onRetry={() => listingQuery.refetch()}
+          />
         }
         ListFooterComponent={
           results.length > 0 ? (
             <View className="gap-3">
               {listingQuery.isError ? (
-                <ErrorState
-                  title="Unable to load more"
-                  message={
-                    listingQuery.error instanceof Error
-                      ? listingQuery.error.message
-                      : 'More discovery results are unavailable right now.'
-                  }
+                <ListingLoadMoreError
+                  error={listingQuery.error}
                   onRetry={() => listingQuery.refetch()}
                 />
               ) : null}
@@ -312,6 +406,13 @@ function DiscoverListingContent({
   );
 }
 
+/**
+ * Validates route params and renders the full discovery shelf listing.
+ *
+ * @param mode - Route param for the discovery mode.
+ * @param mediaType - Route param for the discovery media category.
+ * @returns The listing screen or a route-level empty state for invalid params.
+ */
 export function DiscoverListingScreen({
   mode,
   mediaType,
