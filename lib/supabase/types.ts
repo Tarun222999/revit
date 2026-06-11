@@ -77,6 +77,86 @@ export type Database = {
           },
         ]
       }
+      list_items: {
+        Row: {
+          created_at: string
+          id: string
+          list_id: string
+          media_item_id: string
+          note: string | null
+          position: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          list_id: string
+          media_item_id: string
+          note?: string | null
+          position?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          list_id?: string
+          media_item_id?: string
+          note?: string | null
+          position?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_items_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "list_items_media_item_id_fkey"
+            columns: ["media_item_id"]
+            isOneToOne: false
+            referencedRelation: "media_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lists: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lists_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       media_discovery_cache: {
         Row: {
           cached_at: string

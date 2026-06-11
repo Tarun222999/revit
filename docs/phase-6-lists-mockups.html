@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Phase 6 Lists Mockups</title>
+    <style>
+      :root {
+        --archive-50: #fbf6ec;
+        --archive-100: #efe4d0;
+        --archive-200: #d8c7a9;
+        --archive-300: #aa9473;
+        --archive-500: #6d583e;
+        --archive-700: #2a211a;
+        --archive-800: #171310;
+        --archive-900: #0d0b09;
+        --gold-300: #e8c77d;
+        --gold-400: #d7a94d;
+        --gold-500: #b9842e;
+        --reel-400: #d46a55;
+        --reel-500: #b94b3b;
+        --teal-300: #8bc6bd;
+        --teal-500: #4d9188;
+        --violet-300: #b9a6f2;
+        --violet-500: #7561c8;
+        --ink-500: #476778;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--archive-900);
+        color: var(--archive-50);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+      }
+
+      .page {
+        padding: 28px;
+      }
+
+      .intro {
+        margin: 0 auto 28px;
+        max-width: 1120px;
+      }
+
+      .eyebrow {
+        color: var(--gold-300);
+        font-size: 13px;
+        font-weight: 800;
+        letter-spacing: 0;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        font-size: 34px;
+        line-height: 1.1;
+        margin: 0 0 10px;
+      }
+
+      .intro p {
+        color: var(--archive-200);
+        font-size: 16px;
+        line-height: 1.6;
+        margin: 0;
+        max-width: 780px;
+      }
+
+      .mockup-grid {
+        align-items: start;
+        display: grid;
+        gap: 24px;
+        grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+        margin: 0 auto;
+        max-width: 1120px;
+      }
+
+      .frame-wrap {
+        display: grid;
+        gap: 12px;
+      }
+
+      .caption {
+        color: var(--archive-100);
+        font-size: 14px;
+        font-weight: 750;
+        margin: 0;
+      }
+
+      .phone {
+        background: var(--archive-900);
+        border: 1px solid var(--archive-700);
+        border-radius: 28px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.38);
+        height: 760px;
+        margin: 0 auto;
+        max-width: 390px;
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+      }
+
+      .screen {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        height: 100%;
+        overflow: auto;
+        padding: 28px 20px 24px;
+        scrollbar-width: none;
+      }
+
+      .screen::-webkit-scrollbar {
+        display: none;
+      }
+
+      .top-row,
+      .action-row,
+      .meta-row,
+      .inline-row {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+      }
+
+      .top-row,
+      .action-row {
+        justify-content: space-between;
+      }
+
+      .title-block {
+        min-width: 0;
+      }
+
+      .title-block h2 {
+        font-size: 30px;
+        line-height: 1.1;
+        margin: 0;
+      }
+
+      .title-block p {
+        color: var(--archive-200);
+        font-size: 13px;
+        line-height: 1.35;
+        margin: 6px 0 0;
+      }
+
+      .icon-button {
+        align-items: center;
+        background: var(--archive-800);
+        border: 1px solid var(--archive-500);
+        border-radius: 999px;
+        color: var(--archive-50);
+        display: grid;
+        flex: 0 0 auto;
+        font-size: 20px;
+        font-weight: 800;
+        height: 44px;
+        justify-content: center;
+        width: 44px;
+      }
+
+      .small-icon {
+        font-size: 16px;
+        height: 36px;
+        width: 36px;
+      }
+
+      .primary-button,
+      .secondary-button,
+      .danger-button {
+        align-items: center;
+        border-radius: 8px;
+        display: flex;
+        font-size: 14px;
+        font-weight: 800;
+        gap: 8px;
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 14px;
+      }
+
+      .primary-button {
+        background: var(--gold-400);
+        color: var(--archive-900);
+      }
+
+      .secondary-button {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-500);
+        color: var(--archive-50);
+      }
+
+      .danger-button {
+        background: rgba(185, 75, 59, 0.16);
+        border: 1px solid rgba(212, 106, 85, 0.65);
+        color: #ffd8cf;
+      }
+
+      .stat-strip {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .stat {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        min-height: 70px;
+        padding: 12px;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 20px;
+        line-height: 1;
+      }
+
+      .stat span {
+        color: var(--archive-200);
+        display: block;
+        font-size: 11px;
+        line-height: 1.25;
+        margin-top: 6px;
+      }
+
+      .section-label {
+        color: var(--archive-100);
+        font-size: 13px;
+        font-weight: 850;
+        margin: 0;
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        align-items: center;
+        background: var(--archive-800);
+        border: 1px solid var(--archive-500);
+        border-radius: 999px;
+        color: var(--archive-100);
+        display: flex;
+        font-size: 12px;
+        font-weight: 800;
+        gap: 6px;
+        min-height: 32px;
+        padding: 7px 10px;
+      }
+
+      .chip.active {
+        background: var(--gold-400);
+        border-color: var(--gold-400);
+        color: var(--archive-900);
+      }
+
+      .dot {
+        border-radius: 999px;
+        display: inline-block;
+        height: 7px;
+        width: 7px;
+      }
+
+      .movie {
+        background: var(--gold-400);
+      }
+
+      .series {
+        background: var(--teal-300);
+      }
+
+      .anime {
+        background: var(--reel-400);
+      }
+
+      .list-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .list-card,
+      .detail-card,
+      .panel,
+      .form-card,
+      .empty-card {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+      }
+
+      .list-card {
+        display: grid;
+        gap: 12px;
+        padding: 12px;
+      }
+
+      .list-card-main {
+        align-items: center;
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 98px minmax(0, 1fr);
+      }
+
+      .cover-collage {
+        display: grid;
+        gap: 5px;
+        grid-template-columns: 1fr 1fr;
+        height: 106px;
+      }
+
+      .mini-poster,
+      .poster,
+      .hero-poster {
+        align-items: end;
+        border-radius: 6px;
+        color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        font-weight: 900;
+        justify-content: start;
+        overflow: hidden;
+        padding: 7px;
+        position: relative;
+      }
+
+      .mini-poster {
+        font-size: 12px;
+        min-height: 50px;
+      }
+
+      .poster {
+        flex: 0 0 auto;
+        font-size: 16px;
+        height: 96px;
+        width: 66px;
+      }
+
+      .hero-poster {
+        font-size: 20px;
+        height: 120px;
+        width: 82px;
+      }
+
+      .mini-poster::before,
+      .poster::before,
+      .hero-poster::before {
+        background: rgba(255, 255, 255, 0.18);
+        content: "";
+        height: 52px;
+        position: absolute;
+        right: -18px;
+        top: -18px;
+        transform: rotate(35deg);
+        width: 70px;
+      }
+
+      .art-1 {
+        background: linear-gradient(135deg, #765c2e, #c79a3c);
+      }
+
+      .art-2 {
+        background: linear-gradient(135deg, #274b52, #8bc6bd);
+      }
+
+      .art-3 {
+        background: linear-gradient(135deg, #773833, #d46a55);
+      }
+
+      .art-4 {
+        background: linear-gradient(135deg, #3c3569, #b9a6f2);
+      }
+
+      .art-5 {
+        background: linear-gradient(135deg, #253d4d, #6da4c8);
+      }
+
+      .art-empty {
+        background:
+          linear-gradient(135deg, rgba(215, 169, 77, 0.22), rgba(139, 198, 189, 0.18)),
+          var(--archive-700);
+        border: 1px dashed var(--archive-500);
+        color: var(--archive-200);
+      }
+
+      .list-info h3,
+      .item-info h3,
+      .panel h3,
+      .form-card h3,
+      .empty-card h3 {
+        font-size: 17px;
+        line-height: 1.2;
+        margin: 0;
+      }
+
+      .list-info p,
+      .item-info p,
+      .panel p,
+      .form-card p,
+      .empty-card p {
+        color: var(--archive-200);
+        font-size: 12px;
+        line-height: 1.4;
+        margin: 6px 0 0;
+      }
+
+      .list-footer {
+        align-items: center;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .type-counts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .count-pill {
+        background: rgba(251, 246, 236, 0.06);
+        border: 1px solid rgba(216, 199, 169, 0.16);
+        border-radius: 999px;
+        color: var(--archive-100);
+        font-size: 11px;
+        font-weight: 800;
+        padding: 5px 8px;
+      }
+
+      .updated {
+        color: var(--archive-300);
+        flex: 0 0 auto;
+        font-size: 11px;
+        font-weight: 750;
+      }
+
+      .detail-hero {
+        background:
+          linear-gradient(180deg, rgba(13, 11, 9, 0), rgba(13, 11, 9, 0.86)),
+          linear-gradient(135deg, rgba(215, 169, 77, 0.4), rgba(139, 198, 189, 0.25)),
+          var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        min-height: 184px;
+        padding: 14px;
+      }
+
+      .detail-hero .top-row {
+        align-items: flex-start;
+      }
+
+      .hero-copy {
+        margin-top: 54px;
+      }
+
+      .hero-copy h2 {
+        font-size: 28px;
+        line-height: 1.05;
+        margin: 0;
+      }
+
+      .hero-copy p {
+        color: var(--archive-200);
+        font-size: 13px;
+        line-height: 1.4;
+        margin: 8px 0 0;
+      }
+
+      .item-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .item-card {
+        background: var(--archive-800);
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 66px minmax(0, 1fr) 34px;
+        padding: 10px;
+      }
+
+      .item-info {
+        min-width: 0;
+      }
+
+      .item-info h3 {
+        font-size: 15px;
+      }
+
+      .media-badge,
+      .rating-badge,
+      .note-badge {
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 850;
+        padding: 5px 8px;
+      }
+
+      .media-badge.movie-badge {
+        background: rgba(215, 169, 77, 0.16);
+        color: var(--gold-300);
+      }
+
+      .media-badge.series-badge {
+        background: rgba(139, 198, 189, 0.16);
+        color: var(--teal-300);
+      }
+
+      .media-badge.anime-badge {
+        background: rgba(212, 106, 85, 0.18);
+        color: #f1aa9d;
+      }
+
+      .rating-badge {
+        background: rgba(251, 246, 236, 0.08);
+        color: var(--archive-100);
+      }
+
+      .note-badge {
+        background: rgba(117, 97, 200, 0.2);
+        color: var(--violet-300);
+      }
+
+      .ghost-link {
+        color: var(--gold-300);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .divider {
+        background: var(--archive-700);
+        height: 1px;
+        width: 100%;
+      }
+
+      .title-preview {
+        align-items: center;
+        background:
+          linear-gradient(180deg, rgba(13, 11, 9, 0), rgba(13, 11, 9, 0.88)),
+          linear-gradient(135deg, rgba(71, 103, 120, 0.82), rgba(215, 169, 77, 0.42));
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: flex;
+        gap: 14px;
+        min-height: 190px;
+        padding: 14px;
+      }
+
+      .title-preview-copy {
+        min-width: 0;
+      }
+
+      .title-preview-copy h2 {
+        font-size: 25px;
+        line-height: 1.05;
+        margin: 0;
+      }
+
+      .title-preview-copy p {
+        color: var(--archive-200);
+        font-size: 12px;
+        line-height: 1.35;
+        margin: 7px 0 0;
+      }
+
+      .bottom-panel {
+        background: var(--archive-800);
+        border-top: 1px solid var(--archive-700);
+        border-radius: 18px 18px 0 0;
+        bottom: 0;
+        box-shadow: 0 -18px 45px rgba(0, 0, 0, 0.35);
+        display: grid;
+        gap: 12px;
+        left: 0;
+        padding: 16px 18px 22px;
+        position: absolute;
+        right: 0;
+      }
+
+      .handle {
+        background: var(--archive-500);
+        border-radius: 999px;
+        height: 4px;
+        justify-self: center;
+        width: 48px;
+      }
+
+      .membership-row {
+        align-items: center;
+        border: 1px solid var(--archive-700);
+        border-radius: 8px;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 34px minmax(0, 1fr) auto;
+        padding: 10px;
+      }
+
+      .check {
+        align-items: center;
+        border: 1px solid var(--archive-500);
+        border-radius: 999px;
+        color: transparent;
+        display: grid;
+        font-size: 13px;
+        font-weight: 900;
+        height: 28px;
+        justify-content: center;
+        width: 28px;
+      }
+
+      .check.active {
+        background: var(--gold-400);
+        border-color: var(--gold-400);
+        color: var(--archive-900);
+      }
+
+      .membership-row h4 {
+        font-size: 14px;
+        line-height: 1.15;
+        margin: 0;
+      }
+
+      .membership-row p {
+        color: var(--archive-200);
+        font-size: 11px;
+        margin: 4px 0 0;
+      }
+
+      .form-card,
+      .empty-card,
+      .panel {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+      }
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      .field label {
+        color: var(--archive-200);
+        font-size: 12px;
+        font-weight: 850;
+      }
+
+      .input,
+      .textarea {
+        background: var(--archive-900);
+        border: 1px solid var(--archive-500);
+        border-radius: 8px;
+        color: var(--archive-50);
+        font-size: 14px;
+        min-height: 44px;
+        padding: 11px 12px;
+      }
+
+      .textarea {
+        line-height: 1.45;
+        min-height: 96px;
+      }
+
+      .suggestion-grid {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .suggestion {
+        background: rgba(251, 246, 236, 0.05);
+        border: 1px solid rgba(216, 199, 169, 0.16);
+        border-radius: 8px;
+        color: var(--archive-100);
+        font-size: 12px;
+        font-weight: 800;
+        min-height: 40px;
+        padding: 10px;
+      }
+
+      .empty-art {
+        align-items: center;
+        background:
+          linear-gradient(135deg, rgba(215, 169, 77, 0.16), rgba(139, 198, 189, 0.12)),
+          var(--archive-900);
+        border: 1px dashed var(--archive-500);
+        border-radius: 8px;
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(4, 1fr);
+        min-height: 92px;
+        padding: 12px;
+      }
+
+      .empty-spine {
+        border-radius: 6px;
+        min-height: 62px;
+      }
+
+      .empty-spine:nth-child(1) {
+        background: var(--gold-500);
+      }
+
+      .empty-spine:nth-child(2) {
+        background: var(--teal-500);
+      }
+
+      .empty-spine:nth-child(3) {
+        background: var(--reel-500);
+      }
+
+      .empty-spine:nth-child(4) {
+        background: var(--violet-500);
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          padding: 18px;
+        }
+
+        .mockup-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="intro">
+        <p class="eyebrow">Phase 6 Visual Planning</p>
+        <h1>Lists Mockups</h1>
+        <p>
+          Static mobile mockups for the mixed-media Lists overview, Single List Details,
+          Title Details Add to List panel, and lightweight create/empty states.
+        </p>
+      </section>
+
+      <section class="mockup-grid" aria-label="Phase 6 Lists mockups">
+        <div class="frame-wrap">
+          <p class="caption">Lists overview</p>
+          <div class="phone">
+            <div class="screen">
+              <div class="top-row">
+                <div class="title-block">
+                  <h2>Lists</h2>
+                  <p>5 collections across 41 saved titles</p>
+                </div>
+                <div class="icon-button" aria-label="Create list">+</div>
+              </div>
+
+              <div class="stat-strip">
+                <div class="stat">
+                  <strong>5</strong>
+                  <span>custom lists</span>
+                </div>
+                <div class="stat">
+                  <strong>41</strong>
+                  <span>saved titles</span>
+                </div>
+                <div class="stat">
+                  <strong>3</strong>
+                  <span>recent adds</span>
+                </div>
+              </div>
+
+              <div class="action-row">
+                <p class="section-label">Your collections</p>
+                <div class="chip active">Recent</div>
+              </div>
+
+              <div class="list-stack">
+                <article class="list-card">
+                  <div class="list-card-main">
+                    <div class="cover-collage" aria-hidden="true">
+                      <div class="mini-poster art-1">DP</div>
+                      <div class="mini-poster art-2">SV</div>
+                      <div class="mini-poster art-3">FR</div>
+                      <div class="mini-poster art-4">EE</div>
+                    </div>
+                    <div class="list-info">
+                      <h3>Favorites</h3>
+                      <p>The titles that still sit in my head after the credits.</p>
+                      <div class="meta-row">
+                        <span class="count-pill">14 titles</span>
+                        <span class="count-pill">mixed media</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="list-footer">
+                    <div class="type-counts">
+                      <span class="count-pill"><span class="dot movie"></span> 6 movies</span>
+                      <span class="count-pill"><span class="dot series"></span> 5 series</span>
+                      <span class="count-pill"><span class="dot anime"></span> 3 anime</span>
+                    </div>
+                    <span class="updated">Today</span>
+                  </div>
+                </article>
+
+                <article class="list-card">
+                  <div class="list-card-main">
+                    <div class="cover-collage" aria-hidden="true">
+                      <div class="mini-poster art-5">TH</div>
+                      <div class="mini-poster art-3">JJK</div>
+                      <div class="mini-poster art-2">AN</div>
+                      <div class="mini-poster art-1">OP</div>
+                    </div>
+                    <div class="list-info">
+                      <h3>Watch Next</h3>
+                      <p>Shortlist for the next open weekend.</p>
+                      <div class="meta-row">
+                        <span class="count-pill">9 titles</span>
+                        <span class="count-pill">2 notes</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="list-footer">
+                    <div class="type-counts">
+                      <span class="count-pill"><span class="dot movie"></span> 3 movies</span>
+                      <span class="count-pill"><span class="dot series"></span> 4 series</span>
+                    </div>
+                    <span class="updated">Jun 8</span>
+                  </div>
+                </article>
+
+                <article class="list-card">
+                  <div class="list-card-main">
+                    <div class="cover-collage" aria-hidden="true">
+                      <div class="mini-poster art-4">FM</div>
+                      <div class="mini-poster art-2">AT</div>
+                      <div class="mini-poster art-1">BB</div>
+                      <div class="mini-poster art-3">YL</div>
+                    </div>
+                    <div class="list-info">
+                      <h3>Best Endings</h3>
+                      <p>Finales and closing scenes that actually landed.</p>
+                      <div class="meta-row">
+                        <span class="count-pill">8 titles</span>
+                        <span class="count-pill">curated</span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="list-card">
+                  <div class="list-card-main">
+                    <div class="cover-collage" aria-hidden="true">
+                      <div class="mini-poster art-empty">+</div>
+                      <div class="mini-poster art-empty">+</div>
+                      <div class="mini-poster art-empty">+</div>
+                      <div class="mini-poster art-empty">+</div>
+                    </div>
+                    <div class="list-info">
+                      <h3>Comfort Rewatches</h3>
+                      <p>No items yet. Start with a title from Search or Title Details.</p>
+                      <div class="meta-row">
+                        <span class="count-pill">0 titles</span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <p class="caption">Single List Details</p>
+          <div class="phone">
+            <div class="screen">
+              <div class="top-row">
+                <div class="icon-button small-icon" aria-label="Back">‹</div>
+                <div class="inline-row">
+                  <div class="icon-button small-icon" aria-label="Edit list">✎</div>
+                  <div class="icon-button small-icon" aria-label="More">⋯</div>
+                </div>
+              </div>
+
+              <section class="detail-hero">
+                <div class="top-row">
+                  <div class="chip active">9 titles</div>
+                  <div class="chip">Mixed media</div>
+                </div>
+                <div class="hero-copy">
+                  <h2>Watch Next</h2>
+                  <p>Shortlist for the next open weekend. Movies, series, and anime can live together here.</p>
+                </div>
+              </section>
+
+              <div class="action-row">
+                <div class="secondary-button">✎ Edit list</div>
+                <div class="primary-button">+ Add items</div>
+              </div>
+
+              <div class="action-row">
+                <p class="section-label">List items</p>
+                <div class="chip">Recent first</div>
+              </div>
+
+              <div class="item-list">
+                <article class="item-card">
+                  <div class="poster art-1" aria-hidden="true">DP</div>
+                  <div class="item-info">
+                    <h3>Dune: Part Two</h3>
+                    <p>2024 · Added today</p>
+                    <div class="chip-row">
+                      <span class="media-badge movie-badge">Movie</span>
+                      <span class="rating-badge">4.5 / 5</span>
+                    </div>
+                    <p class="ghost-link">Note: save for a big-screen night</p>
+                  </div>
+                  <div class="icon-button small-icon" aria-label="Remove">×</div>
+                </article>
+
+                <article class="item-card">
+                  <div class="poster art-2" aria-hidden="true">SV</div>
+                  <div class="item-info">
+                    <h3>Severance</h3>
+                    <p>2022 · Added yesterday</p>
+                    <div class="chip-row">
+                      <span class="media-badge series-badge">Series</span>
+                      <span class="rating-badge">Unrated</span>
+                    </div>
+                    <p class="ghost-link">Add note</p>
+                  </div>
+                  <div class="icon-button small-icon" aria-label="Remove">×</div>
+                </article>
+
+                <article class="item-card">
+                  <div class="poster art-3" aria-hidden="true">FR</div>
+                  <div class="item-info">
+                    <h3>Frieren</h3>
+                    <p>2023 · Added Jun 7</p>
+                    <div class="chip-row">
+                      <span class="media-badge anime-badge">Anime</span>
+                      <span class="rating-badge">5 / 5</span>
+                    </div>
+                    <p class="ghost-link">Note: quiet fantasy mood</p>
+                  </div>
+                  <div class="icon-button small-icon" aria-label="Remove">×</div>
+                </article>
+
+                <article class="item-card">
+                  <div class="poster art-5" aria-hidden="true">TH</div>
+                  <div class="item-info">
+                    <h3>The Bear</h3>
+                    <p>2022 · Added Jun 4</p>
+                    <div class="chip-row">
+                      <span class="media-badge series-badge">Series</span>
+                      <span class="rating-badge">4 / 5</span>
+                    </div>
+                    <p class="ghost-link">Add note</p>
+                  </div>
+                  <div class="icon-button small-icon" aria-label="Remove">×</div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <p class="caption">Add to List from Title Details</p>
+          <div class="phone">
+            <div class="screen">
+              <section class="title-preview">
+                <div class="hero-poster art-1" aria-hidden="true">DP</div>
+                <div class="title-preview-copy">
+                  <div class="chip">Movie · 2024</div>
+                  <h2>Dune: Part Two</h2>
+                  <p>Your journal entry is saved. Add this title to any mixed-media list.</p>
+                  <div class="primary-button">+ Add to List</div>
+                </div>
+              </section>
+
+              <section class="detail-card panel">
+                <p class="section-label">Your Entry</p>
+                <div class="chip-row">
+                  <span class="chip active">Completed</span>
+                  <span class="chip">4.5 / 5</span>
+                  <span class="chip">Reviewed</span>
+                </div>
+                <p>Epic, strange, and surprisingly patient for something this huge.</p>
+              </section>
+            </div>
+
+            <section class="bottom-panel">
+              <div class="handle"></div>
+              <div class="top-row">
+                <div class="title-block">
+                  <h2 style="font-size: 22px">Add to List</h2>
+                  <p>Dune: Part Two is in 2 lists</p>
+                </div>
+                <div class="icon-button small-icon" aria-label="Close">×</div>
+              </div>
+
+              <div class="membership-row">
+                <div class="check active">✓</div>
+                <div>
+                  <h4>Favorites</h4>
+                  <p>14 titles · updated today</p>
+                </div>
+                <span class="count-pill">Saved</span>
+              </div>
+
+              <div class="membership-row">
+                <div class="check active">✓</div>
+                <div>
+                  <h4>Watch Next</h4>
+                  <p>9 titles · 2 notes</p>
+                </div>
+                <span class="count-pill">Saved</span>
+              </div>
+
+              <div class="membership-row">
+                <div class="check">✓</div>
+                <div>
+                  <h4>Best Endings</h4>
+                  <p>8 titles · mixed media</p>
+                </div>
+                <span class="updated">Add</span>
+              </div>
+
+              <div class="divider"></div>
+              <div class="secondary-button">+ Create new list</div>
+            </section>
+          </div>
+        </div>
+
+        <div class="frame-wrap">
+          <p class="caption">Create list and empty list states</p>
+          <div class="phone">
+            <div class="screen">
+              <div class="top-row">
+                <div class="title-block">
+                  <h2>New List</h2>
+                  <p>Keep list creation fast and screen-owned</p>
+                </div>
+                <div class="icon-button" aria-label="Close">×</div>
+              </div>
+
+              <section class="form-card">
+                <h3>Create List</h3>
+                <p>Lists can mix movies, series, and anime by default.</p>
+                <div class="field">
+                  <label for="list-name">Name</label>
+                  <div class="input" id="list-name">Summer Queue</div>
+                </div>
+                <div class="field">
+                  <label for="list-description">Description</label>
+                  <div class="textarea" id="list-description">
+                    Breezy watches and a few shows to start before the season gets busy.
+                  </div>
+                </div>
+                <div class="action-row">
+                  <div class="secondary-button">Cancel</div>
+                  <div class="primary-button">Save list</div>
+                </div>
+              </section>
+
+              <section class="panel">
+                <p class="section-label">Starter ideas</p>
+                <div class="suggestion-grid">
+                  <div class="suggestion">Favorites</div>
+                  <div class="suggestion">Watch Next</div>
+                  <div class="suggestion">Best Endings</div>
+                  <div class="suggestion">Comfort Rewatches</div>
+                </div>
+              </section>
+
+              <section class="empty-card">
+                <div class="empty-art" aria-hidden="true">
+                  <div class="empty-spine"></div>
+                  <div class="empty-spine"></div>
+                  <div class="empty-spine"></div>
+                  <div class="empty-spine"></div>
+                </div>
+                <h3>Summer Queue is empty</h3>
+                <p>Add titles from Search, Discover, or Title Details. Mixed media belongs together here.</p>
+                <div class="primary-button">+ Add items</div>
+              </section>
+
+              <section class="panel">
+                <p class="section-label">Delete confirmation</p>
+                <p>Deleting a list removes the collection but keeps the titles and journal entries untouched.</p>
+                <div class="danger-button">Delete list</div>
+              </section>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
