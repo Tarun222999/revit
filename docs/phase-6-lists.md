@@ -59,7 +59,7 @@ Do not implement unrelated product work in Phase 6.
 Specifically, do not implement:
 
 - Profile stats or created-lists summary
-- Dashboard list summaries
+- dashboard list summaries
 - public lists
 - list sharing
 - comments, likes, follows, or other social features
@@ -71,7 +71,7 @@ Specifically, do not implement:
 - long-form reviews
 - a new core modal route unless the user explicitly approves it
 
-Profile and Dashboard summaries remain Phase 7. Settings and account management remain Phase 8.
+Profile summaries remain Phase 7. Settings and account management remain Phase 8. No separate dashboard surface is planned for v1.
 
 ## Current Starting Point
 
@@ -624,7 +624,7 @@ Phase 6 is complete when:
 10. Users can remove titles from lists.
 11. Optional `list_items.note` is supported or explicitly deferred within Phase 6.
 12. Lists remain mixed-media by default.
-13. Profile and Dashboard summaries remain deferred to Phase 7.
+13. Profile summaries remain deferred to Phase 7.
 14. No direct TMDB client calls are introduced.
 15. `npm run typecheck` passes.
 16. `npm run lint` passes.
@@ -664,8 +664,8 @@ Phase 6 should leave Phase 7 with:
 
 - user-created mixed-media lists
 - list item metadata ready for profile summaries
-- list counts and cover media ready for dashboard/profile surfaces
+- list counts and cover media ready for profile summary surfaces
 - Title Details Add to List integration
 - stable list query keys and mutations
 
-Phase 7 can then build Profile and Dashboard summaries without reworking list ownership or list item data.
+Phase 7 can then build Profile summaries without reworking list ownership or list item data.

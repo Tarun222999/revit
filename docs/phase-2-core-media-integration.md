@@ -30,7 +30,7 @@ Do not build unrelated product features in Phase 2.
 
 Specifically, do not implement:
 
-- Home Discover rails as final UI
+- Discover rails as final UI
 - full Search screen polish
 - Title Details final visual design
 - journal entry creation or editing
@@ -619,7 +619,7 @@ Phase 3 should begin after the app can search and load normalized media through 
 
 Phase 3 can then build:
 
-- Home Discover and Dashboard shell
+- Discover shell
 - Search screen UI
 - media type filters
 - trending and content rails

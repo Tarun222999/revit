@@ -62,7 +62,7 @@ app/
     onboarding.tsx
   (tabs)/
     _layout.tsx
-    home.tsx
+    discover.tsx
     search.tsx
     journal.tsx
     lists.tsx
@@ -80,7 +80,7 @@ Notes:
 
 - `(auth)` contains auth flow screens
 - `/welcome` is the auth entry route, while `/` redirects into the main tab shell during Phase 0
-- `(tabs)` contains primary destinations: Home, Search, Journal, and Lists
+- `(tabs)` contains primary destinations: Discover, Search, Journal, and Lists
 - `profile.tsx` is a shared pushed screen accessed from the top-right avatar/profile action
 - `modals/` contains modal routes such as add/edit journal entry
 
@@ -401,7 +401,7 @@ features/auth/
 
 Owns:
 
-- Home Discover tab
+- Discover tab
 - trending rails
 - category rails
 - search results shaping

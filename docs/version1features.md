@@ -69,9 +69,9 @@ Version 1 should be:
     - Mixed-media lists by default
     - Examples: Favorites, Watch Next, Best Endings
 
-12. `Home`
-    - Discover tab
-    - Personal dashboard tab
+12. `Discover`
+    - Trending and category browsing
+    - No separate personal dashboard in v1
 
 13. `Profile`
     - Personal identity and summary
@@ -129,7 +129,7 @@ The final v1 structure is:
 1. Welcome / Auth
 2. Email Code
 3. Onboarding / Create Profile
-4. Home
+4. Discover
 5. Search
 6. Journal
 7. Lists
@@ -146,7 +146,7 @@ The final v1 structure is:
 
 ### Bottom Tabs
 
-- Home
+- Discover
 - Search
 - Journal
 - Lists
@@ -198,15 +198,9 @@ The final v1 structure is:
 - Optional media-interest chips
 - Continue button
 
-### 4. Home
+### 4. Discover
 
-- Header with greeting and avatar/profile action
-- Segmented switch:
-  - Discover
-  - Dashboard
-
-#### Discover
-
+- Header with avatar/profile action
 - Featured banner or hero section
 - Trending Now row
 - Movies row
@@ -215,13 +209,7 @@ The final v1 structure is:
 - Games row
 - Optional recently released row
 
-#### Dashboard
-
-- Quick actions
-- In Progress row
-- Recently Added list
-- Recent Reviews list
-- Stats strip
+There is no separate dashboard in v1. Personal summary content belongs on Profile, while entry management belongs in Journal.
 
 ### 5. Search
 
@@ -359,7 +347,7 @@ This should be a modal, not a normal pushed screen.
 
 ## Key Product Rules
 
-- `Home` should combine discovery and personal dashboard using a segmented switch.
+- `Discover` should be the single browsing-focused home surface, without a separate dashboard segment in v1.
 - `Journal` should support both Timeline and Calendar views.
 - `Lists` should be mixed-media by default.
 - `Profile` should represent identity, taste, and summary.

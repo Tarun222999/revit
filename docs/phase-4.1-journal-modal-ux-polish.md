@@ -4,7 +4,7 @@
 
 Phase 4.1 refines the Add/Edit Journal Entry modal after the Phase 4 CRUD flow is working.
 
-This phase should make the modal feel intentional, mobile-ready, and production-minded without expanding the product scope into Journal Timeline, Calendar, Lists, Dashboard, Profile, or Settings work.
+This phase should make the modal feel intentional, mobile-ready, and production-minded without expanding the product scope into Journal Timeline, Calendar, Lists, Profile, or Settings work.
 
 ## Phase Goal
 
@@ -28,7 +28,7 @@ Specifically, do not implement:
 - Journal Timeline view
 - Journal Calendar view
 - journal filtering and sorting
-- Dashboard personalization
+- dashboard personalization
 - list creation
 - Add to List behavior
 - list selection inside the journal entry modal

@@ -46,7 +46,7 @@ Specifically, do not implement:
 - Lists or Add to List behavior
 - Single List Details
 - Profile stats
-- Dashboard personalization
+- dashboard personalization
 - settings or account-management flows
 - new journal event history tables
 - direct TMDB calls from the client
@@ -55,7 +55,7 @@ Specifically, do not implement:
 - long-form reviews
 - changing the Phase 5 Timeline model unless a bug requires it
 
-Add to List remains Phase 6. Profile and Dashboard summary work remains Phase 7.
+Add to List remains Phase 6. Profile summary work remains Phase 7.
 
 ## Dependency On Phase 5
 
@@ -348,7 +348,7 @@ Phase 5.1 is complete when:
 10. Calendar has loading, empty, no-month-activity, selected-day empty, and error handling.
 11. Tapping a Calendar entry navigates to Title Details.
 12. Lists and Add to List remain deferred.
-13. Profile and Dashboard summary work remains deferred.
+13. Profile summary work remains deferred.
 14. No direct TMDB client calls are introduced.
 15. `npm run typecheck` passes.
 16. `npm run lint` passes.
