@@ -73,18 +73,16 @@ Version 1 should be:
     - Trending and category browsing
     - No separate personal dashboard in v1
 
-13. `Profile`
-    - Personal identity and summary
-    - Stats, top-rated items, recent reviews, created lists
-
-14. `Basic settings`
-    - Edit profile
+13. `Profile / Account`
+    - Personal identity
+    - Edit profile details
     - Avatar update
-    - Connected accounts
+    - Connected accounts where available
+    - Privacy Policy, Terms of Use, Credits / Attributions, and Support
     - Sign out
     - Delete account
 
-15. `Usability essentials`
+14. `Usability essentials`
     - Loading states
     - Empty states
     - Validation
@@ -121,7 +119,7 @@ Notes:
 
 The final v1 structure is:
 
-- `11 core screens`
+- `10 core screens`
 - `1 core modal`
 
 ### Screens
@@ -133,14 +131,13 @@ The final v1 structure is:
 5. Search
 6. Journal
 7. Lists
-8. Profile
+8. Profile / Account
 9. Title Details
 10. Single List Details
-11. Settings
 
 ### Modal
 
-12. Add / Edit Journal Entry
+11. Add / Edit Journal Entry
 
 ## Navigation Structure
 
@@ -153,14 +150,13 @@ The final v1 structure is:
 
 ### Top-Right Avatar Entry
 
-- Profile
+- Profile / Account
 
 ### Shared Push Screens
 
 - Title Details
 - Single List Details
-- Profile
-- Settings
+- Profile / Account
 
 ### Modal
 
@@ -209,7 +205,7 @@ The final v1 structure is:
 - Games row
 - Optional recently released row
 
-There is no separate dashboard in v1. Personal summary content belongs on Profile, while entry management belongs in Journal.
+There is no separate dashboard or Home tab in v1. Discover is the browsing-focused home surface, while entry management belongs in Journal and account actions belong in Profile / Account.
 
 ### 5. Search
 
@@ -266,25 +262,23 @@ There is no separate dashboard in v1. Personal summary content belongs on Profil
 
 Lists should support mixed media by default.
 
-### 8. Profile
+### 8. Profile / Account
 
 - Accessed from the top-right avatar/profile action, not the bottom tab bar
-- Settings icon
 - Avatar
 - Display name
 - Username
-- Stats row:
-  - Entries
-  - Reviews
-  - Lists
-  - Completed
-- Top Rated section
-- Favorite Genres / Categories section
-- Most Logged Media Types section
-- Recent Reviews section
-- Created Lists section
+- Edit profile details
+- Update avatar
+- Connected accounts where available
+- Privacy Policy
+- Terms of Use
+- Credits / Attributions
+- Support
+- Sign Out
+- Delete Account
 
-The Profile screen is summary-focused.
+The Profile / Account screen is account-focused. It should not become a taste dashboard in v1.
 
 ### 9. Title Details
 
@@ -318,19 +312,7 @@ The Profile screen is summary-focused.
   - Media type badge
   - Optional user rating
 
-### 11. Settings
-
-- Edit Profile
-- Change Avatar
-- Connected Accounts
-- Privacy Policy
-- Terms of Use
-- Credits / Attributions
-- Support
-- Sign Out
-- Delete Account
-
-### 12. Add / Edit Journal Entry Modal
+### 11. Add / Edit Journal Entry Modal
 
 - Close button
 - Title and thumbnail
@@ -350,7 +332,7 @@ This should be a modal, not a normal pushed screen.
 - `Discover` should be the single browsing-focused home surface, without a separate dashboard segment in v1.
 - `Journal` should support both Timeline and Calendar views.
 - `Lists` should be mixed-media by default.
-- `Profile` should represent identity, taste, and summary.
+- `Profile / Account` should own identity, avatar, legal/support, sign out, and account deletion.
 - `Journal` should focus on managing and browsing entries.
 - `Add / Edit Journal Entry` should stay fast and frictionless.
 
@@ -369,5 +351,6 @@ This should be a modal, not a normal pushed screen.
 - Direct messaging
 - Recommendation engine
 - Gamification
+- Standalone profile summary dashboard
 - Long-form blog-style reviews
 - Deep progress tracking like episode counts or game hours

@@ -4,7 +4,7 @@
 
 This document defines a focused polish phase for Lists after Phase 6 and before Phase 7.
 
-Phase 6 made Lists functionally complete. Phase 6.1 should make the Lists experience feel intentional, clear, and production-ready before Profile Summary work starts.
+Phase 6 made Lists functionally complete. Phase 6.1 should make the Lists experience feel intentional, clear, and production-ready before Profile / Account work starts.
 
 ## Phase Goal
 
@@ -20,7 +20,7 @@ By the end of Phase 6.1:
 - Add to List should use saved-style selected and unselected affordances instead of vague add/remove labels
 - users should be able to quickly create a list inside Add to List
 - Lists should remain mixed-media by default
-- Profile Summary work should remain deferred to Phase 7
+- Profile / Account work should remain deferred to Phase 7
 
 ## Why This Phase Exists
 
@@ -57,7 +57,7 @@ Phase 6.1 must follow the locked product rules:
 
 - Lists are mixed-media by default.
 - Journal remains management-focused.
-- Profile remains summary-focused and deferred to Phase 7.
+- Profile / Account remains account-focused and deferred to Phase 7.
 - Add/Edit Journal Entry remains the only core app modal route.
 - Add to List can use a component-level bottom sheet or panel.
 - Do not introduce a new Expo Router modal route unless necessary and explicitly approved.
@@ -71,7 +71,7 @@ Do not implement unrelated product work in Phase 6.1.
 
 Specifically, do not implement:
 
-- Profile Summary
+- Profile / Account
 - dashboard or home personalization
 - public lists
 - list sharing
@@ -277,7 +277,7 @@ Phase 6.1 is complete when:
 10. Add to List uses saved-style selected and unselected check controls.
 11. Users can create a list inside Add to List.
 12. Lists remain mixed-media by default.
-13. Profile Summary remains deferred to Phase 7.
+13. Profile / Account remains deferred to Phase 7.
 14. No direct TMDB client calls are introduced.
 15. `npm run typecheck` passes.
 16. `npm run lint` passes.
@@ -322,6 +322,6 @@ Phase 6.1 should leave Phase 7 with:
 - clearer list item note actions
 - a more natural saved-to-list interaction from Title Details
 - quick list creation available where users need it
-- stable list data ready for Profile Summary surfaces
+- stable list data ready for future account or quality-hardening work
 
-Phase 7 can then build Profile Summary without reworking the Lists UX model.
+Phase 7 can then build Profile / Account without reworking the Lists UX model.

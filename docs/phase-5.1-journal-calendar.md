@@ -89,7 +89,7 @@ Phase 5.1 must follow the locked product rules:
 
 - Journal uses Timeline and Calendar.
 - Journal is management-focused.
-- Profile is summary-focused and deferred.
+- Profile / Account is account-focused and deferred.
 - Lists are mixed-media by default and deferred to Phase 6.
 - Calendar activity is based on entry created date for v1.
 - External content APIs are not called directly from the client.

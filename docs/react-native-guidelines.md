@@ -426,7 +426,8 @@ Unless there is a strong reason otherwise:
 - use `Supabase Edge Functions` for external API integration
 - use `Supabase Postgres` with generated types
 - keep journal entry creation/editing in a modal flow
-- keep Profile summary-focused
+- keep Profile / Account focused on identity, avatar, legal/support, sign out, and account deletion
+- keep Discover as the browsing-focused home surface without a separate dashboard or Home tab
 - keep Journal management-focused
 - keep Lists mixed-media by default
 

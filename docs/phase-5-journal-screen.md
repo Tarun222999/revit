@@ -94,7 +94,7 @@ Phase 5 must follow the locked stack:
 Phase 5 must follow the locked product rules:
 
 - Journal is management-focused.
-- Profile is summary-focused and deferred.
+- Profile / Account is account-focused and deferred.
 - Lists are mixed-media by default and deferred to Phase 6.
 - External content APIs are not called directly from the client.
 - Media metadata should come from normalized `media_items` data already persisted through the app's backend flow.

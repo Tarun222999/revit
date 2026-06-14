@@ -24,8 +24,7 @@ Ship a production-ready `journal-first` app that supports:
 - journal entry creation and editing
 - timeline and calendar journal views
 - mixed-media lists
-- profile summary
-- settings and account management
+- profile, settings, and account management
 
 ## Development Phases
 
@@ -190,47 +189,30 @@ Deliverable:
 
 - user can create and manage custom lists
 
-## Phase 7: Profile Summary
+## Phase 7: Profile, Settings, And Account Management
 
 Goal:
 
-- make the app feel personal and reflective, not just functional
+- complete the user account surface and remove remaining dashboard/home ambiguity
 
 Outline:
 
-- build Profile screen
-- calculate user stats
-- show top-rated items
-- show recent reviews
-- show created lists
-- keep Profile summary-focused rather than account-management-focused
-- keep in-progress and recently added entry management in Journal
+- replace the current placeholder profile screen with a practical account screen
+- support profile identity display and editing
+- support avatar update
+- add connected accounts section where available
+- add Privacy Policy, Terms of Use, Credits / Attributions, and Support entry points
+- support sign out
+- support account deletion
+- remove the remaining dashboard-style `Home` tab/route and keep `Discover` as the browsing-focused home surface
+- keep Journal as the management surface for entries
+- keep Lists as the management surface for collections
 
 Deliverable:
 
-- user can see their identity, taste, activity, and summary at a glance
+- app includes essential profile, account, and legal management flows from the avatar-accessed profile/account surface, while Discover remains the only browsing home
 
-## Phase 8: Settings and Account Management
-
-Goal:
-
-- complete the production-ready account experience
-
-Outline:
-
-- build Settings screen
-- edit profile flow
-- avatar update flow
-- connected accounts section
-- sign out flow
-- account deletion flow
-- add Privacy Policy / Terms / Credits entry points
-
-Deliverable:
-
-- app includes essential account and legal management flows
-
-## Phase 9: Quality and Production Hardening
+## Phase 8: Quality and Production Hardening
 
 Goal:
 
@@ -252,7 +234,7 @@ Deliverable:
 
 - v1 is stable enough for store submission preparation
 
-## Phase 10: Launch Preparation
+## Phase 9: Launch Preparation
 
 Goal:
 
@@ -281,10 +263,9 @@ Deliverable:
 6. Title details and journal entry flow
 7. Journal screen
 8. Lists
-9. Profile summary
-10. Settings and account management
-11. Quality hardening
-12. Launch preparation
+9. Profile, settings, and account management
+10. Quality hardening
+11. Launch preparation
 
 ## What Is Intentionally Deferred
 
@@ -292,6 +273,7 @@ Deliverable:
 - social features
 - comments and likes
 - recommendation engine
+- standalone profile summary dashboard
 - long-form reviews
 - detailed progress tracking beyond current v1 scope
 
