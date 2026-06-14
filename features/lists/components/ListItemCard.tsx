@@ -165,13 +165,14 @@ export function ListItemCard({
           onStartShouldSetResponder={() => true}>
           <Pressable
             accessibilityRole="button"
-            className="min-h-9 justify-center rounded-full border border-archive-500 px-4"
+            accessibilityLabel={item.note ? 'Edit list item note' : 'Add list item note'}
+            className="min-h-8 justify-center rounded-full border border-archive-600 px-3"
             disabled={isRemoving || isSavingNote}
             onPress={(event) => {
               stopCardPress(event);
               setIsEditingNote(true);
             }}>
-            <Text className="text-sm font-semibold text-gold-300">
+            <Text className="text-xs font-semibold text-archive-200">
               {item.note ? 'Edit Note' : 'Add Note'}
             </Text>
           </Pressable>

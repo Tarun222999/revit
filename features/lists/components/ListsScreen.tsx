@@ -10,18 +10,13 @@ import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { DeleteListConfirmation } from '@/features/lists/components/DeleteListConfirmation';
 import { ListCard } from '@/features/lists/components/ListCard';
 import {
   ListForm,
   validateListForm,
   type ListFormValues,
 } from '@/features/lists/components/ListForm';
-import {
-  useCreateList,
-  useDeleteList,
-  useUpdateList,
-} from '@/features/lists/hooks/useListMutations';
+import { useCreateList } from '@/features/lists/hooks/useListMutations';
 import { useUserLists } from '@/features/lists/hooks/useUserLists';
 import type { UserListSummary } from '@/features/lists/types';
 
@@ -30,8 +25,6 @@ const EMPTY_LIST_FORM_VALUES: ListFormValues = {
   description: '',
   name: '',
 };
-
-type ListFormMode = 'create' | 'edit' | null;
 
 function getListsErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unable to load your lists right now.';
@@ -125,11 +118,9 @@ function ListsStats({ lists }: { lists: UserListSummary[] }) {
 function ListsLoadedContent({
   lists,
   onCreateList,
-  onEditList,
 }: {
   lists: UserListSummary[];
   onCreateList: () => void;
-  onEditList: (list: UserListSummary) => void;
 }) {
   if (lists.length === 0) {
     return (
@@ -160,7 +151,6 @@ function ListsLoadedContent({
           <ListCard
             key={list.id}
             list={list}
-            onEdit={() => onEditList(list)}
             onPress={() => router.push(`/lists/${list.id}`)}
           />
         ))}
@@ -171,54 +161,27 @@ function ListsLoadedContent({
 
 export function ListsScreen() {
   const { loading: authLoading, user } = useAuth();
-  const [formMode, setFormMode] = useState<ListFormMode>(null);
-  const [selectedList, setSelectedList] = useState<UserListSummary | null>(null);
-  const [confirmingDeleteList, setConfirmingDeleteList] =
-    useState<UserListSummary | null>(null);
+  const [isCreatingList, setIsCreatingList] = useState(false);
   const [formValues, setFormValues] = useState<ListFormValues>(
     EMPTY_LIST_FORM_VALUES,
   );
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const listsQuery = useUserLists(user?.id);
   const createListMutation = useCreateList();
-  const updateListMutation = useUpdateList();
-  const deleteListMutation = useDeleteList();
   const lists = listsQuery.data ?? [];
   const formErrors = useMemo(() => validateListForm(formValues), [formValues]);
-  const isFormVisible = formMode != null;
-  const isSubmitting =
-    createListMutation.isPending || updateListMutation.isPending;
-  const isDeleting = deleteListMutation.isPending;
+  const isSubmitting = createListMutation.isPending;
 
   const resetForm = useCallback(() => {
-    setFormMode(null);
-    setSelectedList(null);
-    setConfirmingDeleteList(null);
+    setIsCreatingList(false);
     setFormValues(EMPTY_LIST_FORM_VALUES);
     setSubmitError(null);
-    setDeleteError(null);
   }, []);
 
   const startCreateList = useCallback(() => {
-    setFormMode('create');
-    setSelectedList(null);
-    setConfirmingDeleteList(null);
+    setIsCreatingList(true);
     setFormValues(EMPTY_LIST_FORM_VALUES);
     setSubmitError(null);
-    setDeleteError(null);
-  }, []);
-
-  const startEditList = useCallback((list: UserListSummary) => {
-    setFormMode('edit');
-    setSelectedList(list);
-    setConfirmingDeleteList(null);
-    setFormValues({
-      description: list.description ?? '',
-      name: list.name,
-    });
-    setSubmitError(null);
-    setDeleteError(null);
   }, []);
 
   const updateFormValue = useCallback(
@@ -240,61 +203,25 @@ export function ListsScreen() {
     setSubmitError(null);
 
     try {
-      if (formMode === 'edit' && selectedList) {
-        await updateListMutation.mutateAsync({
-          description: formValues.description,
-          listId: selectedList.id,
-          name: formValues.name,
-          userId: user.id,
-        });
-      } else {
-        await createListMutation.mutateAsync({
-          description: formValues.description,
-          name: formValues.name,
-          userId: user.id,
-        });
-      }
+      const list = await createListMutation.mutateAsync({
+        description: formValues.description,
+        name: formValues.name,
+        userId: user.id,
+      });
 
       resetForm();
+      router.push(`/lists/${list.id}`);
     } catch (error) {
       setSubmitError(getMutationErrorMessage(error));
     }
   }, [
     createListMutation,
     formErrors,
-    formMode,
     formValues.description,
     formValues.name,
     resetForm,
-    selectedList,
-    updateListMutation,
     user,
   ]);
-
-  const startDeleteList = useCallback(() => {
-    if (selectedList) {
-      setConfirmingDeleteList(selectedList);
-      setDeleteError(null);
-    }
-  }, [selectedList]);
-
-  const confirmDeleteList = useCallback(async () => {
-    if (!user || !confirmingDeleteList) {
-      return;
-    }
-
-    setDeleteError(null);
-
-    try {
-      await deleteListMutation.mutateAsync({
-        listId: confirmingDeleteList.id,
-        userId: user.id,
-      });
-      resetForm();
-    } catch (error) {
-      setDeleteError(getMutationErrorMessage(error));
-    }
-  }, [confirmingDeleteList, deleteListMutation, resetForm, user]);
 
   return (
     <Screen scroll className="gap-5">
@@ -315,32 +242,15 @@ export function ListsScreen() {
         </View>
       </View>
 
-      {isFormVisible ? (
+      {isCreatingList ? (
         <ListForm
-          deleteError={deleteError}
           errors={formErrors}
-          isDeleting={isDeleting}
           isSubmitting={isSubmitting}
-          list={selectedList}
           submitError={submitError}
           values={formValues}
           onCancel={resetForm}
           onChange={updateFormValue}
-          onDelete={formMode === 'edit' ? startDeleteList : undefined}
           onSubmit={submitListForm}
-        />
-      ) : null}
-
-      {confirmingDeleteList ? (
-        <DeleteListConfirmation
-          error={deleteError}
-          isDeleting={isDeleting}
-          list={confirmingDeleteList}
-          onCancel={() => {
-            setConfirmingDeleteList(null);
-            setDeleteError(null);
-          }}
-          onConfirm={confirmDeleteList}
         />
       ) : null}
 
@@ -368,7 +278,6 @@ export function ListsScreen() {
         <ListsLoadedContent
           lists={lists}
           onCreateList={startCreateList}
-          onEditList={startEditList}
         />
       ) : null}
     </Screen>

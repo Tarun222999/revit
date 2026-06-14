@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { TextField } from '@/components/ui/TextField';
-import type { UserListSummary } from '@/features/lists/types';
+import type { UserListDetails, UserListSummary } from '@/features/lists/types';
 
 export type ListFormValues = {
   name: string;
@@ -17,7 +17,7 @@ type ListFormProps = {
   errors: ListFormErrors;
   isDeleting?: boolean;
   isSubmitting: boolean;
-  list?: UserListSummary | null;
+  list?: Pick<UserListSummary | UserListDetails, 'description' | 'id' | 'name'> | null;
   onCancel: () => void;
   onChange: <Key extends keyof ListFormValues>(
     key: Key,

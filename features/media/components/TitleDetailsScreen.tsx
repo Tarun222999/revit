@@ -99,9 +99,8 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
             canOpenLists={Boolean(user?.id && mediaItemId)}
             entry={entry}
             journalEntryLoading={entryQuery.isLoading}
-            onOpenAddToList={() => setShowAddToListPanel((visible) => !visible)}
+            onOpenAddToList={() => setShowAddToListPanel(true)}
             onOpenJournalEntry={openJournalEntry}
-            showAddToListPanel={showAddToListPanel}
           />
 
           {showAddToListPanel && user?.id && mediaItemId ? (

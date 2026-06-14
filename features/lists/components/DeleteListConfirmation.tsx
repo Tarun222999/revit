@@ -2,12 +2,12 @@ import { Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import type { UserListSummary } from '@/features/lists/types';
+import type { UserListDetails, UserListSummary } from '@/features/lists/types';
 
 type DeleteListConfirmationProps = {
   error?: string | null;
   isDeleting: boolean;
-  list: UserListSummary;
+  list: Pick<UserListSummary | UserListDetails, 'name'>;
   onCancel: () => void;
   onConfirm: () => void;
 };

@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { Pressable, Text, View, type GestureResponderEvent } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Card } from '@/components/ui/Card';
 import { MEDIA_TYPE_LABELS, MEDIA_TYPES, type MediaType } from '@/constants/media';
@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils/cn';
 
 type ListCardProps = {
   list: UserListSummary;
-  onEdit: () => void;
   onPress: () => void;
 };
 
@@ -128,13 +127,9 @@ function ListCoverCollage({ coverItems }: { coverItems: ListCoverMedia[] }) {
   );
 }
 
-export function ListCard({ list, onEdit, onPress }: ListCardProps) {
+export function ListCard({ list, onPress }: ListCardProps) {
   const mediaTypeCounts = getMediaTypeCounts(list.coverItems);
   const updatedAt = formatUpdatedAt(list.updatedAt);
-  const handleEditPress = (event: GestureResponderEvent) => {
-    event.stopPropagation();
-    onEdit();
-  };
 
   return (
     <Pressable accessibilityRole="button" onPress={onPress}>
@@ -199,14 +194,6 @@ export function ListCard({ list, onEdit, onPress }: ListCardProps) {
           ) : null}
         </View>
 
-        <View className="flex-row justify-end">
-          <Pressable
-            accessibilityRole="button"
-            className="min-h-9 justify-center rounded-full border border-archive-500 px-4"
-            onPress={handleEditPress}>
-            <Text className="text-sm font-semibold text-gold-300">Edit</Text>
-          </Pressable>
-        </View>
       </Card>
     </Pressable>
   );

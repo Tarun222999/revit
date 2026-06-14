@@ -11,7 +11,6 @@ type TitleDetailsActionsProps = {
   journalEntryLoading: boolean;
   onOpenAddToList: () => void;
   onOpenJournalEntry: () => void;
-  showAddToListPanel: boolean;
 };
 
 export function TitleDetailsActions({
@@ -22,7 +21,6 @@ export function TitleDetailsActions({
   journalEntryLoading,
   onOpenAddToList,
   onOpenJournalEntry,
-  showAddToListPanel,
 }: TitleDetailsActionsProps) {
   return (
     <View className="gap-3">
@@ -32,7 +30,7 @@ export function TitleDetailsActions({
         onPress={onOpenJournalEntry}
       />
       <Button
-        title={showAddToListPanel ? 'Hide Lists' : 'Add to List'}
+        title="Add to List"
         variant="secondary"
         disabled={!canOpenLists || addToListLoading}
         loading={addToListLoading}
