@@ -99,8 +99,7 @@ Goal:
 
 Outline:
 
-- build Home screen shell
-- build Home segmented structure: Discover and Dashboard
+- build the Discover screen shell
 - build Search screen
 - add media type filters
 - add trending/content rails
@@ -191,7 +190,7 @@ Deliverable:
 
 - user can create and manage custom lists
 
-## Phase 7: Profile and Dashboard
+## Phase 7: Profile Summary
 
 Goal:
 
@@ -204,12 +203,12 @@ Outline:
 - show top-rated items
 - show recent reviews
 - show created lists
-- build Dashboard content inside Home
-- connect in-progress and recently added sections
+- keep Profile summary-focused rather than account-management-focused
+- keep in-progress and recently added entry management in Journal
 
 Deliverable:
 
-- user can see their taste, activity, and summary at a glance
+- user can see their identity, taste, activity, and summary at a glance
 
 ## Phase 8: Settings and Account Management
 
@@ -282,7 +281,7 @@ Deliverable:
 6. Title details and journal entry flow
 7. Journal screen
 8. Lists
-9. Profile and dashboard
+9. Profile summary
 10. Settings and account management
 11. Quality hardening
 12. Launch preparation

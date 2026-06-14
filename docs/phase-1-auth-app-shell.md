@@ -433,7 +433,7 @@ Header styling should match the current theme direction:
 - readable muted text
 - no large marketing hero treatment inside the app shell
 
-Home can still include a greeting inside the Home screen later, but Phase 1 does not need to build the full Discover/Dashboard experience.
+Discover can still include a greeting or avatar affordance later, but Phase 1 does not need to build the full discovery experience.
 
 ## Session Handling Approach
 

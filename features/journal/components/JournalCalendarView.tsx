@@ -90,8 +90,8 @@ function NoActivityMonthNotice() {
         No activity this month
       </Text>
       <Text className="mt-1 text-sm leading-5 text-archive-300">
-        The calendar is still showing the full month. Move to another month or
-        adjust the current filters to find logged entries.
+        The calendar is still showing the full month. Move to an earlier month
+        to find logged entries.
       </Text>
     </View>
   );

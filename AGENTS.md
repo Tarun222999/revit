@@ -56,7 +56,7 @@ Games via `IGDB` are deferred to `v1.1`, but the architecture should remain exte
 
 Keep the product aligned with these decisions:
 
-- Home uses `Discover` and `Dashboard`
+- Discover is the browsing-focused home surface; no separate dashboard segment in v1
 - Journal uses `Timeline` and `Calendar`
 - Lists are mixed-media by default
 - Profile is summary-focused

@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document expands Phase 3 from `docs/feature-plan.md` into a concrete implementation plan for the Home Discover/Dashboard shell and the Search experience.
+This document expands Phase 3 from `docs/feature-plan.md` into a concrete implementation plan for the Discover surface and the Search experience.
 
-Phase 3 should turn the Phase 2 media API verification wiring into a usable browsing surface. It should make search feel intentional, add media-type filters, introduce a structured Home screen, and improve loading, empty, and error states without starting journal CRUD.
+Phase 3 should turn the Phase 2 media API verification wiring into a usable browsing surface. It should make search feel intentional, add media-type filters, introduce a structured Discover screen, and improve loading, empty, and error states without starting journal CRUD.
 
 ## Phase Goal
 
@@ -12,9 +12,8 @@ Implement Discovery and Search.
 
 By the end of Phase 3:
 
-- Home should have the locked Discover and Dashboard segmented structure.
+- Discover should be the single browsing-focused home surface.
 - Discover should become a real browsing surface with mode-driven media rails.
-- Dashboard should exist as a useful shell for later personal data without querying journal data yet.
 - Search should have polished input, media filters, result cards, and state handling.
 - Search result taps should continue to route through the existing title details flow.
 - All media data should still come through Supabase Edge Functions.
@@ -31,11 +30,11 @@ Specifically, do not implement:
 - journal timeline or calendar queries
 - lists CRUD
 - profile stats
-- personalized dashboard data from journal entries
+- dashboard or extra home personalization
 - IGDB game integration
 - client-side TMDB calls
 
-Small dashboard placeholders are acceptable only to preserve the final Home structure before Phase 7 connects personal data.
+Do not add dashboard placeholders. Personal summary content belongs in Profile, while entry management belongs in Journal.
 
 ## Current Starting Point From Phase 2
 
@@ -66,7 +65,7 @@ Phase 3 must follow the locked stack:
 
 Phase 3 must follow the product rules:
 
-- Home uses Discover and Dashboard.
+- Discover is the browsing-focused home surface; no separate dashboard segment is planned for v1.
 - Search supports media-type filtering.
 - Screens stay thin.
 - Feature logic lives under `features/discovery`.
@@ -79,7 +78,7 @@ Phase 3 should create a practical discovery shell without pretending to have a f
 
 Target Discover structure:
 
-- `Discover | Dashboard` segmented Home structure
+- single Discover surface, without a Dashboard segment
 - a clean v1 top section that introduces browsing without becoming an oversized hero
 - stable discovery mode chips:
   - `Trending`
@@ -143,22 +142,20 @@ Responsibilities:
 
 This keeps the app model clear:
 
-- Home Discover shows preview rails
+- Discover shows preview rails
 - Discover Listing shows all items for one mode and media type
 - Search handles typed user queries
 - Title Details handles a selected media item
 
 ## Dashboard Scope
 
-Dashboard should exist now because the Home product model requires it, but most useful data depends on journal CRUD from later phases.
+Dashboard is intentionally out of scope for v1.
 
-Recommended Phase 3 dashboard content:
+Do not build a separate Dashboard segment or placeholder dashboard panels. The useful dashboard-like content belongs in existing product areas:
 
-- quick actions that route to Search and Journal
-- empty-state panels for In Progress, Recently Added, and Reviews
-- copy that sets expectations without querying missing data
-
-Do not create mock user stats that look real.
+- in-progress and recently added entries belong in Journal
+- stats, top-rated items, recent reviews, and created lists belong in Profile
+- discovery and browsing belong in Discover
 
 ## Search Scope
 
@@ -175,19 +172,19 @@ Required behavior:
 
 Optional behavior if simple:
 
-- accept route params from Home quick prompts
+- accept route params from Discover quick prompts if those are added later
 - clear query/filter controls
 - show a compact result count
 
 ## Component Structure
 
-Keep `SearchScreen` and `HomeScreen` focused on composition.
+Keep `SearchScreen` and `DiscoverScreen` focused on composition.
 
 Recommended files:
 
 ```text
 app/discover/[mode]/[mediaType].tsx
-features/discovery/components/HomeScreen.tsx
+features/discovery/components/DiscoverScreen.tsx
 features/discovery/components/DiscoverListingScreen.tsx
 features/discovery/components/SearchScreen.tsx
 features/discovery/components/DiscoverScreen.tsx
@@ -444,14 +441,13 @@ app/discover/[mode]/[mediaType].tsx
 - Add load-more behavior if the function returns additional pages.
 - Route selected items to Title Details.
 
-### 9. Wire Home Discover And Dashboard Shell
+### 9. Wire Discover Shell
 
 Expected outcome:
 
-- `HomeScreen` renders the locked `Discover | Dashboard` segmented structure.
+- the tab screen renders the Discover surface.
 - Discover uses the new browse rails.
-- Dashboard remains a non-personalized shell until Phase 7.
-- No journal CRUD or personalized dashboard data is introduced.
+- No journal CRUD or dashboard personalization is introduced.
 
 ### 10. Polish Search And Discovery Lists
 
@@ -500,7 +496,7 @@ Expected outcome:
 Phase 3 is complete when:
 
 1. `docs/phase-3-discovery-search.md` exists.
-2. Home renders a Discover/Dashboard segmented shell.
+2. Discover renders as the single browsing-focused tab surface.
 3. Discover supports Trending, New Releases, and Top Rated modes.
 4. Discover shows Movies, Series, and Anime rails for the selected mode.
 5. Hidden Gems is documented as deferred until a real ranking rule exists.
@@ -510,7 +506,7 @@ Phase 3 is complete when:
 9. Discover Listing uses `media-discover` pagination or load-more behavior and does not depend on typed search queries.
 10. Discover rails are served through `media-discover`, not direct TMDB client calls.
 11. `media-discover` caches shared rail responses by `(mode, mediaType, page)` with time-based invalidation.
-12. Dashboard is present but does not depend on journal CRUD.
+12. No separate Dashboard segment or placeholder dashboard is added.
 13. Search UI is polished beyond Phase 2 verification wiring.
 14. Search supports All, Movies, Series, and Anime filters.
 15. Search shows loading, empty, error, and result states clearly.
@@ -535,8 +531,7 @@ npm run check
 
 Manual checks:
 
-- Home opens on the Discover segment.
-- Home can switch between Discover and Dashboard.
+- The Discover tab opens directly to the browsing surface.
 - Discover mode changes update Movies, Series, and Anime rails.
 - Discover mode chips remain in the same order across reloads and mode changes.
 - Discover rail categories remain Movies, Series, Anime in that order.

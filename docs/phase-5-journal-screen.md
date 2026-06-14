@@ -19,7 +19,7 @@ By the end of Phase 5:
 - Users should be able to sort by recent activity, recently added, rating, and title.
 - Tapping an entry should navigate back to Title Details.
 - Calendar should remain intentionally deferred to Phase 5.1.
-- Journal should remain management-focused, while Profile and Dashboard summary work stays deferred.
+- Journal should remain management-focused, while Profile summary work stays deferred.
 
 ## Visual Direction
 
@@ -52,7 +52,7 @@ Specifically, do not implement:
 - Lists or Add to List behavior
 - Single List Details
 - Profile stats
-- Dashboard personalization
+- dashboard personalization
 - settings or account-management flows
 - new journal event history tables
 - direct TMDB calls from the client
@@ -60,7 +60,7 @@ Specifically, do not implement:
 - social, public profile, comments, or likes
 - long-form reviews
 
-Add to List remains Phase 6. Profile and Dashboard summary work remains Phase 7. Calendar moves to Phase 5.1.
+Add to List remains Phase 6. Profile summary work remains Phase 7. Calendar moves to Phase 5.1.
 
 ## Current Starting Point
 
@@ -464,7 +464,7 @@ Phase 5 is complete when:
 9. Tapping a journal entry navigates to Title Details.
 10. Calendar remains deferred to Phase 5.1.
 11. Lists and Add to List remain deferred.
-12. Profile and Dashboard summary work remains deferred.
+12. Profile summary work remains deferred.
 13. No direct TMDB client calls are introduced.
 14. `npm run typecheck` passes.
 15. `npm run lint` passes.

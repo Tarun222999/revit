@@ -29,7 +29,7 @@ Specifically, do not implement:
 - Journal Timeline view
 - Journal Calendar view
 - journal filtering and sorting
-- Dashboard personalization
+- dashboard personalization
 - list creation or Add to List behavior
 - profile stats
 - game provider integration

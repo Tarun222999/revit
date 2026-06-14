@@ -1,4 +1,5 @@
 import { router, Stack } from 'expo-router';
+import { useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -7,6 +8,8 @@ import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { YourEntrySummary } from '@/features/journal/components/YourEntrySummary';
 import { useJournalEntryForMedia } from '@/features/journal/hooks/useJournalEntryForMedia';
+import { AddToListPanel } from '@/features/lists/components/AddToListPanel';
+import { useMediaListMemberships } from '@/features/lists/hooks/useMediaListMemberships';
 import { TitleDetailsActions } from '@/features/media/components/TitleDetailsActions';
 import { TitleDetailsHero } from '@/features/media/components/TitleDetailsHero';
 import { TitleDetailsMetadataCard } from '@/features/media/components/TitleDetailsMetadataCard';
@@ -28,7 +31,9 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
   const item = detailsQuery.data?.item;
   const mediaItemId = item?.id;
   const entryQuery = useJournalEntryForMedia(user?.id, mediaItemId);
+  const membershipsQuery = useMediaListMemberships(user?.id, mediaItemId);
   const entry = entryQuery.data ?? null;
+  const [showAddToListPanel, setShowAddToListPanel] = useState(false);
 
   const openJournalEntry = () => {
     if (!mediaItemId) {
@@ -89,11 +94,22 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
           )}
 
           <TitleDetailsActions
+            addToListLoading={membershipsQuery.isLoading}
             canOpenJournalEntry={Boolean(mediaItemId)}
+            canOpenLists={Boolean(user?.id && mediaItemId)}
             entry={entry}
             journalEntryLoading={entryQuery.isLoading}
+            onOpenAddToList={() => setShowAddToListPanel(true)}
             onOpenJournalEntry={openJournalEntry}
           />
+
+          {showAddToListPanel && user?.id && mediaItemId ? (
+            <AddToListPanel
+              mediaItemId={mediaItemId}
+              userId={user.id}
+              onClose={() => setShowAddToListPanel(false)}
+            />
+          ) : null}
 
           <TitleDetailsMetadataCard details={getTitleDetailMetrics(item)} />
         </>
