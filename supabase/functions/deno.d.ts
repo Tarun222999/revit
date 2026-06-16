@@ -44,6 +44,15 @@ declare module 'npm:@supabase/supabase-js@2.106.1' {
         };
         error: unknown;
       }>;
+      admin: {
+        deleteUser: (
+          id: string,
+          shouldSoftDelete?: boolean,
+        ) => Promise<{
+          data: unknown;
+          error: unknown;
+        }>;
+      };
     };
     from: (table: string) => {
       select: (columns?: string) => PostgrestFilterBuilder;
@@ -59,6 +68,27 @@ declare module 'npm:@supabase/supabase-js@2.106.1' {
             error: unknown;
           }>;
         };
+      };
+    };
+    storage: {
+      from: (bucket: string) => {
+        list: (
+          path: string,
+          options?: {
+            limit?: number;
+          },
+        ) => Promise<{
+          data:
+            | Array<{
+                name: string;
+              }>
+            | null;
+          error: unknown;
+        }>;
+        remove: (paths: string[]) => Promise<{
+          data: unknown;
+          error: unknown;
+        }>;
       };
     };
   };
