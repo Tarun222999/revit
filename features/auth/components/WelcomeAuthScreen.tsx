@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -88,9 +88,28 @@ export function WelcomeAuthScreen() {
 
         </Card>
 
-        <Text className="text-center text-xs leading-5 text-archive-300">
-          By continuing, you agree to Revit&apos;s Terms and Privacy Policy.
-        </Text>
+        <View className="items-center gap-1">
+          <Text className="text-center text-xs leading-5 text-archive-300">
+            By continuing, you agree to Revit&apos;s
+          </Text>
+          <View className="flex-row items-center gap-2">
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => router.push('/legal/terms')}>
+              <Text className="text-xs font-semibold text-gold-300">
+                Terms
+              </Text>
+            </Pressable>
+            <Text className="text-xs text-archive-500">and</Text>
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => router.push('/legal/privacy')}>
+              <Text className="text-xs font-semibold text-gold-300">
+                Privacy Policy
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </View>
     </Screen>
   );

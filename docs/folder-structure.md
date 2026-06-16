@@ -62,7 +62,7 @@ app/
     onboarding.tsx
   (tabs)/
     _layout.tsx
-    discover.tsx
+    index.tsx
     search.tsx
     journal.tsx
     lists.tsx
@@ -71,7 +71,6 @@ app/
   lists/
     [id].tsx
   profile.tsx
-  settings.tsx
   modals/
     journal-entry.tsx
 ```
@@ -81,7 +80,8 @@ Notes:
 - `(auth)` contains auth flow screens
 - `/welcome` is the auth entry route, while `/` redirects into the main tab shell during Phase 0
 - `(tabs)` contains primary destinations: Discover, Search, Journal, and Lists
-- `profile.tsx` is a shared pushed screen accessed from the top-right avatar/profile action
+- the first tab is Discover; do not add a separate dashboard or Home tab in v1
+- `profile.tsx` is a shared pushed profile/account screen accessed from the top-right avatar/profile action
 - `modals/` contains modal routes such as add/edit journal entry
 
 ### `components/`
@@ -166,7 +166,6 @@ features/
   journal/
   lists/
   profile/
-  settings/
   media/
 ```
 
@@ -429,19 +428,16 @@ Owns:
 
 Owns:
 
-- profile summary
-- stats
-- recent reviews
-- top-rated items
-
-### `features/settings`
-
-Owns:
-
-- settings UI
+- profile/account screen
+- profile identity editing
+- avatar update
 - connected accounts
 - attribution/privacy/terms entry points
+- support entry point
+- sign out
 - delete account flow
+
+Do not use Profile as a v1 taste dashboard. Journal owns entry management and Lists owns collection management.
 
 ## Naming Conventions
 
@@ -508,7 +504,6 @@ features/
   journal/
   lists/
   profile/
-  settings/
 lib/
   supabase/
   query/

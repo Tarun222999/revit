@@ -42,7 +42,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     }
 
     if (isAuthRoute) {
-      router.replace('/home');
+      router.replace('/(tabs)');
     }
   }, [
     authLoading,

@@ -71,7 +71,7 @@ Specifically, do not implement:
 - long-form reviews
 - a new core modal route unless the user explicitly approves it
 
-Profile summaries remain Phase 7. Settings and account management remain Phase 8. No separate dashboard surface is planned for v1.
+Profile, settings, and account management remain Phase 7. No separate dashboard surface is planned for v1.
 
 ## Current Starting Point
 
@@ -116,7 +116,7 @@ Phase 6 must follow the locked product rules:
 
 - Lists are mixed-media by default.
 - Journal remains management-focused.
-- Profile remains summary-focused and deferred.
+- Profile / Account remains account-focused and deferred.
 - Add/Edit Journal Entry remains the only core app modal route.
 - Media metadata should come from normalized `media_items` records.
 - External content APIs are not called directly from the client.
@@ -624,7 +624,7 @@ Phase 6 is complete when:
 10. Users can remove titles from lists.
 11. Optional `list_items.note` is supported or explicitly deferred within Phase 6.
 12. Lists remain mixed-media by default.
-13. Profile summaries remain deferred to Phase 7.
+13. Profile / Account remains deferred to Phase 7.
 14. No direct TMDB client calls are introduced.
 15. `npm run typecheck` passes.
 16. `npm run lint` passes.
@@ -663,9 +663,8 @@ Manual checks:
 Phase 6 should leave Phase 7 with:
 
 - user-created mixed-media lists
-- list item metadata ready for profile summaries
-- list counts and cover media ready for profile summary surfaces
+- stable list data ready for future account or quality-hardening work
 - Title Details Add to List integration
 - stable list query keys and mutations
 
-Phase 7 can then build Profile summaries without reworking list ownership or list item data.
+Phase 7 can then build Profile / Account without reworking list ownership or list item data.

@@ -43,7 +43,7 @@ export function OnboardingScreen() {
         displayName,
         username: normalizedUsername,
       });
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)');
     } catch (profileError) {
       const message = profileError instanceof Error ? profileError.message : 'Could not create your profile.';
 

@@ -232,6 +232,14 @@ Calendar behavior for v1:
 
 - calendar activity should be based on `entry created`
 
+Navigation and account behavior for v1:
+
+- Discover is the browsing-focused home surface.
+- Do not add a separate dashboard or Home tab.
+- The avatar action opens the profile/account surface.
+- Profile/account owns identity, avatar, legal/support, sign out, and account deletion.
+- Do not build a standalone profile taste summary dashboard in v1.
+
 Notes:
 
 - we can evaluate alternative rating inputs later

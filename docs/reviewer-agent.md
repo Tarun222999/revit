@@ -80,7 +80,8 @@ Games are deferred to `v1.1`, but architecture should remain extensible for them
 - Discover is the browsing-focused home surface; no separate dashboard segment in v1
 - Journal uses Timeline and Calendar
 - Lists are mixed-media by default
-- Profile is summary-focused
+- Profile / Account owns identity, avatar, legal/support, sign out, and account deletion
+- Do not add a separate Home tab or dashboard surface
 - Journal is management-focused
 - Reviews are short-form
 - Add/Edit Journal Entry is a modal flow

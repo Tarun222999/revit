@@ -1,5 +1,5 @@
-import { Redirect } from 'expo-router';
+import { DiscoverTabScreen } from '@/features/discovery/components/DiscoverTabScreen';
 
 export default function TabsIndexRoute() {
-  return <Redirect href="/home" />;
+  return <DiscoverTabScreen />;
 }

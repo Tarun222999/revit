@@ -32,6 +32,10 @@ export default function RootLayout() {
               <Stack.Screen name="lists/[id]" options={{ title: 'List Details' }} />
               <Stack.Screen name="profile" options={{ title: 'Profile' }} />
               <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+              <Stack.Screen name="legal/privacy" options={{ title: 'Privacy Policy' }} />
+              <Stack.Screen name="legal/terms" options={{ title: 'Terms of Use' }} />
+              <Stack.Screen name="legal/credits" options={{ title: 'Credits' }} />
+              <Stack.Screen name="support" options={{ title: 'Support' }} />
               <Stack.Screen
                 name="modals/journal-entry"
                 options={{

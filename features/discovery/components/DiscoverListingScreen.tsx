@@ -428,8 +428,8 @@ export function DiscoverListingScreen({
         <EmptyState
           title="Discovery shelf not found"
           message="This discovery collection is not available."
-          actionLabel="Back to Home"
-          onAction={() => router.replace('/home')}
+          actionLabel="Back to Discover"
+          onAction={() => router.replace('/(tabs)')}
         />
       </Screen>
     );

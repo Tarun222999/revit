@@ -34,7 +34,7 @@ Specifically, do not implement:
 - IGDB game integration
 - client-side TMDB calls
 
-Do not add dashboard placeholders. Personal summary content belongs in Profile, while entry management belongs in Journal.
+Do not add dashboard placeholders. Account actions belong in Profile / Account, while entry management belongs in Journal.
 
 ## Current Starting Point From Phase 2
 
