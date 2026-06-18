@@ -7,6 +7,8 @@ import { Colors } from '@/constants/theme';
 import { ProfileAvatarAction } from '@/features/profile/components/ProfileAvatarAction';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
+const APP_BACKGROUND_COLOR = '#0d0b09';
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -17,10 +19,18 @@ export default function TabLayout() {
         headerShown: true,
         headerRight: () => <ProfileAvatarAction />,
         headerStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
+          backgroundColor: APP_BACKGROUND_COLOR,
         },
-        headerTintColor: Colors[colorScheme ?? 'light'].text,
+        headerTintColor: '#fbf6ec',
+        sceneStyle: {
+          backgroundColor: APP_BACKGROUND_COLOR,
+        },
+        tabBarInactiveTintColor: '#c8bba8',
         tabBarButton: HapticTab,
+        tabBarStyle: {
+          backgroundColor: APP_BACKGROUND_COLOR,
+          borderTopColor: '#3c3329',
+        },
       }}>
       <Tabs.Screen
         name="index"

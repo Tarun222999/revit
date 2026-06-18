@@ -22,6 +22,30 @@ export function todayString() {
   return new Date().toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
+export function isFutureReleaseDate(releaseDate?: string | null) {
+  if (!releaseDate || !ISO_DATE_INPUT_PATTERN.test(releaseDate)) {
+    return false;
+  }
+
+  return releaseDate > todayString();
+}
+
+export function canRateOrReviewReleaseDate(releaseDate?: string | null) {
+  return !isFutureReleaseDate(releaseDate);
+}
+
+export function clearRatingAndReviewValues(
+  values: JournalEntryFormValues,
+): JournalEntryFormValues {
+  return {
+    ...values,
+    containsSpoilers: false,
+    rating: null,
+    reviewBody: '',
+    reviewHeadline: '',
+  };
+}
+
 /**
  * Creates a fresh set of default values for the journal entry form.
  *

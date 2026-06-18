@@ -1,4 +1,4 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import * as WebBrowser from 'expo-web-browser';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,24 +7,37 @@ import '../global.css';
 
 import { AuthGate } from '@/features/auth/components/AuthGate';
 import { AuthProvider } from '@/features/auth/context/AuthProvider';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { QueryProvider } from '@/lib/query/QueryProvider';
 
 WebBrowser.maybeCompleteAuthSession();
+
+const APP_BACKGROUND_COLOR = '#0d0b09';
+const APP_TEXT_COLOR = '#fbf6ec';
+const APP_BORDER_COLOR = '#3c3329';
+const APP_PRIMARY_COLOR = '#d7a84f';
+const APP_NAVIGATION_THEME = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: APP_BACKGROUND_COLOR,
+    border: APP_BORDER_COLOR,
+    card: APP_BACKGROUND_COLOR,
+    primary: APP_PRIMARY_COLOR,
+    text: APP_TEXT_COLOR,
+  },
+};
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <QueryProvider>
       <AuthProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <ThemeProvider value={APP_NAVIGATION_THEME}>
           <AuthGate>
-            <Stack>
+            <Stack screenOptions={{ contentStyle: { backgroundColor: APP_BACKGROUND_COLOR } }}>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="title/[id]" options={{ title: 'Title Details' }} />

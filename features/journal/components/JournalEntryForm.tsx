@@ -17,6 +17,7 @@ import type { JournalEntryFormValues } from '@/features/journal/types';
 import type { NormalizedMediaItem } from '@/types/media';
 
 type JournalEntryFormProps = {
+  canRateOrReview: boolean;
   canDelete: boolean;
   deleteError?: string | null;
   errors: JournalEntryFormErrors;
@@ -72,6 +73,7 @@ function JournalEntryMediaSummary({ item }: { item?: NormalizedMediaItem }) {
  * @returns Status, rating, review, spoiler, save, and delete controls.
  */
 export function JournalEntryForm({
+  canRateOrReview,
   canDelete,
   deleteError,
   errors,
@@ -94,10 +96,53 @@ export function JournalEntryForm({
 
       <JournalStatusSelector value={values.status} onChange={onStatusChange} />
 
-      <RatingInput
-        value={values.rating}
-        onChange={(rating) => onChange('rating', rating)}
-      />
+      {canRateOrReview ? (
+        <>
+          <RatingInput
+            value={values.rating}
+            onChange={(rating) => onChange('rating', rating)}
+          />
+
+          <TextField
+            error={errors.reviewHeadline}
+            label={`Headline (${values.reviewHeadline.length}/${REVIEW_HEADLINE_MAX_LENGTH})`}
+            maxLength={REVIEW_HEADLINE_MAX_LENGTH}
+            onChangeText={(reviewHeadline) =>
+              onChange('reviewHeadline', reviewHeadline)
+            }
+            placeholder="Optional short headline"
+            value={values.reviewHeadline}
+          />
+
+          <TextField
+            className="min-h-32 py-3"
+            error={errors.reviewBody}
+            label={`Review (${values.reviewBody.length}/${REVIEW_BODY_MAX_LENGTH})`}
+            maxLength={REVIEW_BODY_MAX_LENGTH}
+            multiline
+            onChangeText={(reviewBody) => onChange('reviewBody', reviewBody)}
+            placeholder="Write a short review"
+            textAlignVertical="top"
+            value={values.reviewBody}
+          />
+
+          <SpoilerToggle
+            value={values.containsSpoilers}
+            onChange={(containsSpoilers) =>
+              onChange('containsSpoilers', containsSpoilers)
+            }
+          />
+        </>
+      ) : (
+        <Card className="gap-1 border-gold-700 bg-archive-800">
+          <Text className="text-base font-bold text-archive-50">
+            Rating opens after release
+          </Text>
+          <Text className="text-sm leading-5 text-archive-300">
+            You can add this title to your journal now, then rate and review it once it has been released.
+          </Text>
+        </Card>
+      )}
 
       {values.status === 'completed' ? (
         <TextField
@@ -110,36 +155,6 @@ export function JournalEntryForm({
           value={values.completedOn ?? ''}
         />
       ) : null}
-
-      <TextField
-        error={errors.reviewHeadline}
-        label={`Headline (${values.reviewHeadline.length}/${REVIEW_HEADLINE_MAX_LENGTH})`}
-        maxLength={REVIEW_HEADLINE_MAX_LENGTH}
-        onChangeText={(reviewHeadline) =>
-          onChange('reviewHeadline', reviewHeadline)
-        }
-        placeholder="Optional short headline"
-        value={values.reviewHeadline}
-      />
-
-      <TextField
-        className="min-h-32 py-3"
-        error={errors.reviewBody}
-        label={`Review (${values.reviewBody.length}/${REVIEW_BODY_MAX_LENGTH})`}
-        maxLength={REVIEW_BODY_MAX_LENGTH}
-        multiline
-        onChangeText={(reviewBody) => onChange('reviewBody', reviewBody)}
-        placeholder="Write a short review"
-        textAlignVertical="top"
-        value={values.reviewBody}
-      />
-
-      <SpoilerToggle
-        value={values.containsSpoilers}
-        onChange={(containsSpoilers) =>
-          onChange('containsSpoilers', containsSpoilers)
-        }
-      />
 
       {hasValidationErrors ? (
         <Text className="text-sm leading-5 text-reel-400">
