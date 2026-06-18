@@ -12,8 +12,10 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { ListCard } from '@/features/lists/components/ListCard';
 import {
+  getVisibleListFormErrors,
   ListForm,
   validateListForm,
+  type ListFormTouchedFields,
   type ListFormValues,
 } from '@/features/lists/components/ListForm';
 import { useCreateList } from '@/features/lists/hooks/useListMutations';
@@ -165,23 +167,40 @@ export function ListsScreen() {
   const [formValues, setFormValues] = useState<ListFormValues>(
     EMPTY_LIST_FORM_VALUES,
   );
+  const [touchedFields, setTouchedFields] = useState<ListFormTouchedFields>({});
+  const [hasSubmittedForm, setHasSubmittedForm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const listsQuery = useUserLists(user?.id);
   const createListMutation = useCreateList();
   const lists = listsQuery.data ?? [];
   const formErrors = useMemo(() => validateListForm(formValues), [formValues]);
+  const visibleFormErrors = useMemo(
+    () => getVisibleListFormErrors(formErrors, touchedFields, hasSubmittedForm),
+    [formErrors, hasSubmittedForm, touchedFields],
+  );
   const isSubmitting = createListMutation.isPending;
 
   const resetForm = useCallback(() => {
     setIsCreatingList(false);
     setFormValues(EMPTY_LIST_FORM_VALUES);
+    setTouchedFields({});
+    setHasSubmittedForm(false);
     setSubmitError(null);
   }, []);
 
   const startCreateList = useCallback(() => {
     setIsCreatingList(true);
     setFormValues(EMPTY_LIST_FORM_VALUES);
+    setTouchedFields({});
+    setHasSubmittedForm(false);
     setSubmitError(null);
+  }, []);
+
+  const markFieldTouched = useCallback((key: keyof ListFormValues) => {
+    setTouchedFields((currentFields) => ({
+      ...currentFields,
+      [key]: true,
+    }));
   }, []);
 
   const updateFormValue = useCallback(
@@ -190,12 +209,15 @@ export function ListsScreen() {
         ...currentValues,
         [key]: value,
       }));
+      markFieldTouched(key);
       setSubmitError(null);
     },
-    [],
+    [markFieldTouched],
   );
 
   const submitListForm = useCallback(async () => {
+    setHasSubmittedForm(true);
+
     if (!user || Object.keys(formErrors).length > 0) {
       return;
     }
@@ -244,10 +266,13 @@ export function ListsScreen() {
 
       {isCreatingList ? (
         <ListForm
-          errors={formErrors}
+          errors={visibleFormErrors}
+          hasSubmitted={hasSubmittedForm}
           isSubmitting={isSubmitting}
           submitError={submitError}
+          touchedFields={touchedFields}
           values={formValues}
+          onBlurField={markFieldTouched}
           onCancel={resetForm}
           onChange={updateFormValue}
           onSubmit={submitListForm}

@@ -11,8 +11,10 @@ import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { DeleteListConfirmation } from '@/features/lists/components/DeleteListConfirmation';
 import {
+  getVisibleListFormErrors,
   ListForm,
   validateListForm,
+  type ListFormTouchedFields,
   type ListFormValues,
 } from '@/features/lists/components/ListForm';
 import { ListItemCard } from '@/features/lists/components/ListItemCard';
@@ -184,6 +186,8 @@ export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
   const [formValues, setFormValues] = useState<ListFormValues>(
     EMPTY_LIST_FORM_VALUES,
   );
+  const [touchedFields, setTouchedFields] = useState<ListFormTouchedFields>({});
+  const [hasSubmittedForm, setHasSubmittedForm] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [removingItemId, setRemovingItemId] = useState<string | null>(null);
@@ -191,6 +195,10 @@ export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
   const [itemErrorId, setItemErrorId] = useState<string | null>(null);
   const [itemErrorMessage, setItemErrorMessage] = useState<string | null>(null);
   const formErrors = useMemo(() => validateListForm(formValues), [formValues]);
+  const visibleFormErrors = useMemo(
+    () => getVisibleListFormErrors(formErrors, touchedFields, hasSubmittedForm),
+    [formErrors, hasSubmittedForm, touchedFields],
+  );
   const isSubmittingList = updateListMutation.isPending;
   const isDeletingList = deleteListMutation.isPending;
 
@@ -207,6 +215,8 @@ export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
       description: list.description ?? '',
       name: list.name,
     });
+    setTouchedFields({});
+    setHasSubmittedForm(false);
     setSubmitError(null);
     setDeleteError(null);
   }, []);
@@ -215,8 +225,17 @@ export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
     setIsEditingList(false);
     setConfirmingDelete(false);
     setFormValues(EMPTY_LIST_FORM_VALUES);
+    setTouchedFields({});
+    setHasSubmittedForm(false);
     setSubmitError(null);
     setDeleteError(null);
+  }, []);
+
+  const markFieldTouched = useCallback((key: keyof ListFormValues) => {
+    setTouchedFields((currentFields) => ({
+      ...currentFields,
+      [key]: true,
+    }));
   }, []);
 
   const updateFormValue = useCallback(
@@ -225,12 +244,15 @@ export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
         ...currentValues,
         [key]: value,
       }));
+      markFieldTouched(key);
       setSubmitError(null);
     },
-    [],
+    [markFieldTouched],
   );
 
   const submitListForm = useCallback(async () => {
+    setHasSubmittedForm(true);
+
     if (!user || !listQuery.data || Object.keys(formErrors).length > 0) {
       return;
     }
@@ -371,12 +393,15 @@ export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
           {isEditingList ? (
             <ListForm
               deleteError={deleteError}
-              errors={formErrors}
+              errors={visibleFormErrors}
+              hasSubmitted={hasSubmittedForm}
               isDeleting={isDeletingList}
               isSubmitting={isSubmittingList}
               list={currentList}
               submitError={submitError}
+              touchedFields={touchedFields}
               values={formValues}
+              onBlurField={markFieldTouched}
               onCancel={cancelEditList}
               onChange={updateFormValue}
               onDelete={() => {

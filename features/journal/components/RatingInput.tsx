@@ -1,11 +1,6 @@
-import { useState } from 'react';
-import {
-  Pressable,
-  Text,
-  View,
-  type GestureResponderEvent,
-  type LayoutChangeEvent,
-} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, View, type GestureResponderEvent } from 'react-native';
+
 import { RATING_MAX, RATING_MIN, RATING_STEP } from '@/constants/ratings';
 
 type RatingInputProps = {
@@ -13,33 +8,49 @@ type RatingInputProps = {
   onChange: (value: number | null) => void;
 };
 
+const STAR_COUNT = RATING_MAX;
+const STAR_TOUCH_WIDTH = 44;
+
 function clampRating(value: number) {
   return Math.min(RATING_MAX, Math.max(RATING_MIN, value));
 }
 
-function roundToStep(value: number) {
-  return clampRating(Math.round(value / RATING_STEP) * RATING_STEP);
+function getStarIcon(starValue: number, rating: number | null) {
+  if (!rating || rating < starValue - RATING_STEP) {
+    return 'star-outline';
+  }
+
+  if (rating >= starValue) {
+    return 'star';
+  }
+
+  return 'star-half';
+}
+
+function getRatingFromStarPress(
+  starValue: number,
+  event: GestureResponderEvent,
+) {
+  const isHalfStar = event.nativeEvent.locationX <= STAR_TOUCH_WIDTH / 2;
+  return clampRating(starValue - (isHalfStar ? RATING_STEP : 0));
 }
 
 export function RatingInput({ value, onChange }: RatingInputProps) {
-  const [trackWidth, setTrackWidth] = useState(0);
-  const percentage = value ? (value / RATING_MAX) * 100 : 0;
   const ratingLabel = value ? `${value.toFixed(1)} / ${RATING_MAX}` : 'Not rated';
 
-  const handleLayout = (event: LayoutChangeEvent) => {
-    setTrackWidth(event.nativeEvent.layout.width);
-  };
+  const adjustRating = (direction: 'increment' | 'decrement') => {
+    const baseValue = value ?? 0;
+    const nextValue =
+      direction === 'increment'
+        ? baseValue + RATING_STEP
+        : baseValue - RATING_STEP;
 
-  const updateRatingFromGesture = (locationX: number) => {
-    if (trackWidth <= 0) {
+    if (nextValue < RATING_MIN) {
+      onChange(null);
       return;
     }
 
-    onChange(roundToStep((locationX / trackWidth) * RATING_MAX));
-  };
-
-  const handleRatingGesture = (event: GestureResponderEvent) => {
-    updateRatingFromGesture(event.nativeEvent.locationX);
+    onChange(clampRating(nextValue));
   };
 
   return (
@@ -51,60 +62,67 @@ export function RatingInput({ value, onChange }: RatingInputProps) {
             Optional personal score.
           </Text>
         </View>
-        <Text className="text-sm font-bold text-gold-300">
-          {ratingLabel}
-        </Text>
+        <Text className="text-sm font-bold text-gold-300">{ratingLabel}</Text>
       </View>
 
-      <Pressable
-        accessibilityHint="Tap or drag to choose a rating from 0.5 to 5."
+      <View
+        accessibilityActions={[
+          { name: 'increment', label: 'Increase rating' },
+          { name: 'decrement', label: 'Decrease rating' },
+        ]}
+        accessibilityHint="Tap the left or right side of a star to choose half or full stars."
         accessibilityLabel={`Rating, ${ratingLabel}`}
         accessibilityRole="adjustable"
-        className="rounded-app border border-archive-700 bg-archive-800 p-4"
-        onMoveShouldSetResponder={() => true}
-        onPress={handleRatingGesture}
-        onResponderGrant={handleRatingGesture}
-        onResponderMove={handleRatingGesture}
-      >
-        <View
-          className="relative h-7 justify-center"
-          onLayout={handleLayout}
-        >
-          <View className="h-2 overflow-hidden rounded-full bg-archive-700">
-            <View
-              className="h-full rounded-full bg-gold-400"
-              style={{ width: `${percentage}%` }}
-            />
-          </View>
-          {value ? (
-            <View
-              className="absolute h-6 w-6 items-center justify-center rounded-full border-2 border-archive-900 bg-gold-400"
-              style={{ left: `${percentage}%`, marginLeft: -12 }}
-            >
-              <View className="h-2 w-2 rounded-full bg-archive-900" />
-            </View>
-          ) : (
-            <View className="absolute left-0 h-6 w-6 items-center justify-center rounded-full border border-archive-600 bg-archive-900">
-              <View className="h-2 w-2 rounded-full bg-archive-500" />
-            </View>
-          )}
+        className="rounded-app border border-archive-700 bg-archive-800 p-3"
+        onAccessibilityAction={(event) => {
+          if (event.nativeEvent.actionName === 'increment') {
+            adjustRating('increment');
+          }
+
+          if (event.nativeEvent.actionName === 'decrement') {
+            adjustRating('decrement');
+          }
+        }}>
+        <View className="flex-row items-center justify-between">
+          {Array.from({ length: STAR_COUNT }, (_, index) => {
+            const starValue = index + 1;
+            const starIcon = getStarIcon(starValue, value);
+
+            return (
+              <Pressable
+                accessibilityLabel={`Set rating to ${starValue - RATING_STEP} or ${starValue}`}
+                accessibilityRole="button"
+                className="h-11 w-11 items-center justify-center rounded-full"
+                hitSlop={4}
+                key={starValue}
+                onPress={(event) => {
+                  onChange(getRatingFromStarPress(starValue, event));
+                }}>
+                <Ionicons
+                  color={starIcon === 'star-outline' ? '#8b7355' : '#f4c95d'}
+                  name={starIcon}
+                  size={32}
+                />
+              </Pressable>
+            );
+          })}
         </View>
-        <View className="mt-2 flex-row justify-between">
+
+        <View className="mt-3 flex-row justify-between px-1">
           <Text className="text-xs font-semibold text-archive-300">
-            {RATING_MIN}
+            {RATING_MIN.toFixed(1)}
           </Text>
           <Text className="text-xs font-semibold text-archive-300">
-            {RATING_MAX}
+            {RATING_MAX.toFixed(1)}
           </Text>
         </View>
-      </Pressable>
+      </View>
 
       {value ? (
         <Pressable
           accessibilityRole="button"
           className="self-start rounded-full border border-archive-600 px-3 py-2"
-          onPress={() => onChange(null)}
-        >
+          onPress={() => onChange(null)}>
           <Text className="text-sm font-semibold text-gold-300">
             Clear rating
           </Text>

@@ -18,7 +18,9 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
 import {
+  getVisibleListFormErrors,
   validateListForm,
+  type ListFormTouchedFields,
   type ListFormValues,
 } from '@/features/lists/components/ListForm';
 import {
@@ -137,26 +139,36 @@ function MembershipRow({
 
 function QuickCreateListForm({
   error,
+  hasSubmitted,
   isSubmitting,
   onCancel,
+  onBlurField,
   onChange,
   onSubmit,
   showCancel,
+  touchedFields,
   values,
 }: {
   error?: string | null;
+  hasSubmitted: boolean;
   isSubmitting: boolean;
   onCancel?: () => void;
+  onBlurField: (key: keyof ListFormValues) => void;
   onChange: <Key extends keyof ListFormValues>(
     key: Key,
     value: ListFormValues[Key],
   ) => void;
   onSubmit: () => void;
   showCancel: boolean;
+  touchedFields: ListFormTouchedFields;
   values: ListFormValues;
 }) {
   const errors = useMemo(() => validateListForm(values), [values]);
-  const hasValidationErrors = Object.keys(errors).length > 0;
+  const visibleErrors = useMemo(
+    () => getVisibleListFormErrors(errors, touchedFields, hasSubmitted),
+    [errors, hasSubmitted, touchedFields],
+  );
+  const hasVisibleValidationErrors = Object.keys(visibleErrors).length > 0;
 
   return (
     <View className="gap-4 rounded-app border border-archive-700 bg-archive-800 p-4">
@@ -168,9 +180,10 @@ function QuickCreateListForm({
       </View>
 
       <TextField
-        error={errors.name}
+        error={visibleErrors.name}
         label="Name"
         maxLength={80}
+        onBlur={() => onBlurField('name')}
         onChangeText={(name) => onChange('name', name)}
         placeholder="Watch Next"
         value={values.name}
@@ -178,17 +191,18 @@ function QuickCreateListForm({
 
       <TextField
         className="min-h-20 py-3"
-        error={errors.description}
+        error={visibleErrors.description}
         label="Description"
         maxLength={280}
         multiline
+        onBlur={() => onBlurField('description')}
         onChangeText={(description) => onChange('description', description)}
         placeholder="Optional note about this collection"
         textAlignVertical="top"
         value={values.description}
       />
 
-      {hasValidationErrors ? (
+      {hasVisibleValidationErrors ? (
         <Text className="text-sm leading-5 text-reel-400">
           Fix the highlighted fields before saving.
         </Text>
@@ -200,7 +214,6 @@ function QuickCreateListForm({
 
       <View className="gap-3">
         <Button
-          disabled={hasValidationErrors}
           loading={isSubmitting}
           onPress={onSubmit}
           title="Create and Save"
@@ -240,11 +253,21 @@ export function AddToListPanel({
   const [createValues, setCreateValues] = useState<ListFormValues>(
     EMPTY_LIST_FORM_VALUES,
   );
+  const [touchedCreateFields, setTouchedCreateFields] =
+    useState<ListFormTouchedFields>({});
+  const [hasSubmittedCreateForm, setHasSubmittedCreateForm] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const showQuickCreate = lists.length === 0 || isCreatingNewList;
   const panelMaxHeight = Math.max(360, height - insets.top - 32);
   const isCreatingAndSaving =
     createListMutation.isPending || addMutation.isPending;
+
+  const markCreateFieldTouched = (key: keyof ListFormValues) => {
+    setTouchedCreateFields((currentFields) => ({
+      ...currentFields,
+      [key]: true,
+    }));
+  };
 
   const updateCreateValue = <Key extends keyof ListFormValues>(
     key: Key,
@@ -254,12 +277,15 @@ export function AddToListPanel({
       ...currentValues,
       [key]: value,
     }));
+    markCreateFieldTouched(key);
     setCreateError(null);
   };
 
   const resetCreateForm = () => {
     setIsCreatingNewList(false);
     setCreateValues(EMPTY_LIST_FORM_VALUES);
+    setTouchedCreateFields({});
+    setHasSubmittedCreateForm(false);
     setCreateError(null);
   };
 
@@ -283,6 +309,7 @@ export function AddToListPanel({
   };
 
   const createListAndSaveTitle = async () => {
+    setHasSubmittedCreateForm(true);
     const errors = validateListForm(createValues);
 
     if (Object.keys(errors).length > 0) {
@@ -383,6 +410,8 @@ export function AddToListPanel({
                         className="min-h-8 justify-center rounded-full border border-archive-600 px-3"
                         onPress={() => {
                           setIsCreatingNewList(true);
+                          setTouchedCreateFields({});
+                          setHasSubmittedCreateForm(false);
                           setCreateError(null);
                         }}>
                         <Text className="text-xs font-semibold text-gold-300">
@@ -418,9 +447,12 @@ export function AddToListPanel({
               {!isLoading && !isError && showQuickCreate ? (
                 <QuickCreateListForm
                   error={createError}
+                  hasSubmitted={hasSubmittedCreateForm}
                   isSubmitting={isCreatingAndSaving}
                   showCancel={lists.length > 0}
+                  touchedFields={touchedCreateFields}
                   values={createValues}
+                  onBlurField={markCreateFieldTouched}
                   onCancel={resetCreateForm}
                   onChange={updateCreateValue}
                   onSubmit={createListAndSaveTitle}
