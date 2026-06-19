@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { InlineNotice } from '@/components/feedback/InlineNotice';
@@ -53,13 +53,19 @@ function LegalSection() {
 }
 
 function DangerSection({
+  confirmVisible,
   deleting,
   error,
+  onCancelDelete,
+  onConfirmDelete,
   onDeleteAccount,
   onSignOut,
 }: {
+  confirmVisible: boolean;
   deleting: boolean;
   error: string | null;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
   onDeleteAccount: () => void;
   onSignOut: () => void;
 }) {
@@ -84,6 +90,35 @@ function DangerSection({
         disabled={deleting}
         onPress={onDeleteAccount}
       />
+      {confirmVisible ? (
+        <View className="gap-4 rounded-app border border-reel-500 bg-archive-800 p-4">
+          <View className="gap-2">
+            <Text className="text-base font-bold text-reel-200">
+              Permanently delete this account?
+            </Text>
+            <Text className="text-sm leading-5 text-archive-100">
+              This removes your profile, journal entries, lists, and avatar. This
+              action cannot be undone.
+            </Text>
+          </View>
+          <View className="flex-row gap-3">
+            <Button
+              title="Cancel"
+              variant="secondary"
+              className="flex-1"
+              disabled={deleting}
+              onPress={onCancelDelete}
+            />
+            <Button
+              title="Delete"
+              variant="danger"
+              className="flex-1"
+              loading={deleting}
+              onPress={onConfirmDelete}
+            />
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -94,6 +129,7 @@ export function ProfileScreen() {
   const deleteAccount = useDeleteAccount();
   const updateAvatar = useUpdateProfileAvatar();
   const [isEditing, setIsEditing] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [accountError, setAccountError] = useState<string | null>(null);
 
@@ -157,31 +193,25 @@ export function ProfileScreen() {
 
   function handleDeleteAccount() {
     setAccountError(null);
+    setDeleteConfirmVisible(true);
+  }
 
-    Alert.alert(
-      'Delete account?',
-      'This permanently removes your profile, journal entries, lists, and avatar. This cannot be undone.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Delete Account',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteAccount.mutateAsync();
-              router.replace('/(auth)/welcome');
-            } catch (error) {
-              setAccountError(
-                getProfileErrorMessage(error, 'Could not delete account.'),
-              );
-            }
-          },
-        },
-      ],
-    );
+  function handleCancelDeleteAccount() {
+    setDeleteConfirmVisible(false);
+  }
+
+  async function handleConfirmDeleteAccount() {
+    setAccountError(null);
+
+    try {
+      await deleteAccount.mutateAsync();
+      setDeleteConfirmVisible(false);
+      router.replace('/(auth)/welcome');
+    } catch (error) {
+      setAccountError(
+        getProfileErrorMessage(error, 'Could not delete account.'),
+      );
+    }
   }
 
   if (!user) {
@@ -248,7 +278,6 @@ export function ProfileScreen() {
         <ProfileIdentityHeader
           avatarLoading={updateAvatar.isPending}
           avatarUrl={avatarUrl}
-          email={user.email}
           isEditing={isEditing}
           profile={profileQuery.data}
           onEdit={() => setIsEditing(true)}
@@ -269,8 +298,11 @@ export function ProfileScreen() {
         <ConnectedAccountSection email={user.email} />
         <LegalSection />
         <DangerSection
+          confirmVisible={deleteConfirmVisible}
           deleting={deleteAccount.isPending}
           error={accountError}
+          onCancelDelete={handleCancelDeleteAccount}
+          onConfirmDelete={handleConfirmDeleteAccount}
           onDeleteAccount={handleDeleteAccount}
           onSignOut={handleSignOut}
         />

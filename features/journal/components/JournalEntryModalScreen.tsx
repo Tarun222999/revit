@@ -17,10 +17,10 @@ import {
 import { useJournalEntryForMedia } from '@/features/journal/hooks/useJournalEntryForMedia';
 import {
   canRateOrReviewReleaseDate,
-  clearRatingAndReviewValues,
   createDefaultJournalEntryFormValues,
   todayString,
   validateJournalEntryForm,
+  valuesForUnreleasedTitle,
   valuesFromJournalEntry,
 } from '@/features/journal/model/journalEntryForm';
 import type { JournalEntryFormValues } from '@/features/journal/types';
@@ -127,8 +127,15 @@ export function JournalEntryModalScreen({
   const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] =
     useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const errors = useMemo(() => validateJournalEntryForm(values), [values]);
   const canRateOrReview = canRateOrReviewReleaseDate(item?.releaseDate);
+  const effectiveValues = useMemo(
+    () => (canRateOrReview ? values : valuesForUnreleasedTitle(values)),
+    [canRateOrReview, values],
+  );
+  const errors = useMemo(
+    () => validateJournalEntryForm(effectiveValues),
+    [effectiveValues],
+  );
 
   useEffect(() => {
     if (entry) {
@@ -140,7 +147,7 @@ export function JournalEntryModalScreen({
 
   useEffect(() => {
     if (!canRateOrReview) {
-      setValues((current) => clearRatingAndReviewValues(current));
+      setValues((current) => valuesForUnreleasedTitle(current));
     }
   }, [canRateOrReview]);
 
@@ -189,12 +196,12 @@ export function JournalEntryModalScreen({
 
       if (resolvedEntryId) {
         await updateEntryMutation.mutateAsync({
-          ...(canRateOrReview ? values : clearRatingAndReviewValues(values)),
+          ...effectiveValues,
           entryId: resolvedEntryId,
         });
       } else {
         await createEntryMutation.mutateAsync({
-          ...(canRateOrReview ? values : clearRatingAndReviewValues(values)),
+          ...effectiveValues,
           mediaItemId,
           userId: user.id,
         });

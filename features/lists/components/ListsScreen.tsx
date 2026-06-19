@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
@@ -58,6 +59,14 @@ function getListStats(lists: UserListSummary[]) {
 
 function getTitleCountLabel(count: number) {
   return count === 1 ? '1 title' : `${count} titles`;
+}
+
+function ListExampleChip({ label }: { label: string }) {
+  return (
+    <View className="rounded-full border border-archive-600 px-3 py-2">
+      <Text className="text-sm font-semibold text-gold-300">{label}</Text>
+    </View>
+  );
 }
 
 function ListsLoadingState() {
@@ -126,12 +135,42 @@ function ListsLoadedContent({
 }) {
   if (lists.length === 0) {
     return (
-      <EmptyState
-        title="Create your first list"
-        message="Build mixed-media collections like Favorites, Watch Next, or Best Endings."
-        actionLabel="Create List"
-        onAction={onCreateList}
-      />
+      <Card className="gap-5 p-5">
+        <View className="flex-row items-start gap-3">
+          <View className="h-12 w-12 items-center justify-center rounded-full bg-shelf-700">
+            <Ionicons color="#f4c95d" name="albums" size={22} />
+          </View>
+          <View className="min-w-0 flex-1 gap-1">
+            <Text className="text-xl font-bold text-archive-50">
+              Build your first collection
+            </Text>
+            <Text className="text-sm leading-5 text-archive-300">
+              Lists are for hand-picked shelves that mix movies, series, and
+              anime without changing the journal log.
+            </Text>
+          </View>
+        </View>
+
+        <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-4">
+          <Text className="text-xs font-bold uppercase text-archive-300">
+            A few good starters
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            <ListExampleChip label="Favorites" />
+            <ListExampleChip label="Watch Next" />
+            <ListExampleChip label="Best Endings" />
+          </View>
+        </View>
+
+        <View className="gap-3">
+          <Button title="Create List" onPress={onCreateList} />
+          <Button
+            title="Find Titles"
+            variant="secondary"
+            onPress={() => router.push('/search')}
+          />
+        </View>
+      </Card>
     );
   }
 

@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils/cn';
 
 type JournalFilterBoardProps = {
   entries: JournalListEntry[];
+  expanded: boolean;
   filters: JournalListFilters;
   hasActiveFilters: boolean;
   sort: JournalSort;
@@ -23,6 +24,7 @@ type JournalFilterBoardProps = {
   onClearFilters: () => void;
   onFiltersChange: (filters: JournalListFilters) => void;
   onSortChange: (sort: JournalSort) => void;
+  onToggleExpanded: () => void;
 };
 
 type MediaOption = {
@@ -234,6 +236,7 @@ function OptionPillGroup<Value extends string>({
  */
 export function JournalFilterBoard({
   entries,
+  expanded,
   filters,
   hasActiveFilters,
   sort,
@@ -241,6 +244,7 @@ export function JournalFilterBoard({
   onClearFilters,
   onFiltersChange,
   onSortChange,
+  onToggleExpanded,
 }: JournalFilterBoardProps) {
   const updateFilters = (nextFilters: Partial<JournalListFilters>) => {
     onFiltersChange({
@@ -265,50 +269,67 @@ export function JournalFilterBoard({
         </View>
       </View>
 
-      <View className="flex-row gap-2">
-        {MEDIA_FILTER_OPTIONS.map((option) => (
-          <FilterTile
-            count={countEntriesForMedia(entries, option.value)}
-            key={option.value}
-            label={option.label}
-            selected={filters.mediaType === option.value}
-            onPress={() => updateFilters({ mediaType: option.value })}
-          />
-        ))}
-      </View>
-
-      <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
-        <LaneLabel title="Status track" />
-        <OptionPillGroup
-          options={STATUS_FILTER_OPTIONS}
-          selectedValue={filters.status}
-          statusForOption={(status) => status}
-          onSelect={(status) => updateFilters({ status })}
-        />
-      </View>
-
       <View className="flex-row gap-3">
-        <View className="flex-1 gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
-          <LaneLabel title="Rating" />
-          <OptionPillGroup
-            options={RATING_FILTER_OPTIONS}
-            selectedValue={filters.rating}
-            onSelect={(rating) => updateFilters({ rating })}
-          />
-        </View>
-      </View>
-
-      <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
-        <LaneLabel title="Sort" />
-        <OptionPillGroup
-          options={SORT_OPTIONS}
-          selectedValue={sort}
-          onSelect={onSortChange}
+        <Button
+          title={expanded ? 'Hide filters' : 'Filters'}
+          variant="secondary"
+          className="flex-1"
+          onPress={onToggleExpanded}
         />
+        {hasActiveFilters ? (
+          <Button
+            title="Clear"
+            variant="ghost"
+            className="w-24"
+            onPress={onClearFilters}
+          />
+        ) : null}
       </View>
 
-      {hasActiveFilters ? (
-        <Button title="Clear filters" variant="ghost" onPress={onClearFilters} />
+      {expanded ? (
+        <>
+          <View className="flex-row gap-2">
+            {MEDIA_FILTER_OPTIONS.map((option) => (
+              <FilterTile
+                count={countEntriesForMedia(entries, option.value)}
+                key={option.value}
+                label={option.label}
+                selected={filters.mediaType === option.value}
+                onPress={() => updateFilters({ mediaType: option.value })}
+              />
+            ))}
+          </View>
+
+          <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
+            <LaneLabel title="Status track" />
+            <OptionPillGroup
+              options={STATUS_FILTER_OPTIONS}
+              selectedValue={filters.status}
+              statusForOption={(status) => status}
+              onSelect={(status) => updateFilters({ status })}
+            />
+          </View>
+
+          <View className="flex-row gap-3">
+            <View className="flex-1 gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
+              <LaneLabel title="Rating" />
+              <OptionPillGroup
+                options={RATING_FILTER_OPTIONS}
+                selectedValue={filters.rating}
+                onSelect={(rating) => updateFilters({ rating })}
+              />
+            </View>
+          </View>
+
+          <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-3">
+            <LaneLabel title="Sort" />
+            <OptionPillGroup
+              options={SORT_OPTIONS}
+              selectedValue={sort}
+              onSelect={onSortChange}
+            />
+          </View>
+        </>
       ) : null}
     </Card>
   );

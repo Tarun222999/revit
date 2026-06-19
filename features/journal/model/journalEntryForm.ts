@@ -46,6 +46,16 @@ export function clearRatingAndReviewValues(
   };
 }
 
+export function valuesForUnreleasedTitle(
+  values: JournalEntryFormValues,
+): JournalEntryFormValues {
+  return {
+    ...clearRatingAndReviewValues(values),
+    completedOn: null,
+    status: 'planned',
+  };
+}
+
 /**
  * Creates a fresh set of default values for the journal entry form.
  *

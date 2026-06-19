@@ -1,11 +1,12 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { sendEmailOtp, verifyEmailOtp } from '@/features/auth/api/email-auth-api';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { TextField } from '@/components/ui/TextField';
+import { sendEmailOtp, verifyEmailOtp } from '@/features/auth/api/email-auth-api';
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -65,53 +66,99 @@ export function EmailCodeScreen() {
 
   return (
     <Screen scroll>
-      <View className="gap-8">
-        <View className="gap-3">
-          <Text className="text-3xl font-bold text-archive-50">Continue with Email</Text>
-          <Text className="text-base leading-6 text-archive-200">
-            We&apos;ll send a one-time sign-in code and magic link to your inbox.
-          </Text>
+      <View className="gap-6">
+        <View className="gap-5 pt-4">
+          <Pressable
+            accessibilityRole="button"
+            className="min-h-10 self-start justify-center"
+            onPress={() => router.back()}>
+            <Text className="text-sm font-semibold text-gold-300">
+              Back
+            </Text>
+          </Pressable>
+
+          <View className="gap-3">
+            <Text className="text-sm font-semibold uppercase text-gold-300">
+              Sign in
+            </Text>
+            <Text className="text-3xl font-bold text-archive-50">
+              Continue with Email
+            </Text>
+            <Text className="text-base leading-6 text-archive-200">
+              Get a one-time code or magic link for your Revit account.
+            </Text>
+          </View>
         </View>
 
-        <View className="gap-4">
-          <TextField
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            placeholder="you@example.com"
-            error={emailError}
-            editable={!loading}
-          />
+        <Card className="gap-5">
+          <View className="gap-2">
+            <Text className="text-lg font-bold text-archive-50">
+              {sent ? 'Check your inbox' : 'Where should we send it?'}
+            </Text>
+            <Text className="text-sm leading-5 text-archive-300">
+              {sent
+                ? `We sent a sign-in email to ${email.trim()}.`
+                : 'Use the email address you want attached to your journal.'}
+            </Text>
+          </View>
 
-          {sent ? (
+          <View className="gap-4">
             <TextField
-              label="Code"
-              value={token}
-              onChangeText={setToken}
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
               autoCapitalize="none"
               autoCorrect={false}
-              keyboardType="number-pad"
-              placeholder="123456"
-              editable={!loading}
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              placeholder="you@example.com"
+              error={emailError}
+              editable={!loading && !sent}
             />
-          ) : null}
 
-          {notice ? <Text className="text-sm leading-5 text-teal-300">{notice}</Text> : null}
-          {error ? <Text className="text-sm leading-5 text-reel-400">{error}</Text> : null}
+            {sent ? (
+              <TextField
+                label="Code"
+                value={token}
+                onChangeText={setToken}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="number-pad"
+                placeholder="123456"
+                editable={!loading}
+              />
+            ) : null}
 
-          {sent ? (
-            <View className="gap-3">
-              <Button title="Verify Code" onPress={handleVerifyCode} loading={loading} />
-              <Button title="Resend Code" variant="ghost" onPress={handleSendCode} disabled={loading} />
-            </View>
-          ) : (
-            <Button title="Send Code" onPress={handleSendCode} loading={loading} />
-          )}
-        </View>
+            {notice ? (
+              <View className="rounded-app border border-teal-700 bg-teal-950/40 px-4 py-3">
+                <Text className="text-sm leading-5 text-teal-200">
+                  {notice}
+                </Text>
+              </View>
+            ) : null}
+
+            {error ? (
+              <View className="rounded-app border border-reel-500 bg-reel-950/30 px-4 py-3">
+                <Text className="text-sm leading-5 text-reel-300">
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+
+            {sent ? (
+              <View className="gap-3">
+                <Button title="Verify Code" onPress={handleVerifyCode} loading={loading} />
+                <Button title="Resend Code" variant="ghost" onPress={handleSendCode} disabled={loading} />
+              </View>
+            ) : (
+              <Button title="Send Code" onPress={handleSendCode} loading={loading} />
+            )}
+          </View>
+        </Card>
+
+        <Text className="text-center text-xs leading-5 text-archive-400">
+          No password needed. Email sign-in keeps your account simple and secure.
+        </Text>
       </View>
     </Screen>
   );

@@ -94,7 +94,17 @@ export function JournalEntryForm({
     <>
       <JournalEntryMediaSummary item={item} />
 
-      <JournalStatusSelector value={values.status} onChange={onStatusChange} />
+      {canRateOrReview ? (
+        <JournalStatusSelector value={values.status} onChange={onStatusChange} />
+      ) : (
+        <Card className="gap-1 border-gold-700 bg-archive-800">
+          <Text className="text-sm font-semibold text-archive-100">Status</Text>
+          <Text className="text-base font-bold text-archive-50">Planned</Text>
+          <Text className="text-sm leading-5 text-archive-300">
+            Unreleased titles stay planned until their release date.
+          </Text>
+        </Card>
+      )}
 
       {canRateOrReview ? (
         <>
@@ -136,10 +146,10 @@ export function JournalEntryForm({
       ) : (
         <Card className="gap-1 border-gold-700 bg-archive-800">
           <Text className="text-base font-bold text-archive-50">
-            Rating opens after release
+            Rating and review open after release
           </Text>
           <Text className="text-sm leading-5 text-archive-300">
-            You can add this title to your journal now, then rate and review it once it has been released.
+            You can save this title to your plans now, then update status, rating, and review once it has been released.
           </Text>
         </Card>
       )}

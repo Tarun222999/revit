@@ -5,17 +5,15 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import type { Profile } from '@/features/profile/api/profile-api';
 
-function getProfileInitial(profile: Profile, email?: string) {
+function getProfileInitial(profile: Profile) {
   return (
     profile.display_name[0] ??
     profile.username[0] ??
-    email?.[0] ??
     'R'
   ).toUpperCase();
 }
 
 type ProfileIdentityHeaderProps = {
-  email?: string;
   isEditing: boolean;
   avatarUrl?: string | null;
   avatarLoading?: boolean;
@@ -27,7 +25,6 @@ type ProfileIdentityHeaderProps = {
 export function ProfileIdentityHeader({
   avatarLoading = false,
   avatarUrl,
-  email,
   isEditing,
   profile,
   onEdit,
@@ -46,7 +43,7 @@ export function ProfileIdentityHeader({
           ) : (
             <View className="h-full w-full items-center justify-center">
               <Text className="text-2xl font-bold text-gold-300">
-                {getProfileInitial(profile, email)}
+                {getProfileInitial(profile)}
               </Text>
             </View>
           )}
@@ -57,9 +54,6 @@ export function ProfileIdentityHeader({
             {profile.display_name}
           </Text>
           <Text className="text-base text-archive-300">@{profile.username}</Text>
-          {email ? (
-            <Text className="text-sm text-archive-400">{email}</Text>
-          ) : null}
         </View>
       </View>
 

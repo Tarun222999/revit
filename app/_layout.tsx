@@ -1,7 +1,9 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import * as SystemUI from 'expo-system-ui';
 import * as WebBrowser from 'expo-web-browser';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
@@ -32,6 +34,10 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  useEffect(() => {
+    void SystemUI.setBackgroundColorAsync(APP_BACKGROUND_COLOR);
+  }, []);
+
   return (
     <QueryProvider>
       <AuthProvider>
