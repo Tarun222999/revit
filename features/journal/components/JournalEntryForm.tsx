@@ -1,4 +1,9 @@
-import { Text, View } from 'react-native';
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
+import { useMemo, useState } from 'react';
+import { Platform, Text, View } from 'react-native';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
@@ -37,6 +42,47 @@ type JournalEntryFormProps = {
 };
 
 const MEDIA_METADATA_SEPARATOR = ' - ';
+const DATE_INPUT_LENGTH = 10;
+
+function dateFromInput(value: string | null) {
+  if (!value) {
+    return new Date();
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return new Date();
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function dateToInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateLabel(value: string | null) {
+  if (!value) {
+    return 'Choose completion date';
+  }
+
+  const date = dateFromInput(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, DATE_INPUT_LENGTH);
+  }
+
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+}
 
 function getMediaMetadataLabel(item: NormalizedMediaItem) {
   return item.year
@@ -61,6 +107,79 @@ function JournalEntryMediaSummary({ item }: { item?: NormalizedMediaItem }) {
         </Text>
       </View>
     </Card>
+  );
+}
+
+function CompletedOnPicker({
+  error,
+  onChange,
+  value,
+}: {
+  error?: string;
+  onChange: (completedOn: string | null) => void;
+  value: string | null;
+}) {
+  const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const date = useMemo(() => dateFromInput(value), [value]);
+  const label = formatDateLabel(value);
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    selectedDate?: Date,
+  ) => {
+    if (event.type === 'dismissed') {
+      setIsPickerVisible(false);
+      return;
+    }
+
+    if (selectedDate) {
+      onChange(dateToInput(selectedDate));
+    }
+
+    if (Platform.OS !== 'ios') {
+      setIsPickerVisible(false);
+    }
+  };
+
+  return (
+    <View className="gap-2">
+      <Text className="text-sm font-semibold text-archive-100">
+        Completed on
+      </Text>
+      <View className="gap-3 rounded-app border border-archive-500 bg-archive-800 px-4 py-3">
+        <View className="flex-row items-center gap-3">
+          <Ionicons color="#f0c15a" name="calendar-outline" size={20} />
+          <View className="min-w-0 flex-1">
+            <Text className="text-base font-semibold text-archive-50">
+              {label}
+            </Text>
+          </View>
+          <Button
+            className="min-h-10 px-3"
+            title={isPickerVisible ? 'Done' : 'Pick'}
+            variant="secondary"
+            onPress={() => setIsPickerVisible((current) => !current)}
+          />
+        </View>
+        {isPickerVisible ? (
+          <DateTimePicker
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            mode="date"
+            value={date}
+            onChange={handleDateChange}
+          />
+        ) : null}
+      </View>
+      {value ? (
+        <Button
+          className="self-start px-0"
+          title="Clear date"
+          variant="ghost"
+          onPress={() => onChange(null)}
+        />
+      ) : null}
+      {error ? <Text className="text-sm text-reel-400">{error}</Text> : null}
+    </View>
   );
 }
 
@@ -155,14 +274,10 @@ export function JournalEntryForm({
       )}
 
       {values.status === 'completed' ? (
-        <TextField
+        <CompletedOnPicker
           error={errors.completedOn}
-          label="Completed on"
-          onChangeText={(completedOn) =>
-            onChange('completedOn', completedOn || null)
-          }
-          placeholder="YYYY-MM-DD"
-          value={values.completedOn ?? ''}
+          value={values.completedOn}
+          onChange={(completedOn) => onChange('completedOn', completedOn)}
         />
       ) : null}
 
