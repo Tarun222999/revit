@@ -22,6 +22,7 @@ export type JournalEntryFormValues = {
   reviewHeadline: string;
   reviewBody: string;
   containsSpoilers: boolean;
+  startedOn: string | null;
   completedOn: string | null;
 };
 
@@ -68,6 +69,7 @@ export type JournalListEntry = {
   reviewBody: string | null;
   containsSpoilers: boolean;
   completedOn: string | null;
+  startedOn: string | null;
   createdAt: string;
   updatedAt: string;
   lastActivityAt: string;

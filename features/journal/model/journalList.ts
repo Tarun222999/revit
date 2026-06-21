@@ -101,6 +101,7 @@ export function toJournalListEntry(row: JournalListEntryRow): JournalListEntry {
     reviewHeadline: row.review_headline,
     source: mediaItem.source,
     sourceId: mediaItem.source_id,
+    startedOn: row.started_on,
     status: row.status,
     title: mediaItem.title,
     updatedAt: row.updated_at,

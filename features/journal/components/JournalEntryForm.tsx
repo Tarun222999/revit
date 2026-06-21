@@ -66,9 +66,9 @@ function dateToInput(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function formatDateLabel(value: string | null) {
+function formatDateLabel(value: string | null, emptyLabel: string) {
   if (!value) {
-    return 'Choose completion date';
+    return emptyLabel;
   }
 
   const date = dateFromInput(value);
@@ -110,18 +110,22 @@ function JournalEntryMediaSummary({ item }: { item?: NormalizedMediaItem }) {
   );
 }
 
-function CompletedOnPicker({
+function JournalDatePicker({
+  emptyLabel,
   error,
+  label,
   onChange,
   value,
 }: {
+  emptyLabel: string;
   error?: string;
-  onChange: (completedOn: string | null) => void;
+  label: string;
+  onChange: (date: string | null) => void;
   value: string | null;
 }) {
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   const date = useMemo(() => dateFromInput(value), [value]);
-  const label = formatDateLabel(value);
+  const selectedDateLabel = formatDateLabel(value, emptyLabel);
 
   const handleDateChange = (
     event: DateTimePickerEvent,
@@ -144,14 +148,14 @@ function CompletedOnPicker({
   return (
     <View className="gap-2">
       <Text className="text-sm font-semibold text-archive-100">
-        Completed on
+        {label}
       </Text>
       <View className="gap-3 rounded-app border border-archive-500 bg-archive-800 px-4 py-3">
         <View className="flex-row items-center gap-3">
           <Ionicons color="#f0c15a" name="calendar-outline" size={20} />
           <View className="min-w-0 flex-1">
             <Text className="text-base font-semibold text-archive-50">
-              {label}
+              {selectedDateLabel}
             </Text>
           </View>
           <Button
@@ -225,6 +229,16 @@ export function JournalEntryForm({
         </Card>
       )}
 
+      {!canRateOrReview ? (
+        <JournalDatePicker
+          emptyLabel="Choose planned date"
+          error={errors.startedOn}
+          label="Planned for"
+          value={values.startedOn}
+          onChange={(startedOn) => onChange('startedOn', startedOn)}
+        />
+      ) : null}
+
       {canRateOrReview ? (
         <>
           <RatingInput
@@ -274,8 +288,10 @@ export function JournalEntryForm({
       )}
 
       {values.status === 'completed' ? (
-        <CompletedOnPicker
+        <JournalDatePicker
+          emptyLabel="Choose completion date"
           error={errors.completedOn}
+          label="Completed on"
           value={values.completedOn}
           onChange={(completedOn) => onChange('completedOn', completedOn)}
         />

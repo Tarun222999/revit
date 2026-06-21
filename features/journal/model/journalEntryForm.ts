@@ -69,6 +69,7 @@ export function createDefaultJournalEntryFormValues(): JournalEntryFormValues {
     rating: null,
     reviewBody: '',
     reviewHeadline: '',
+    startedOn: null,
     status: JOURNAL_DEFAULT_STATUS,
   };
 }
@@ -88,6 +89,7 @@ export function valuesFromJournalEntry(
     rating: entry.rating,
     reviewBody: entry.review_body ?? '',
     reviewHeadline: entry.review_headline ?? '',
+    startedOn: entry.started_on,
     status: entry.status,
   };
 }
@@ -131,6 +133,10 @@ export function validateJournalEntryForm(
     !isValidDateInput(values.completedOn)
   ) {
     errors.completedOn = 'Use YYYY-MM-DD.';
+  }
+
+  if (values.startedOn && !isValidDateInput(values.startedOn)) {
+    errors.startedOn = 'Use YYYY-MM-DD.';
   }
 
   return errors;

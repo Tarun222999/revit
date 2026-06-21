@@ -71,6 +71,7 @@ export function YourEntrySummary({ entry }: YourEntrySummaryProps) {
 
   const completedOn = formatDate(entry.completed_on);
   const loggedAt = formatDate(entry.created_at);
+  const startedOn = formatDate(entry.started_on);
   const updatedAt = formatDate(entry.last_activity_at);
   const reviewPreview = entry.review_headline || entry.review_body;
 
@@ -100,6 +101,11 @@ export function YourEntrySummary({ entry }: YourEntrySummaryProps) {
 
       {completedOn ? (
         <Metric label="Completed" value={completedOn} />
+      ) : startedOn ? (
+        <Metric
+          label={entry.status === 'planned' ? 'Planned for' : 'Started'}
+          value={startedOn}
+        />
       ) : updatedAt ? (
         <Metric label="Last activity" value={updatedAt} />
       ) : null}

@@ -23,6 +23,10 @@ function formatDate(date: string) {
 }
 
 function getActivityLabel(entry: JournalListEntry, sort: JournalSort) {
+  if (entry.status === 'planned' && entry.startedOn) {
+    return `Planned for ${formatDate(entry.startedOn)}`;
+  }
+
   if (sort === 'recently_added') {
     return `Added ${formatDate(entry.createdAt)}`;
   }
