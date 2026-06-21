@@ -294,16 +294,18 @@ export function ListsScreen() {
               subtitle="Curate movies, series, and anime into custom collections."
             />
           </View>
-          <Button
-            title="Create"
-            disabled={!user || authLoading}
-            className="min-h-10 px-4"
-            onPress={startCreateList}
-          />
+          {!isCreatingList ? (
+            <Button
+              title="Create"
+              disabled={!user || authLoading}
+              className="min-h-10 px-4"
+              onPress={startCreateList}
+            />
+          ) : null}
         </View>
       </View>
 
-      {isCreatingList ? (
+      {!authLoading && user && isCreatingList ? (
         <ListForm
           errors={visibleFormErrors}
           hasSubmitted={hasSubmittedForm}
@@ -338,7 +340,7 @@ export function ListsScreen() {
         />
       ) : null}
 
-      {!authLoading && user && listsQuery.isSuccess ? (
+      {!authLoading && user && listsQuery.isSuccess && !isCreatingList ? (
         <ListsLoadedContent
           lists={lists}
           onCreateList={startCreateList}
