@@ -10,6 +10,7 @@ import type { JournalListEntry, JournalSort } from '@/features/journal/types';
 type JournalEntryCardProps = {
   entry: JournalListEntry;
   sort: JournalSort;
+  showActivityLabel?: boolean;
   onPress: () => void;
 };
 
@@ -52,7 +53,12 @@ function getReviewPreview(entry: JournalListEntry) {
   return entry.reviewHeadline || entry.reviewBody;
 }
 
-export function JournalEntryCard({ entry, sort, onPress }: JournalEntryCardProps) {
+export function JournalEntryCard({
+  entry,
+  sort,
+  showActivityLabel = true,
+  onPress,
+}: JournalEntryCardProps) {
   const reviewPreview = getReviewPreview(entry);
 
   return (
@@ -63,14 +69,11 @@ export function JournalEntryCard({ entry, sort, onPress }: JournalEntryCardProps
 
           <View className="min-w-0 flex-1 gap-2">
             <View className="gap-1">
-              <View className="flex-row items-start justify-between gap-3">
-                <Text
-                  className="min-w-0 flex-1 text-base font-bold text-archive-50"
-                  numberOfLines={2}>
-                  {entry.title}
-                </Text>
-                <RatingBadge rating={entry.rating} />
-              </View>
+              <Text
+                className="text-base font-bold text-archive-50"
+                numberOfLines={2}>
+                {entry.title}
+              </Text>
 
               <Text className="text-sm text-archive-300" numberOfLines={1}>
                 {getMetadata(entry)}
@@ -78,6 +81,7 @@ export function JournalEntryCard({ entry, sort, onPress }: JournalEntryCardProps
             </View>
 
             <View className="flex-row flex-wrap gap-2">
+              <RatingBadge rating={entry.rating} />
               <View className="rounded-full bg-archive-700 px-3 py-1">
                 <Text className="text-xs font-bold text-gold-300">
                   {MEDIA_TYPE_LABELS[entry.mediaType]}
@@ -92,9 +96,11 @@ export function JournalEntryCard({ entry, sort, onPress }: JournalEntryCardProps
               </Text>
             ) : null}
 
-            <Text className="text-xs font-semibold text-archive-300">
-              {getActivityLabel(entry, sort)}
-            </Text>
+            {showActivityLabel ? (
+              <Text className="text-xs font-semibold text-archive-300">
+                {getActivityLabel(entry, sort)}
+              </Text>
+            ) : null}
           </View>
         </View>
       </Card>

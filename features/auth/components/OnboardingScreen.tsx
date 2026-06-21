@@ -1,14 +1,21 @@
 import { router } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { useMemo, useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { normalizeUsername, validateDisplayName, validateUsername } from '@/features/profile/api/profile-api';
+import {
+  normalizeUsername,
+  uploadProfileAvatar,
+  validateDisplayName,
+  validateUsername,
+} from '@/features/profile/api/profile-api';
 import { useCreateProfile } from '@/features/profile/hooks/useCreateProfile';
+import { getProfileErrorMessage } from '@/features/profile/utils/profileErrors';
 
 function ProfileTextInput({
   autoCapitalize = 'none',
@@ -58,14 +65,62 @@ export function OnboardingScreen() {
   const createProfile = useCreateProfile();
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
+  const [selectedAvatar, setSelectedAvatar] =
+    useState<ImagePicker.ImagePickerAsset | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const normalizedUsername = useMemo(() => normalizeUsername(username), [username]);
   const displayNameError = displayName ? validateDisplayName(displayName) ?? undefined : undefined;
   const usernameError = username ? validateUsername(username) ?? undefined : undefined;
   const avatarInitial = (displayName.trim()[0] ?? username.trim()[0] ?? 'R').toUpperCase();
+  const isBusy = isSubmitting || createProfile.isPending;
+
+  async function handlePickAvatar() {
+    if (isBusy) {
+      return;
+    }
+
+    setError(null);
+
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (!permission.granted) {
+        setError('Allow photo library access before choosing an avatar.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        base64: true,
+        mediaTypes: ['images'],
+        quality: 0.85,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const asset = result.assets[0];
+
+      if (!asset) {
+        setError('Choose an image before adding an avatar.');
+        return;
+      }
+
+      setSelectedAvatar(asset);
+    } catch (avatarError) {
+      setError(getProfileErrorMessage(avatarError, 'Could not choose avatar.'));
+    }
+  }
 
   async function handleContinue() {
+    if (isBusy) {
+      return;
+    }
+
     setError(null);
 
     if (!user) {
@@ -82,7 +137,20 @@ export function OnboardingScreen() {
     }
 
     try {
+      setIsSubmitting(true);
+      const avatarPath = selectedAvatar
+        ? await uploadProfileAvatar({
+            base64: selectedAvatar.base64,
+            file: selectedAvatar.file ?? null,
+            fileName: selectedAvatar.fileName,
+            mimeType: selectedAvatar.mimeType,
+            uri: selectedAvatar.uri,
+            userId: user.id,
+          })
+        : null;
+
       await createProfile.mutateAsync({
+        avatarPath,
         userId: user.id,
         displayName,
         username: normalizedUsername,
@@ -97,6 +165,8 @@ export function OnboardingScreen() {
       }
 
       setError(message);
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -118,13 +188,35 @@ export function OnboardingScreen() {
         <Card className="gap-5 border-gold-500 bg-archive-800 p-5">
           <View className="flex-row items-center gap-4">
             <View className="relative h-20 w-20">
-              <View className="h-20 w-20 items-center justify-center rounded-full border-2 border-dashed border-gold-400 bg-gold-500/20">
-                <Text className="text-3xl font-bold text-gold-400">{avatarInitial}</Text>
-              </View>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel="Choose optional profile avatar"
+                disabled={isBusy}
+                onPress={handlePickAvatar}
+                className="h-20 w-20 overflow-hidden rounded-full border-2 border-dashed border-gold-400 bg-gold-500/20">
+                {selectedAvatar ? (
+                  <Image
+                    source={{ uri: selectedAvatar.uri }}
+                    className="h-full w-full"
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View className="h-full w-full items-center justify-center">
+                    <Text className="text-3xl font-bold text-gold-400">{avatarInitial}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Choose optional profile avatar"
+                disabled={isBusy}
+                onPress={handlePickAvatar}
                 className="absolute bottom-0 right-0 h-9 w-9 items-center justify-center rounded-full border-4 border-archive-800 bg-gold-400">
-                <MaterialIcons name="edit" size={18} color="#fbf6ec" />
+                <MaterialIcons
+                  name={selectedAvatar ? 'edit' : 'add-a-photo'}
+                  size={18}
+                  color="#fbf6ec"
+                />
               </Pressable>
             </View>
             <View className="min-w-0 flex-1 gap-1">
@@ -146,7 +238,7 @@ export function OnboardingScreen() {
             textContentType="name"
             icon="person-outline"
             error={displayNameError}
-            editable={!createProfile.isPending}
+            editable={!isBusy}
           />
 
           <ProfileTextInput
@@ -156,7 +248,7 @@ export function OnboardingScreen() {
             placeholder="revit_reader"
             icon="alternate-email"
             error={usernameError}
-            editable={!createProfile.isPending}
+            editable={!isBusy}
           />
 
           <View className="gap-2">
@@ -168,6 +260,9 @@ export function OnboardingScreen() {
                 This will be saved as @{normalizedUsername}.
               </Text>
             ) : null}
+            <Text className="text-sm leading-5 text-archive-300">
+              Avatar is optional and can be changed later from Profile.
+            </Text>
           </View>
 
           {error ? (
@@ -180,7 +275,7 @@ export function OnboardingScreen() {
             title="Continue"
             className="mt-4 min-h-14"
             onPress={handleContinue}
-            loading={createProfile.isPending}
+            loading={isBusy}
           />
         </Card>
       </View>
