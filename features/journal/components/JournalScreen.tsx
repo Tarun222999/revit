@@ -291,7 +291,6 @@ function JournalLoadedContent({
   return (
     <>
       <JournalFilterBoard
-        entries={entries}
         expanded={filtersExpanded}
         filters={filters}
         hasActiveFilters={activeFilters}

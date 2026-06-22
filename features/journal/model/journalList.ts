@@ -13,14 +13,16 @@ import type { MediaSource } from '@/types/media';
 const MEDIA_SOURCES = ['tmdb', 'igdb'] as const;
 const RELEASE_YEAR_LENGTH = 4;
 const TIMELINE_MONTH_KEY_LENGTH = 7;
+const TIMELINE_MONTH_LOCALE = 'en';
+const LAST_30_DAYS = 30;
 const MINIMUM_STRONG_RATING = 4;
 const MINIMUM_POSITIVE_RATING = 3;
-const TIMELINE_MONTH_LOCALE = 'en';
 
 export const JOURNAL_DEFAULT_FILTERS: JournalListFilters = {
+  date: 'all',
   mediaType: 'all',
   rating: 'any',
-  status: 'all',
+  statuses: [],
 };
 
 export const JOURNAL_DEFAULT_SORT: JournalSort = 'recent_activity';
@@ -137,6 +139,41 @@ function matchesRatingFilter(
   }
 }
 
+function getDateFilterStart(dateFilter: JournalListFilters['date']) {
+  if (dateFilter === 'all') {
+    return null;
+  }
+
+  const now = new Date();
+  const startDate = new Date(now);
+
+  if (dateFilter === 'this_month') {
+    startDate.setDate(1);
+  }
+
+  if (dateFilter === 'last_30_days') {
+    startDate.setDate(now.getDate() - LAST_30_DAYS);
+  }
+
+  if (dateFilter === 'this_year') {
+    startDate.setMonth(0, 1);
+  }
+
+  startDate.setHours(0, 0, 0, 0);
+
+  return startDate;
+}
+
+function matchesDateFilter(entry: JournalListEntry, filters: JournalListFilters) {
+  const startDate = getDateFilterStart(filters.date);
+
+  if (!startDate) {
+    return true;
+  }
+
+  return new Date(entry.createdAt) >= startDate;
+}
+
 /**
  * Checks whether a journal list has any non-default filter selected.
  *
@@ -145,9 +182,10 @@ function matchesRatingFilter(
  */
 export function hasActiveJournalFilters(filters: JournalListFilters) {
   return (
+    filters.date !== JOURNAL_DEFAULT_FILTERS.date ||
     filters.mediaType !== JOURNAL_DEFAULT_FILTERS.mediaType ||
-    filters.rating !== JOURNAL_DEFAULT_FILTERS.rating ||
-    filters.status !== JOURNAL_DEFAULT_FILTERS.status
+    filters.statuses.length > 0 ||
+    filters.rating !== JOURNAL_DEFAULT_FILTERS.rating
   );
 }
 
@@ -156,7 +194,7 @@ function matchesMediaFilter(entry: JournalListEntry, filters: JournalListFilters
 }
 
 function matchesStatusFilter(entry: JournalListEntry, filters: JournalListFilters) {
-  return filters.status === 'all' || entry.status === filters.status;
+  return filters.statuses.length === 0 || filters.statuses.includes(entry.status);
 }
 
 /**
@@ -174,7 +212,8 @@ export function filterJournalEntries(
     (entry) =>
       matchesMediaFilter(entry, filters) &&
       matchesStatusFilter(entry, filters) &&
-      matchesRatingFilter(entry, filters.rating),
+      matchesRatingFilter(entry, filters.rating) &&
+      matchesDateFilter(entry, filters),
   );
 }
 

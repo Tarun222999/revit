@@ -76,14 +76,16 @@ export type JournalListEntry = {
 };
 
 export type JournalMediaFilter = 'all' | MediaType;
-export type JournalStatusFilter = 'all' | JournalStatus;
+export type JournalStatusFilter = JournalStatus[];
 export type JournalRatingFilter = 'any' | 'rated' | 'unrated' | 'gte_4' | 'gte_3';
+export type JournalDateFilter = 'all' | 'this_month' | 'last_30_days' | 'this_year';
 export type JournalSort = 'recent_activity' | 'recently_added' | 'rating' | 'title';
 
 export type JournalListFilters = {
   mediaType: JournalMediaFilter;
-  status: JournalStatusFilter;
+  statuses: JournalStatusFilter;
   rating: JournalRatingFilter;
+  date: JournalDateFilter;
 };
 
 export type JournalTimelineGroup = {
