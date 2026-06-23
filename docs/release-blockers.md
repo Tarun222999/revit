@@ -38,6 +38,7 @@ Release requirement:
 Status: open
 Severity: release blocker
 Area: authentication, branding
+Linear: TAR-93
 
 Issue:
 
@@ -58,46 +59,51 @@ Release requirement:
 - Configure Google OAuth consent branding so the consent flow clearly shows Revit.
 - Review Supabase custom domain options for auth before release.
 - Verify the final Google consent screen on mobile and web before submission.
+- Complete this during Phase 8 before final auth verification and before Phase 9 screenshots/release builds.
 
 ## Production Email Delivery Uses Supabase Built-In Email
 
-Status: open
-Severity: release blocker
+Status: deferred
+Severity: post-domain follow-up
 Area: authentication, email delivery
+Linear: TAR-73
 
 Issue:
 
-Supabase's built-in email service is being used for OTP and magic-link emails during development. This service has rate limits and is not intended for production app email delivery.
+Supabase's built-in email service is available for OTP and magic-link emails during development. This service has rate limits and is not intended for production app email delivery.
+
+The v1 launch auth plan now hides Email OTP / magic link because there is no verified sending domain available for Resend/custom SMTP yet.
 
 Current workaround:
 
-- Acceptable for Phase 1 development/testing.
-- Rate limits may interrupt repeated local auth testing.
+- Email auth remains implemented in the codebase but hidden behind a launch flag.
+- Android launch auth uses Google.
+- iOS launch auth uses Google and Apple.
 
 Release requirement:
 
-- Configure custom SMTP before release.
-- Verify deliverability for auth emails.
-- Verify sender name, sender address, and reply-to behavior.
+- Not required for the no-email v1 launch path.
+- Before enabling Email OTP / magic link for users, buy/use a domain, configure Resend/custom SMTP, verify deliverability, and verify sender name, sender address, and reply-to behavior.
 
 ## Auth Email Templates Are Plain And Unbranded
 
-Status: open
-Severity: release blocker
+Status: deferred
+Severity: post-domain follow-up
 Area: authentication, email UX
 
 Issue:
 
-Current Supabase auth email templates are plain and do not reflect the Revit product identity. Production auth emails should look intentional, trustworthy, and consistent with the app.
+Current Supabase auth email templates are plain and do not reflect the Revit product identity. Production auth emails should look intentional, trustworthy, and consistent with the app before Email OTP / magic link is exposed to users.
 
 Current workaround:
 
-- Plain templates are acceptable for Phase 1 testing.
-- The template currently supports both magic link and OTP token testing.
+- Email auth is hidden for v1 launch.
+- Plain templates remain acceptable only for local/development testing while email auth is dormant.
 
 Release requirement:
 
-- Create branded Revit email templates for OTP and magic link.
+- Not required for the no-email v1 launch path.
+- Before enabling Email OTP / magic link for users, create branded Revit email templates for OTP and magic link.
 - Include clear copy, app name, support/contact context, expiration wording, and safe fallback text.
 - Verify templates on mobile and desktop email clients.
 
