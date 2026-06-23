@@ -35,8 +35,8 @@ Release requirement:
 
 ## OAuth Consent Branding Shows Supabase Project Domain
 
-Status: open
-Severity: release blocker
+Status: deferred
+Severity: accepted v1 tradeoff
 Area: authentication, branding
 Linear: TAR-93
 
@@ -52,14 +52,16 @@ This feels unbranded and may look suspicious to users. The production auth exper
 
 Current workaround:
 
-- Acceptable during development while Google auth is being tested through Supabase OAuth.
+- Accepted for the no-email v1 launch path while using Supabase hosted OAuth on the current plan.
+- The Google consent app name should still be set to Revit where Google allows it.
 
 Release requirement:
 
-- Configure Google OAuth consent branding so the consent flow clearly shows Revit.
-- Review Supabase custom domain options for auth before release.
-- Verify the final Google consent screen on mobile and web before submission.
-- Complete this during Phase 8 before final auth verification and before Phase 9 screenshots/release builds.
+- Not required for the current v1 launch path if the tradeoff is accepted.
+- To remove the Supabase project domain from the hosted OAuth flow, choose one later:
+  - Upgrade/use Supabase custom domains, which are a paid add-on / paid-plan feature.
+  - Replace hosted Supabase Google OAuth with native Google sign-in and `signInWithIdToken`.
+- Before submission, verify that Google sign-in still completes successfully and users return to the app.
 
 ## Production Email Delivery Uses Supabase Built-In Email
 

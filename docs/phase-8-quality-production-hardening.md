@@ -17,6 +17,7 @@ Launch auth decision:
 - Android launch auth: Google.
 - iOS launch auth: Google and Apple.
 - Email OTP / magic link is dormant for v1 launch because production SMTP requires a verified sending domain that is not available yet.
+- Google OAuth may still show the Supabase project domain in the hosted OAuth flow for v1. Removing that requires either a paid Supabase custom domain/add-on or a future native Google sign-in implementation.
 
 Do not start Phase 9 launch preparation until the active production auth blockers are resolved or explicitly accepted as release risks. Phase 9 depends on stable auth, redirects, and app identity because screenshots, privacy disclosures, and release builds should be tested against the final production-like setup.
 
@@ -31,10 +32,10 @@ Work through these items in order.
    - Linear: `TAR-73`.
    - Execution checklist: `docs/phase-8-tar-73-resend-smtp.md`.
 
-2. Google OAuth consent branding
-   - Update Google OAuth consent/app branding so the sign-in flow clearly presents Revit.
-   - Remove or avoid user-facing gibberish/Supabase-project identity where possible.
-   - Verify the final consent screen on web and mobile.
+2. Defer complete Google OAuth domain branding
+   - Keep Google OAuth consent app name set to Revit where Google allows it.
+   - Accept that the hosted Supabase OAuth flow may show the Supabase project domain for v1.
+   - Revisit after choosing either paid Supabase custom domains or native Google sign-in.
    - Linear: `TAR-93`.
 
 3. Apple Sign-In production verification
@@ -73,6 +74,10 @@ Deferred until a domain is available:
    - Support both OTP code entry and magic-link fallback where practical.
    - Include final support/contact context and clear expiration/safety copy.
    - Verify templates on mobile and desktop email clients.
+- Complete Google OAuth domain branding
+   - Supabase custom domains are a paid add-on / paid-plan feature.
+   - A future native Google sign-in implementation can also avoid the hosted Supabase OAuth domain.
+   - Linear: `TAR-93`.
 
 Phase 8 can be considered complete only after the items above are done and any remaining risks are moved into `docs/release-blockers.md` with an explicit release decision.
 
@@ -170,11 +175,12 @@ Current state:
 
 Remaining check:
 
-- Update Google OAuth consent branding before final OAuth verification.
+- Confirm Google OAuth still completes successfully with the accepted hosted Supabase OAuth domain.
 - Verify Google OAuth on Android/dev build and iOS/dev or production-like builds.
 - Verify Apple Sign-In on a real iOS device or production-like iOS build with Apple Sign-In capability.
 - Keep the Apple Sign-In release blocker open until device verification is complete.
 - Keep TAR-73 deferred until a sending domain is available.
+- Keep TAR-93 deferred unless paid Supabase custom domains or native Google sign-in is chosen.
 
 ### Deep Links And Redirects
 
@@ -215,7 +221,7 @@ Remaining check:
 Code-level Phase 8 hardening is close, but Phase 8 should not be marked fully complete until:
 
 1. Email auth is confirmed hidden/dormant for v1 launch.
-2. Google OAuth consent branding clearly presents Revit.
+2. The Supabase-hosted Google OAuth domain tradeoff is explicitly accepted for v1.
 3. Apple Sign-In is verified on a production-like iOS build or real device.
 4. Launch auth flows are manually verified across the required platforms.
 5. Deep links and redirects are verified against the Supabase allow-list.
