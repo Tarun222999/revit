@@ -14,6 +14,11 @@ export function AuthGate({ children }: PropsWithChildren) {
   const isEmailCodeRoute = pathname === '/email-code';
   const isCallbackRoute = pathname === '/callback';
   const isOnboardingRoute = pathname === '/onboarding';
+  const isPublicInfoRoute =
+    pathname === '/legal/privacy' ||
+    pathname === '/legal/terms' ||
+    pathname === '/legal/credits' ||
+    pathname === '/support';
   const isAuthRoute = isWelcomeRoute || isEmailCodeRoute || isCallbackRoute || isOnboardingRoute;
 
   useEffect(() => {
@@ -22,7 +27,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     }
 
     if (!user) {
-      if (!isAuthRoute) {
+      if (!isAuthRoute && !isPublicInfoRoute) {
         router.replace('/welcome');
       }
 
@@ -49,6 +54,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     isAuthRoute,
     isCallbackRoute,
     isOnboardingRoute,
+    isPublicInfoRoute,
     profileQuery.data,
     profileQuery.isLoading,
     user,

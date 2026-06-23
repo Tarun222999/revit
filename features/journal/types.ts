@@ -22,6 +22,7 @@ export type JournalEntryFormValues = {
   reviewHeadline: string;
   reviewBody: string;
   containsSpoilers: boolean;
+  startedOn: string | null;
   completedOn: string | null;
 };
 
@@ -68,20 +69,23 @@ export type JournalListEntry = {
   reviewBody: string | null;
   containsSpoilers: boolean;
   completedOn: string | null;
+  startedOn: string | null;
   createdAt: string;
   updatedAt: string;
   lastActivityAt: string;
 };
 
 export type JournalMediaFilter = 'all' | MediaType;
-export type JournalStatusFilter = 'all' | JournalStatus;
+export type JournalStatusFilter = JournalStatus[];
 export type JournalRatingFilter = 'any' | 'rated' | 'unrated' | 'gte_4' | 'gte_3';
+export type JournalDateFilter = 'all' | 'this_month' | 'last_30_days' | 'this_year';
 export type JournalSort = 'recent_activity' | 'recently_added' | 'rating' | 'title';
 
 export type JournalListFilters = {
   mediaType: JournalMediaFilter;
-  status: JournalStatusFilter;
+  statuses: JournalStatusFilter;
   rating: JournalRatingFilter;
+  date: JournalDateFilter;
 };
 
 export type JournalTimelineGroup = {

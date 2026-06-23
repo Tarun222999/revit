@@ -22,6 +22,40 @@ export function todayString() {
   return new Date().toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
+export function isFutureReleaseDate(releaseDate?: string | null) {
+  if (!releaseDate || !ISO_DATE_INPUT_PATTERN.test(releaseDate)) {
+    return false;
+  }
+
+  return releaseDate > todayString();
+}
+
+export function canRateOrReviewReleaseDate(releaseDate?: string | null) {
+  return !isFutureReleaseDate(releaseDate);
+}
+
+export function clearRatingAndReviewValues(
+  values: JournalEntryFormValues,
+): JournalEntryFormValues {
+  return {
+    ...values,
+    containsSpoilers: false,
+    rating: null,
+    reviewBody: '',
+    reviewHeadline: '',
+  };
+}
+
+export function valuesForUnreleasedTitle(
+  values: JournalEntryFormValues,
+): JournalEntryFormValues {
+  return {
+    ...clearRatingAndReviewValues(values),
+    completedOn: null,
+    status: 'planned',
+  };
+}
+
 /**
  * Creates a fresh set of default values for the journal entry form.
  *
@@ -35,6 +69,7 @@ export function createDefaultJournalEntryFormValues(): JournalEntryFormValues {
     rating: null,
     reviewBody: '',
     reviewHeadline: '',
+    startedOn: null,
     status: JOURNAL_DEFAULT_STATUS,
   };
 }
@@ -54,6 +89,7 @@ export function valuesFromJournalEntry(
     rating: entry.rating,
     reviewBody: entry.review_body ?? '',
     reviewHeadline: entry.review_headline ?? '',
+    startedOn: entry.started_on,
     status: entry.status,
   };
 }
@@ -97,6 +133,10 @@ export function validateJournalEntryForm(
     !isValidDateInput(values.completedOn)
   ) {
     errors.completedOn = 'Use YYYY-MM-DD.';
+  }
+
+  if (values.startedOn && !isValidDateInput(values.startedOn)) {
+    errors.startedOn = 'Use YYYY-MM-DD.';
   }
 
   return errors;

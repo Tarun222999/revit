@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -32,6 +33,8 @@ const SEARCH_MEDIA_FILTERS: Array<{ label: string; value: SearchMediaType }> = [
   { label: 'Series', value: 'series' },
   { label: 'Anime', value: 'anime' },
 ];
+
+const SEARCH_SUGGESTIONS = ['Dune', 'Shogun', 'Spirited Away', 'The Bear'];
 
 function getSearchErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unable to search right now.';
@@ -114,21 +117,80 @@ function SearchEmptyContent({
   isError,
   isLoading,
   onClearSearch,
+  onSuggestionPress,
   onRetry,
+  query,
 }: {
   canSearch: boolean;
   error: unknown;
   isError: boolean;
   isLoading: boolean;
   onClearSearch: () => void;
+  onSuggestionPress: (query: string) => void;
   onRetry: () => void;
+  query: string;
 }) {
   if (!canSearch) {
+    if (query.trim().length > 0) {
+      return (
+        <EmptyState
+          title="Keep typing"
+          message="Search starts after two characters so results stay focused."
+        />
+      );
+    }
+
     return (
-      <EmptyState
-        title="Start with a title"
-        message="Enter at least two characters, then narrow the results by media type."
-      />
+      <View className="gap-4 rounded-app border border-archive-700 bg-archive-800 p-5">
+        <View className="flex-row items-start gap-3">
+          <View className="h-11 w-11 items-center justify-center rounded-full bg-shelf-700">
+            <Ionicons color="#f4c95d" name="search" size={20} />
+          </View>
+          <View className="min-w-0 flex-1 gap-1">
+            <Text className="text-lg font-bold text-archive-50">
+              Search your next entry
+            </Text>
+            <Text className="text-sm leading-5 text-archive-300">
+              Find a movie, series, or anime, then open the title to add it to
+              your journal or save it to a list.
+            </Text>
+          </View>
+        </View>
+
+        <View className="gap-3">
+          <Text className="text-xs font-bold uppercase text-archive-300">
+            Try searching
+          </Text>
+          <View className="flex-row flex-wrap gap-2">
+            {SEARCH_SUGGESTIONS.map((suggestion) => (
+              <Pressable
+                accessibilityRole="button"
+                className="rounded-full border border-archive-600 px-3 py-2"
+                key={suggestion}
+                onPress={() => onSuggestionPress(suggestion)}>
+                <Text className="text-sm font-semibold text-gold-300">
+                  {suggestion}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View className="gap-2 border-t border-archive-700 pt-4">
+          <View className="flex-row items-center gap-2">
+            <Ionicons color="#aa9473" name="filter" size={16} />
+            <Text className="text-sm leading-5 text-archive-300">
+              Use the media chips above to narrow broad searches.
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-2">
+            <Ionicons color="#aa9473" name="journal" size={16} />
+            <Text className="text-sm leading-5 text-archive-300">
+              Results open directly into the title details flow.
+            </Text>
+          </View>
+        </View>
+      </View>
     );
   }
 
@@ -218,6 +280,8 @@ export function SearchScreen() {
             isLoading={searchQuery.isLoading}
             onClearSearch={clearSearch}
             onRetry={() => searchQuery.refetch()}
+            onSuggestionPress={setQuery}
+            query={query}
           />
         }
       />

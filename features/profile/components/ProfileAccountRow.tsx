@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
 import { cn } from '@/lib/utils/cn';
@@ -11,6 +12,8 @@ type ProfileAccountRowProps = {
   disabled?: boolean;
   onPress?: () => void;
 };
+
+const ROW_CHEVRON_COLOR = '#d9c8aa';
 
 export function ProfileAccountRow({
   title,
@@ -43,7 +46,15 @@ export function ProfileAccountRow({
             </Text>
           ) : null}
         </View>
-        {onPress ? <Text className="text-lg text-archive-400">&gt;</Text> : null}
+        {onPress ? (
+          <Ionicons
+            accessibilityElementsHidden
+            color={ROW_CHEVRON_COLOR}
+            importantForAccessibility="no-hide-descendants"
+            name="chevron-forward"
+            size={18}
+          />
+        ) : null}
       </View>
     </Pressable>
   );

@@ -1,4 +1,9 @@
-import { Text, View } from 'react-native';
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
+import { Ionicons } from '@expo/vector-icons';
+import { useMemo, useState } from 'react';
+import { Platform, Text, View } from 'react-native';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +22,7 @@ import type { JournalEntryFormValues } from '@/features/journal/types';
 import type { NormalizedMediaItem } from '@/types/media';
 
 type JournalEntryFormProps = {
+  canRateOrReview: boolean;
   canDelete: boolean;
   deleteError?: string | null;
   errors: JournalEntryFormErrors;
@@ -36,6 +42,47 @@ type JournalEntryFormProps = {
 };
 
 const MEDIA_METADATA_SEPARATOR = ' - ';
+const DATE_INPUT_LENGTH = 10;
+
+function dateFromInput(value: string | null) {
+  if (!value) {
+    return new Date();
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+
+  if (!year || !month || !day) {
+    return new Date();
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function dateToInput(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateLabel(value: string | null, emptyLabel: string) {
+  if (!value) {
+    return emptyLabel;
+  }
+
+  const date = dateFromInput(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value.slice(0, DATE_INPUT_LENGTH);
+  }
+
+  return new Intl.DateTimeFormat('en', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(date);
+}
 
 function getMediaMetadataLabel(item: NormalizedMediaItem) {
   return item.year
@@ -63,6 +110,83 @@ function JournalEntryMediaSummary({ item }: { item?: NormalizedMediaItem }) {
   );
 }
 
+function JournalDatePicker({
+  emptyLabel,
+  error,
+  label,
+  onChange,
+  value,
+}: {
+  emptyLabel: string;
+  error?: string;
+  label: string;
+  onChange: (date: string | null) => void;
+  value: string | null;
+}) {
+  const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const date = useMemo(() => dateFromInput(value), [value]);
+  const selectedDateLabel = formatDateLabel(value, emptyLabel);
+
+  const handleDateChange = (
+    event: DateTimePickerEvent,
+    selectedDate?: Date,
+  ) => {
+    if (event.type === 'dismissed') {
+      setIsPickerVisible(false);
+      return;
+    }
+
+    if (selectedDate) {
+      onChange(dateToInput(selectedDate));
+    }
+
+    if (Platform.OS !== 'ios') {
+      setIsPickerVisible(false);
+    }
+  };
+
+  return (
+    <View className="gap-2">
+      <Text className="text-sm font-semibold text-archive-100">
+        {label}
+      </Text>
+      <View className="gap-3 rounded-app border border-archive-500 bg-archive-800 px-4 py-3">
+        <View className="flex-row items-center gap-3">
+          <Ionicons color="#f0c15a" name="calendar-outline" size={20} />
+          <View className="min-w-0 flex-1">
+            <Text className="text-base font-semibold text-archive-50">
+              {selectedDateLabel}
+            </Text>
+          </View>
+          <Button
+            className="min-h-10 px-3"
+            title={isPickerVisible ? 'Done' : 'Pick'}
+            variant="secondary"
+            onPress={() => setIsPickerVisible((current) => !current)}
+          />
+        </View>
+        {isPickerVisible ? (
+          <DateTimePicker
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            mode="date"
+            value={date}
+            onChange={handleDateChange}
+          />
+        ) : null}
+      </View>
+      {value ? (
+        <Button
+          className="self-start px-0"
+          title="Clear date"
+          variant="ghost"
+          onPress={() => onChange(null)}
+        />
+      ) : null}
+      {error ? <Text className="text-sm text-reel-400">{error}</Text> : null}
+    </View>
+  );
+}
+
 /**
  * Renders the controlled journal entry form used by the add/edit modal.
  *
@@ -72,6 +196,7 @@ function JournalEntryMediaSummary({ item }: { item?: NormalizedMediaItem }) {
  * @returns Status, rating, review, spoiler, save, and delete controls.
  */
 export function JournalEntryForm({
+  canRateOrReview,
   canDelete,
   deleteError,
   errors,
@@ -92,54 +217,85 @@ export function JournalEntryForm({
     <>
       <JournalEntryMediaSummary item={item} />
 
-      <JournalStatusSelector value={values.status} onChange={onStatusChange} />
+      {canRateOrReview ? (
+        <JournalStatusSelector value={values.status} onChange={onStatusChange} />
+      ) : (
+        <Card className="gap-1 border-gold-700 bg-archive-800">
+          <Text className="text-sm font-semibold text-archive-100">Status</Text>
+          <Text className="text-base font-bold text-archive-50">Planned</Text>
+          <Text className="text-sm leading-5 text-archive-300">
+            Unreleased titles stay planned until their release date.
+          </Text>
+        </Card>
+      )}
 
-      <RatingInput
-        value={values.rating}
-        onChange={(rating) => onChange('rating', rating)}
-      />
-
-      {values.status === 'completed' ? (
-        <TextField
-          error={errors.completedOn}
-          label="Completed on"
-          onChangeText={(completedOn) =>
-            onChange('completedOn', completedOn || null)
-          }
-          placeholder="YYYY-MM-DD"
-          value={values.completedOn ?? ''}
+      {!canRateOrReview ? (
+        <JournalDatePicker
+          emptyLabel="Choose planned date"
+          error={errors.startedOn}
+          label="Planned for"
+          value={values.startedOn}
+          onChange={(startedOn) => onChange('startedOn', startedOn)}
         />
       ) : null}
 
-      <TextField
-        error={errors.reviewHeadline}
-        label={`Headline (${values.reviewHeadline.length}/${REVIEW_HEADLINE_MAX_LENGTH})`}
-        maxLength={REVIEW_HEADLINE_MAX_LENGTH}
-        onChangeText={(reviewHeadline) =>
-          onChange('reviewHeadline', reviewHeadline)
-        }
-        placeholder="Optional short headline"
-        value={values.reviewHeadline}
-      />
+      {canRateOrReview ? (
+        <>
+          <RatingInput
+            value={values.rating}
+            onChange={(rating) => onChange('rating', rating)}
+          />
 
-      <TextField
-        className="min-h-32 py-3"
-        error={errors.reviewBody}
-        label={`Review (${values.reviewBody.length}/${REVIEW_BODY_MAX_LENGTH})`}
-        maxLength={REVIEW_BODY_MAX_LENGTH}
-        multiline
-        onChangeText={(reviewBody) => onChange('reviewBody', reviewBody)}
-        placeholder="Write a short review"
-        textAlignVertical="top"
-        value={values.reviewBody}
-      />
+          <TextField
+            error={errors.reviewHeadline}
+            label={`Headline (${values.reviewHeadline.length}/${REVIEW_HEADLINE_MAX_LENGTH})`}
+            maxLength={REVIEW_HEADLINE_MAX_LENGTH}
+            onChangeText={(reviewHeadline) =>
+              onChange('reviewHeadline', reviewHeadline)
+            }
+            placeholder="Optional short headline"
+            value={values.reviewHeadline}
+          />
 
-      <SpoilerToggle
-        value={values.containsSpoilers}
-        onChange={(containsSpoilers) =>
-          onChange('containsSpoilers', containsSpoilers)
-        }
-      />
+          <TextField
+            className="min-h-32 py-3"
+            error={errors.reviewBody}
+            label={`Review (${values.reviewBody.length}/${REVIEW_BODY_MAX_LENGTH})`}
+            maxLength={REVIEW_BODY_MAX_LENGTH}
+            multiline
+            onChangeText={(reviewBody) => onChange('reviewBody', reviewBody)}
+            placeholder="Write a short review"
+            textAlignVertical="top"
+            value={values.reviewBody}
+          />
+
+          <SpoilerToggle
+            value={values.containsSpoilers}
+            onChange={(containsSpoilers) =>
+              onChange('containsSpoilers', containsSpoilers)
+            }
+          />
+        </>
+      ) : (
+        <Card className="gap-1 border-gold-700 bg-archive-800">
+          <Text className="text-base font-bold text-archive-50">
+            Rating and review open after release
+          </Text>
+          <Text className="text-sm leading-5 text-archive-300">
+            You can save this title to your plans now, then update status, rating, and review once it has been released.
+          </Text>
+        </Card>
+      )}
+
+      {values.status === 'completed' ? (
+        <JournalDatePicker
+          emptyLabel="Choose completion date"
+          error={errors.completedOn}
+          label="Completed on"
+          value={values.completedOn}
+          onChange={(completedOn) => onChange('completedOn', completedOn)}
+        />
+      ) : null}
 
       {hasValidationErrors ? (
         <Text className="text-sm leading-5 text-reel-400">

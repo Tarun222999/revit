@@ -1,5 +1,5 @@
-import { getAuthRedirectUrl } from '@/features/auth/utils/authRedirect';
 import { supabase } from '@/lib/supabase/client';
+import { getAuthRedirectUrl } from '@/features/auth/utils/authRedirect';
 
 export async function sendEmailOtp(email: string) {
   const { error } = await supabase.auth.signInWithOtp({

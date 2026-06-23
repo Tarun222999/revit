@@ -11,14 +11,17 @@ export type ListFormValues = {
 };
 
 export type ListFormErrors = Partial<Record<keyof ListFormValues, string>>;
+export type ListFormTouchedFields = Partial<Record<keyof ListFormValues, boolean>>;
 
 type ListFormProps = {
   deleteError?: string | null;
   errors: ListFormErrors;
+  hasSubmitted?: boolean;
   isDeleting?: boolean;
   isSubmitting: boolean;
   list?: Pick<UserListSummary | UserListDetails, 'description' | 'id' | 'name'> | null;
   onCancel: () => void;
+  onBlurField?: (key: keyof ListFormValues) => void;
   onChange: <Key extends keyof ListFormValues>(
     key: Key,
     value: ListFormValues[Key],
@@ -26,6 +29,7 @@ type ListFormProps = {
   onDelete?: () => void;
   onSubmit: () => void;
   submitError?: string | null;
+  touchedFields?: ListFormTouchedFields;
   values: ListFormValues;
 };
 
@@ -49,21 +53,45 @@ export function validateListForm(values: ListFormValues): ListFormErrors {
   return errors;
 }
 
+export function getVisibleListFormErrors(
+  errors: ListFormErrors,
+  touchedFields: ListFormTouchedFields,
+  hasSubmitted: boolean,
+): ListFormErrors {
+  if (hasSubmitted) {
+    return errors;
+  }
+
+  return Object.fromEntries(
+    Object.entries(errors).filter(([field]) => {
+      return touchedFields[field as keyof ListFormValues];
+    }),
+  ) as ListFormErrors;
+}
+
 export function ListForm({
   deleteError,
   errors,
+  hasSubmitted = false,
   isDeleting = false,
   isSubmitting,
   list,
+  onBlurField,
   onCancel,
   onChange,
   onDelete,
   onSubmit,
   submitError,
+  touchedFields = {},
   values,
 }: ListFormProps) {
   const isEditMode = Boolean(list);
-  const hasValidationErrors = Object.keys(errors).length > 0;
+  const visibleErrors = getVisibleListFormErrors(
+    errors,
+    touchedFields,
+    hasSubmitted,
+  );
+  const hasVisibleValidationErrors = Object.keys(visibleErrors).length > 0;
 
   return (
     <Card className="gap-4">
@@ -77,9 +105,10 @@ export function ListForm({
       </View>
 
       <TextField
-        error={errors.name}
+        error={visibleErrors.name}
         label={`Name (${values.name.length}/${LIST_NAME_MAX_LENGTH})`}
         maxLength={LIST_NAME_MAX_LENGTH}
+        onBlur={() => onBlurField?.('name')}
         onChangeText={(name) => onChange('name', name)}
         placeholder="Favorites"
         value={values.name}
@@ -87,17 +116,18 @@ export function ListForm({
 
       <TextField
         className="min-h-24 py-3"
-        error={errors.description}
+        error={visibleErrors.description}
         label={`Description (${values.description.length}/${LIST_DESCRIPTION_MAX_LENGTH})`}
         maxLength={LIST_DESCRIPTION_MAX_LENGTH}
         multiline
+        onBlur={() => onBlurField?.('description')}
         onChangeText={(description) => onChange('description', description)}
         placeholder="Optional note about this collection"
         textAlignVertical="top"
         value={values.description}
       />
 
-      {hasValidationErrors ? (
+      {hasVisibleValidationErrors ? (
         <Text className="text-sm leading-5 text-reel-400">
           Fix the highlighted fields before saving.
         </Text>
@@ -113,7 +143,7 @@ export function ListForm({
 
       <View className="gap-3">
         <Button
-          disabled={hasValidationErrors || isDeleting}
+          disabled={isDeleting}
           loading={isSubmitting}
           onPress={onSubmit}
           title={isEditMode ? 'Save Changes' : 'Create List'}

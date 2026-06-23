@@ -26,7 +26,7 @@ export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
     <View className="gap-7">
       <View className="gap-2">
         <SectionHeader
-          title="Discover"
+          title="Browse"
           subtitle="Movies, series, and anime worth browsing now."
         />
       </View>

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -5,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
+import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -77,6 +79,55 @@ function JournalLoadingState() {
         ),
       )}
     </View>
+  );
+}
+
+function JournalStartEmptyState() {
+  return (
+    <Card className="gap-5 p-5">
+      <View className="flex-row items-start gap-3">
+        <View className="h-12 w-12 items-center justify-center rounded-full bg-shelf-700">
+          <Ionicons color="#f4c95d" name="journal" size={22} />
+        </View>
+        <View className="min-w-0 flex-1 gap-1">
+          <Text className="text-xl font-bold text-archive-50">
+            Start your first journal entry
+          </Text>
+          <Text className="text-sm leading-5 text-archive-300">
+            Pick a movie, series, or anime and turn it into a personal log with
+            status, rating, completion date, and a short review.
+          </Text>
+        </View>
+      </View>
+
+      <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-4">
+        <Text className="text-xs font-bold uppercase text-archive-300">
+          Your journal will collect
+        </Text>
+        <View className="gap-3">
+          <View className="flex-row items-center gap-3">
+            <Ionicons color="#aa9473" name="checkmark-circle" size={18} />
+            <Text className="min-w-0 flex-1 text-sm leading-5 text-archive-200">
+              Planned, in-progress, completed, and dropped titles.
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-3">
+            <Ionicons color="#aa9473" name="star" size={18} />
+            <Text className="min-w-0 flex-1 text-sm leading-5 text-archive-200">
+              Ratings and short notes you can revisit later.
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-3">
+            <Ionicons color="#aa9473" name="calendar" size={18} />
+            <Text className="min-w-0 flex-1 text-sm leading-5 text-archive-200">
+              Timeline and calendar views once entries exist.
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <Button title="Find titles" onPress={() => router.push('/search')} />
+    </Card>
   );
 }
 
@@ -205,6 +256,7 @@ function JournalLoadedContent({
   activeView,
   activeFilters,
   entries,
+  filtersExpanded,
   filters,
   sort,
   visibleEntries,
@@ -212,10 +264,12 @@ function JournalLoadedContent({
   onEntryPress,
   onFiltersChange,
   onSortChange,
+  onToggleFilters,
 }: {
   activeView: JournalView;
   activeFilters: boolean;
   entries: JournalListEntry[];
+  filtersExpanded: boolean;
   filters: JournalListFilters;
   sort: JournalSort;
   visibleEntries: JournalListEntry[];
@@ -223,6 +277,7 @@ function JournalLoadedContent({
   onEntryPress: (entry: JournalListEntry) => void;
   onFiltersChange: (filters: JournalListFilters) => void;
   onSortChange: (sort: JournalSort) => void;
+  onToggleFilters: () => void;
 }) {
   if (activeView === 'calendar') {
     return (
@@ -236,7 +291,7 @@ function JournalLoadedContent({
   return (
     <>
       <JournalFilterBoard
-        entries={entries}
+        expanded={filtersExpanded}
         filters={filters}
         hasActiveFilters={activeFilters}
         sort={sort}
@@ -244,6 +299,7 @@ function JournalLoadedContent({
         onClearFilters={onClearFilters}
         onFiltersChange={onFiltersChange}
         onSortChange={onSortChange}
+        onToggleExpanded={onToggleFilters}
       />
 
       {visibleEntries.length > 0 ? (
@@ -269,6 +325,7 @@ function JournalContent({
   activeFilters,
   authLoading,
   entries,
+  filtersExpanded,
   filters,
   isSignedIn,
   journalQuery,
@@ -278,11 +335,13 @@ function JournalContent({
   onEntryPress,
   onFiltersChange,
   onSortChange,
+  onToggleFilters,
 }: {
   activeView: JournalView;
   activeFilters: boolean;
   authLoading: boolean;
   entries: JournalListEntry[];
+  filtersExpanded: boolean;
   filters: JournalListFilters;
   isSignedIn: boolean;
   journalQuery: JournalEntriesQuery;
@@ -292,6 +351,7 @@ function JournalContent({
   onEntryPress: (entry: JournalListEntry) => void;
   onFiltersChange: (filters: JournalListFilters) => void;
   onSortChange: (sort: JournalSort) => void;
+  onToggleFilters: () => void;
 }) {
   if (authLoading) {
     return <LoadingState message="Loading journal" />;
@@ -322,14 +382,7 @@ function JournalContent({
   }
 
   if (journalQuery.isSuccess && entries.length === 0) {
-    return (
-      <EmptyState
-        title="Your journal is ready"
-        message="Search for a title, add it to your journal, then come back here to manage the log."
-        actionLabel="Find titles"
-        onAction={() => router.push('/search')}
-      />
-    );
+    return <JournalStartEmptyState />;
   }
 
   if (!journalQuery.isSuccess) {
@@ -341,6 +394,7 @@ function JournalContent({
       activeView={activeView}
       activeFilters={activeFilters}
       entries={entries}
+      filtersExpanded={filtersExpanded}
       filters={filters}
       sort={sort}
       visibleEntries={visibleEntries}
@@ -348,6 +402,7 @@ function JournalContent({
       onEntryPress={onEntryPress}
       onFiltersChange={onFiltersChange}
       onSortChange={onSortChange}
+      onToggleFilters={onToggleFilters}
     />
   );
 }
@@ -374,6 +429,7 @@ export function JournalScreen() {
   const [filters, setFilters] = useState<JournalListFilters>(
     JOURNAL_DEFAULT_FILTERS,
   );
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [sort, setSort] = useState<JournalSort>(JOURNAL_DEFAULT_SORT);
   const journalQuery = useJournalEntries(user?.id);
   const entries = journalQuery.data ?? [];
@@ -388,6 +444,9 @@ export function JournalScreen() {
   );
   const activeFilters = hasActiveJournalFilters(filters);
   const clearFilters = useCallback(() => setFilters(JOURNAL_DEFAULT_FILTERS), []);
+  const toggleFilters = useCallback(() => {
+    setFiltersExpanded((currentValue) => !currentValue);
+  }, []);
 
   return (
     <Screen scroll className="gap-5">
@@ -406,6 +465,7 @@ export function JournalScreen() {
         activeFilters={activeFilters}
         authLoading={authLoading}
         entries={entries}
+        filtersExpanded={filtersExpanded}
         filters={filters}
         isSignedIn={Boolean(user)}
         journalQuery={journalQuery}
@@ -415,6 +475,7 @@ export function JournalScreen() {
         onEntryPress={openEntryTitleDetails}
         onFiltersChange={setFilters}
         onSortChange={setSort}
+        onToggleFilters={toggleFilters}
       />
     </Screen>
   );

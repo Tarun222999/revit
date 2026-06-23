@@ -38,6 +38,7 @@ function toJournalEntryFields(
   | 'rating'
   | 'review_body'
   | 'review_headline'
+  | 'started_on'
   | 'status'
 > {
   return {
@@ -46,6 +47,7 @@ function toJournalEntryFields(
     rating: values.rating,
     review_body: normalizeOptionalText(values.reviewBody),
     review_headline: normalizeOptionalText(values.reviewHeadline),
+    started_on: values.startedOn,
     status: values.status,
   };
 }

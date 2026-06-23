@@ -5,6 +5,7 @@ import { Platform, Pressable, Text, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
+import { EMAIL_AUTH_ENABLED_FOR_LAUNCH } from '@/constants/app';
 import { isAppleSignInAvailable, signInWithApple } from '@/features/auth/api/apple-auth-api';
 import { signInWithGoogle } from '@/features/auth/api/google-auth-api';
 
@@ -67,7 +68,9 @@ export function WelcomeAuthScreen() {
           </View>
 
           <View className="gap-3">
-            <Button title="Continue with Email" onPress={() => router.push('/email-code')} />
+            {EMAIL_AUTH_ENABLED_FOR_LAUNCH ? (
+              <Button title="Continue with Email" onPress={() => router.push('/email-code')} />
+            ) : null}
             <Button
               title="Continue with Google"
               variant="secondary"
