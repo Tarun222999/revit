@@ -12,6 +12,12 @@ Status: active
 
 We are still in Phase 8. The main v1 product surfaces are already implemented, and the remaining work is now production hardening, release-blocker cleanup, and real-device/manual verification.
 
+Publishing record:
+
+- Live release log: `docs/release-publishing-log.md`.
+- Blog/playbook draft: `docs/react-native-publishing-playbook-draft.md`.
+- Record every build, dashboard action, error, fix, and decision before moving on.
+
 Launch auth decision:
 
 - Android launch auth: Google.

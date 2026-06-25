@@ -9,11 +9,19 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
+      "buildNumber": "1",
       "bundleIdentifier": "com.tarun.revit",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "supportsTablet": true
     },
     "android": {
       "package": "com.tarun.revit",
+      "versionCode": 1,
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -52,6 +60,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1e3b3312-1672-4370-8fc7-20ca5f53718a"
+      }
+    },
+    "owner": "tarun495"
   }
 }

@@ -1,8 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient } from '@supabase/supabase-js';
+import supabaseJs from '@supabase/supabase-js/dist/index.cjs';
 import 'react-native-url-polyfill/auto';
 
 import type { Database } from '@/lib/supabase/types';
+import type { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+const { createClient } = supabaseJs as unknown as { createClient: typeof createSupabaseClient };
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;

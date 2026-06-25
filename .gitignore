@@ -145,6 +145,13 @@ vite.config.ts.timestamp-*
 # Expo local state
 .expo/
 
+# Store publishing credentials
+google-service-account*.json
+play-store-service-account*.json
+AuthKey_*.p8
+*.jks
+*.keystore
+
 # Temporary scaffold app used to merge Expo into this existing repo
 RevitExpoTemp/
 
