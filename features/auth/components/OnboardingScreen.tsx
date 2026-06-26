@@ -61,7 +61,7 @@ function ProfileTextInput({
 }
 
 export function OnboardingScreen() {
-  const { user } = useAuth();
+  const { signOut, user } = useAuth();
   const createProfile = useCreateProfile();
   const [displayName, setDisplayName] = useState('');
   const [username, setUsername] = useState('');
@@ -167,6 +167,21 @@ export function OnboardingScreen() {
       setError(message);
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleSignOut() {
+    if (isBusy) {
+      return;
+    }
+
+    setError(null);
+
+    try {
+      await signOut();
+      router.replace('/welcome');
+    } catch (signOutError) {
+      setError(getProfileErrorMessage(signOutError, 'Could not sign out.'));
     }
   }
 
@@ -276,6 +291,12 @@ export function OnboardingScreen() {
             className="mt-4 min-h-14"
             onPress={handleContinue}
             loading={isBusy}
+          />
+          <Button
+            title="Use a different account"
+            variant="secondary"
+            disabled={isBusy}
+            onPress={handleSignOut}
           />
         </Card>
       </View>

@@ -48,10 +48,8 @@ function getMutationErrorMessage(error: unknown) {
 
 function getListStats(lists: UserListSummary[]) {
   const itemCount = lists.reduce((total, list) => total + list.itemCount, 0);
-  const activeLists = lists.filter((list) => list.itemCount > 0).length;
 
   return {
-    activeLists,
     itemCount,
     listCount: lists.length,
   };
@@ -112,14 +110,6 @@ function ListsStats({ lists }: { lists: UserListSummary[] }) {
         </Text>
         <Text className="text-xs font-semibold text-archive-300">
           Saved titles
-        </Text>
-      </Card>
-      <Card className="min-w-0 flex-1 gap-1 p-3">
-        <Text className="text-xl font-bold text-archive-50">
-          {stats.activeLists}
-        </Text>
-        <Text className="text-xs font-semibold text-archive-300">
-          Active
         </Text>
       </Card>
     </View>

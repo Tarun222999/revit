@@ -499,6 +499,213 @@ Next action:
 
 - Re-run `npx expo export --platform android` from a terminal that can complete the local export, then retry the Android preview APK build if export passes.
 
+### 2026-06-25: Android Export Passed After Supabase Bundle Fix
+
+Goal:
+
+- Verify locally that the Android production JavaScript/Hermes export succeeds after switching Supabase to its CommonJS build.
+
+Action:
+
+- Ran:
+
+```text
+npx expo export --platform android
+```
+
+Result:
+
+- Export passed and produced:
+
+```text
+android bundles (1):
+_expo/static/js/android/entry-b01d98d74fdadcf6b7f77e5aa1e7be04.hbc (5.23 MB)
+
+Files (1):
+metadata.json (3.03 kB)
+
+Exported: dist
+```
+
+Notes:
+
+- This confirms the previous Hermes `Invalid expression encountered` error is fixed locally.
+- Generated `dist` output is not intended to be committed.
+
+Next action:
+
+- Retry the Android preview APK build with EAS.
+
+### 2026-06-25: Android Preview APK Build Succeeded
+
+Goal:
+
+- Build an Android preview APK for direct device testing after fixing the Supabase/Hermes bundling failure.
+
+Action:
+
+- Ran:
+
+```text
+npx eas-cli@latest build -p android --profile preview
+```
+
+Result:
+
+- Build finished successfully.
+- Build artifact type:
+
+```text
+APK
+```
+
+- Build profile:
+
+```text
+preview
+```
+
+- App version:
+
+```text
+1.0.0 (1)
+```
+
+- Commit shown by EAS:
+
+```text
+fe9a9b1
+```
+
+- Build timing:
+
+```text
+Queue time: 19m 41s
+Build time: 17m 8s
+Total time: 36m 58s
+```
+
+- APK availability:
+
+```text
+13 days
+```
+
+Notes:
+
+- This is an internal distribution APK, not a Play Store AAB and not a public release.
+- The successful build confirms the Supabase CommonJS import fix works in EAS.
+
+Next action:
+
+- Install the APK on an Android device and run the launch smoke test: app open, Google auth redirect, onboarding/profile routing, hidden email auth, core tabs, and permission prompts.
+
+### 2026-06-25: EAS Upload Ignore Added
+
+Goal:
+
+- Keep EAS build uploads focused on files needed to compile the app.
+
+Action:
+
+- Added `.easignore`.
+
+Result:
+
+- EAS build uploads now exclude local/generated output, logs, docs, agent-only context, temporary scaffold folders, store credential files, and unreferenced draft/reference image assets.
+
+Notes:
+
+- This does not remove docs or reference assets from the repo.
+- This does not change which assets are bundled into the installed app; Metro and native config still include only referenced runtime assets.
+- Current referenced app assets remain available, including `icon.png`, `android-icon-foreground.png`, `android-icon-background.png`, `android-icon-monochrome.png`, `splash-icon.png`, and `favicon.png`.
+
+Next action:
+
+- Later, do a separate asset inventory before store submission to decide which draft/reference images should be deleted, moved, or kept.
+
+### 2026-06-26: Android Preview APK Opens Splash Then Exits
+
+Goal:
+
+- Test the installed Android preview APK on a real device.
+
+Result:
+
+- APK installed successfully.
+- On open, the app showed the splash screen and then exited.
+
+Investigation:
+
+- The app creates the Supabase client during startup using:
+
+```text
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_ANON_KEY
+```
+
+- Local `.env` is not committed and is not automatically available to EAS cloud builds.
+- `@supabase/supabase-js` throws immediately if `supabaseUrl` is empty:
+
+```text
+supabaseUrl is required.
+```
+
+Likely root cause:
+
+- The EAS preview APK was built without the required public Supabase environment variables.
+
+Notes:
+
+- Only the public Supabase URL and anon key are needed by the mobile client.
+- Do not add service-role keys, database keys, TMDB tokens, Resend keys, or other server secrets to public Expo variables.
+
+Next action:
+
+- Add `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` to the Expo/EAS project environment for preview builds, then rebuild the Android preview APK.
+
+### 2026-06-26: Preview Rebuild Failed Because EAS Ignore Excluded App Icons
+
+Goal:
+
+- Rebuild the Android preview APK after adding EAS environment variables.
+
+Result:
+
+- EAS prebuild failed while generating Android icons.
+
+Error:
+
+```text
+withAndroidDangerousBaseMod: ENOENT: no such file or directory, open './assets/images/revit-android-icon-foreground.png'
+```
+
+Root cause:
+
+- `.easignore` excluded `assets/images/revit-android-icon-*.png`.
+- `app.json` references these `revit-*` icon files for the Android adaptive icon, so EAS needs them during prebuild.
+
+Fix:
+
+- Updated `.easignore` to allow the referenced runtime icon assets:
+
+```text
+assets/images/revit-app-icon.png
+assets/images/revit-android-icon-foreground.png
+assets/images/revit-android-icon-background.png
+assets/images/revit-android-icon-monochrome.png
+```
+
+- Kept unused draft/reference assets ignored.
+
+Validation:
+
+- `npx expo config --type public` passed and resolved the `revit-*` icon paths.
+
+Next action:
+
+- Retry the Android preview APK build.
+
 ## Upcoming Attempts
 
 ### EAS Build Setup

@@ -17,7 +17,10 @@ export default function TabLayout() {
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: true,
-        headerTitle: '',
+        headerTitleStyle: {
+          color: '#fbf6ec',
+          fontWeight: '700',
+        },
         headerShadowVisible: false,
         headerRight: () => <ProfileAvatarAction />,
         headerStyle: {
@@ -37,6 +40,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          title: 'Discover',
           tabBarLabel: 'Discover',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
         }}
@@ -44,6 +48,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="search"
         options={{
+          title: 'Search',
           tabBarLabel: 'Search',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass" color={color} />,
         }}
@@ -51,6 +56,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="journal"
         options={{
+          title: 'Journal',
           tabBarLabel: 'Journal',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="book.closed.fill" color={color} />,
         }}
@@ -58,6 +64,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="lists"
         options={{
+          title: 'Lists',
           tabBarLabel: 'Lists',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.bullet" color={color} />,
         }}

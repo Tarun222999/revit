@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import supabaseJs from '@supabase/supabase-js/dist/index.cjs';
+import * as supabaseJs from '@supabase/supabase-js/dist/index.cjs';
 import 'react-native-url-polyfill/auto';
 
 import type { Database } from '@/lib/supabase/types';

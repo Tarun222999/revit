@@ -1,6 +1,12 @@
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import type { PropsWithChildren } from 'react';
-import { ScrollView, View, type ViewProps } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  View,
+  type ViewProps,
+} from 'react-native';
 
 import { cn } from '@/lib/utils/cn';
 
@@ -25,13 +31,24 @@ export function Screen({
   return (
     <SafeAreaView className="flex-1 bg-archive-900" edges={safeAreaEdges}>
       {scroll ? (
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName={cn(padded && 'px-5 py-6', className)}
-          showsVerticalScrollIndicator={false}
-          {...props}>
-          {children}
-        </ScrollView>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          className="flex-1">
+          <ScrollView
+            automaticallyAdjustKeyboardInsets
+            className="flex-1"
+            contentContainerClassName={cn(
+              padded && 'px-5 py-6',
+              'pb-28',
+              className,
+            )}
+            contentInsetAdjustmentBehavior="automatic"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            {...props}>
+            {children}
+          </ScrollView>
+        </KeyboardAvoidingView>
       ) : (
         <View className={contentClassName} {...props}>
           {children}
