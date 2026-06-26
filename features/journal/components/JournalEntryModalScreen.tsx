@@ -55,6 +55,13 @@ function getCompletedOnForStatus(
   return status === 'completed' ? currentCompletedOn ?? todayString() : null;
 }
 
+function getStartedOnForStatus(
+  status: JournalStatus,
+  currentStartedOn: string | null,
+) {
+  return status === 'completed' ? null : currentStartedOn ?? todayString();
+}
+
 function ModalEmptyState({
   message,
   title,
@@ -172,6 +179,7 @@ export function JournalEntryModalScreen({
     setValues((current) => ({
       ...current,
       completedOn: getCompletedOnForStatus(status, current.completedOn),
+      startedOn: getStartedOnForStatus(status, current.startedOn),
       status,
     }));
   };

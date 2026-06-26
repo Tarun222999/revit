@@ -19,6 +19,7 @@
     "android": {
       "package": "com.tarun.revit",
       "versionCode": 1,
+      "softwareKeyboardLayoutMode": "resize",
       "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
       ],

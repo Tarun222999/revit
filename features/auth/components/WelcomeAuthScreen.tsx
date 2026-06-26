@@ -154,7 +154,7 @@ export function WelcomeAuthScreen() {
   }
 
   return (
-    <Screen scroll className="grow px-8 py-8">
+    <Screen scroll className="grow px-8 pb-8 pt-14">
       <View className="w-full max-w-[430px] flex-1 justify-between gap-8 self-center">
         <View className="flex-1 justify-center gap-8">
           <View className="gap-7">

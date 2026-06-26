@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -43,6 +43,34 @@ const EMPTY_LIST_FORM_VALUES: ListFormValues = {
   description: '',
   name: '',
 };
+
+function useKeyboardInset(bottomInset: number) {
+  const [keyboardInset, setKeyboardInset] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      return;
+    }
+
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSubscription = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardInset(Math.max(0, event.endCoordinates.height - bottomInset));
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardInset(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [bottomInset]);
+
+  return keyboardInset;
+}
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
@@ -238,6 +266,7 @@ export function AddToListPanel({
 }: AddToListPanelProps) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
+  const keyboardInset = useKeyboardInset(insets.bottom);
   const listsQuery = useUserLists(userId);
   const membershipsQuery = useMediaListMemberships(userId, mediaItemId);
   const createListMutation = useCreateList();
@@ -258,7 +287,11 @@ export function AddToListPanel({
   const [hasSubmittedCreateForm, setHasSubmittedCreateForm] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const showQuickCreate = lists.length === 0 || isCreatingNewList;
-  const panelMaxHeight = Math.max(360, height - insets.top - 32);
+  const keyboardPadding = keyboardInset > 0 ? keyboardInset + 8 : 0;
+  const panelMaxHeight =
+    keyboardInset > 0
+      ? Math.max(240, height - keyboardPadding - insets.top - 24)
+      : Math.max(360, height - insets.top - 32);
   const isCreatingAndSaving =
     createListMutation.isPending || addMutation.isPending;
 
@@ -347,7 +380,10 @@ export function AddToListPanel({
         className="flex-1"
         edges={['top', 'right', 'bottom', 'left']}
         style={{ backgroundColor: 'rgba(13, 11, 9, 0.72)' }}>
-        <Pressable className="flex-1 justify-end px-3 pt-8" onPress={onClose}>
+        <Pressable
+          className="flex-1 justify-end px-3 pt-8"
+          onPress={onClose}
+          style={{ paddingBottom: keyboardPadding }}>
           <Pressable
             className="w-full max-w-xl self-center overflow-hidden rounded-app border border-archive-700 bg-archive-900"
             onPress={(event) => event.stopPropagation()}
@@ -374,12 +410,11 @@ export function AddToListPanel({
             </View>
 
             <ScrollView
-              automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+              automaticallyAdjustKeyboardInsets
               className="min-h-0"
-              contentContainerClassName="gap-4 px-5 py-5"
+              contentContainerClassName="gap-4 px-5 py-5 pb-8"
               keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
               keyboardShouldPersistTaps="handled"
-              onScrollBeginDrag={() => Keyboard.dismiss()}
               showsVerticalScrollIndicator={false}>
               {isLoading ? <LoadingState message="Loading lists" /> : null}
 

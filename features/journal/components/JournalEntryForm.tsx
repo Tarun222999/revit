@@ -187,6 +187,38 @@ function JournalDatePicker({
   );
 }
 
+function getStatusDatePickerConfig(status: JournalStatus) {
+  if (status === 'completed') {
+    return {
+      emptyLabel: 'Choose completion date',
+      field: 'completedOn' as const,
+      label: 'Completed on',
+    };
+  }
+
+  if (status === 'in_progress') {
+    return {
+      emptyLabel: 'Choose start date',
+      field: 'startedOn' as const,
+      label: 'Started on',
+    };
+  }
+
+  if (status === 'dropped') {
+    return {
+      emptyLabel: 'Choose dropped date',
+      field: 'startedOn' as const,
+      label: 'Dropped on',
+    };
+  }
+
+  return {
+    emptyLabel: 'Choose planned date',
+    field: 'startedOn' as const,
+    label: 'Planned for',
+  };
+}
+
 /**
  * Renders the controlled journal entry form used by the add/edit modal.
  *
@@ -212,6 +244,9 @@ export function JournalEntryForm({
   values,
 }: JournalEntryFormProps) {
   const hasValidationErrors = Object.keys(errors).length > 0;
+  const statusDatePicker = getStatusDatePickerConfig(values.status);
+  const statusDateValue = values[statusDatePicker.field];
+  const statusDateError = errors[statusDatePicker.field];
 
   return (
     <>
@@ -229,15 +264,13 @@ export function JournalEntryForm({
         </Card>
       )}
 
-      {!canRateOrReview ? (
-        <JournalDatePicker
-          emptyLabel="Choose planned date"
-          error={errors.startedOn}
-          label="Planned for"
-          value={values.startedOn}
-          onChange={(startedOn) => onChange('startedOn', startedOn)}
-        />
-      ) : null}
+      <JournalDatePicker
+        emptyLabel={statusDatePicker.emptyLabel}
+        error={statusDateError}
+        label={statusDatePicker.label}
+        value={statusDateValue}
+        onChange={(date) => onChange(statusDatePicker.field, date)}
+      />
 
       {canRateOrReview ? (
         <>
@@ -286,16 +319,6 @@ export function JournalEntryForm({
           </Text>
         </Card>
       )}
-
-      {values.status === 'completed' ? (
-        <JournalDatePicker
-          emptyLabel="Choose completion date"
-          error={errors.completedOn}
-          label="Completed on"
-          value={values.completedOn}
-          onChange={(completedOn) => onChange('completedOn', completedOn)}
-        />
-      ) : null}
 
       {hasValidationErrors ? (
         <Text className="text-sm leading-5 text-reel-400">

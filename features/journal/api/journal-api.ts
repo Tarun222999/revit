@@ -47,7 +47,7 @@ function toJournalEntryFields(
     rating: values.rating,
     review_body: normalizeOptionalText(values.reviewBody),
     review_headline: normalizeOptionalText(values.reviewHeadline),
-    started_on: values.startedOn,
+    started_on: values.status === 'completed' ? null : values.startedOn,
     status: values.status,
   };
 }

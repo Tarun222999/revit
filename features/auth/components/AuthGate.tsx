@@ -1,6 +1,7 @@
 import { router, usePathname } from 'expo-router';
 import { useEffect } from 'react';
 import type { PropsWithChildren } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentProfile } from '@/features/profile/hooks/useCurrentProfile';
@@ -59,6 +60,21 @@ export function AuthGate({ children }: PropsWithChildren) {
     profileQuery.isLoading,
     user,
   ]);
+
+  const isResolvingAuthRoute =
+    authLoading ||
+    Boolean(user && profileQuery.isLoading && !isCallbackRoute) ||
+    Boolean(user && profileQuery.data && isAuthRoute) ||
+    Boolean(!user && !authLoading && !isAuthRoute && !isPublicInfoRoute) ||
+    Boolean(user && !profileQuery.data && !profileQuery.isLoading && !isOnboardingRoute);
+
+  if (isResolvingAuthRoute) {
+    return (
+      <View className="flex-1 items-center justify-center bg-archive-900">
+        <ActivityIndicator color="#d7a94d" />
+      </View>
+    );
+  }
 
   return <>{children}</>;
 }
