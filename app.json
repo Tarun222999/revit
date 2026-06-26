@@ -42,8 +42,8 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/revit-android-icon-foreground.png",
+          "imageWidth": 180,
           "resizeMode": "contain",
           "backgroundColor": "#0d0b09",
           "dark": {

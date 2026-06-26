@@ -706,6 +706,46 @@ Next action:
 
 - Retry the Android preview APK build.
 
+### 2026-06-26: Production Splash Asset Replaced
+
+Goal:
+
+- Replace the placeholder construction/grid splash image before further release testing.
+
+Action:
+
+- Updated the Expo splash screen config in `app.json` from:
+
+```text
+./assets/images/splash-icon.png
+```
+
+- To:
+
+```text
+./assets/images/revit-android-icon-foreground.png
+```
+
+- Set splash image width to:
+
+```text
+180
+```
+
+Result:
+
+- The installed app should show the Revit brand mark during native startup instead of the placeholder grid image.
+
+Validation:
+
+- `npx expo config --type public` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+
+Next action:
+
+- Rebuild the Android preview APK and verify the splash on device.
+
 ## Upcoming Attempts
 
 ### EAS Build Setup

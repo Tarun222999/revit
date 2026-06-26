@@ -1,6 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -68,6 +78,109 @@ function openItemTitleDetails(item: UserListItem) {
   router.push(`/title/${encodeURIComponent(routeId)}`);
 }
 
+function ListEditSheet({
+  deleteError,
+  errors,
+  hasSubmitted,
+  isDeleting,
+  isSubmitting,
+  list,
+  submitError,
+  touchedFields,
+  values,
+  onBlurField,
+  onCancel,
+  onChange,
+  onDelete,
+  onSubmit,
+}: {
+  deleteError: string | null;
+  errors: ReturnType<typeof getVisibleListFormErrors>;
+  hasSubmitted: boolean;
+  isDeleting: boolean;
+  isSubmitting: boolean;
+  list: UserListDetails;
+  submitError: string | null;
+  touchedFields: ListFormTouchedFields;
+  values: ListFormValues;
+  onBlurField: (key: keyof ListFormValues) => void;
+  onCancel: () => void;
+  onChange: <Key extends keyof ListFormValues>(
+    key: Key,
+    value: ListFormValues[Key],
+  ) => void;
+  onDelete: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <Modal
+      animationType="slide"
+      onRequestClose={onCancel}
+      transparent
+      visible>
+      <SafeAreaView
+        className="flex-1"
+        edges={['top', 'right', 'bottom', 'left']}
+        style={{ backgroundColor: 'rgba(13, 11, 9, 0.72)' }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          className="flex-1 justify-end">
+          <Pressable className="flex-1 justify-end px-3 pb-5 pt-8" onPress={onCancel}>
+            <Pressable
+              className="max-h-[92%] w-full max-w-xl self-center overflow-hidden rounded-app border border-archive-700 bg-archive-900"
+              onPress={(event) => event.stopPropagation()}>
+              <View className="flex-row items-center justify-between gap-4 border-b border-archive-700 px-5 py-4">
+                <View className="min-w-0 flex-1 gap-1">
+                  <Text className="text-lg font-bold text-archive-50">
+                    Edit List
+                  </Text>
+                  <Text className="text-sm leading-5 text-archive-300" numberOfLines={1}>
+                    Update the name, description, or remove the list.
+                  </Text>
+                </View>
+                <Pressable
+                  accessibilityLabel="Close edit list"
+                  accessibilityRole="button"
+                  hitSlop={10}
+                  className="h-10 w-10 items-center justify-center rounded-full border border-archive-700 bg-archive-800"
+                  onPress={onCancel}>
+                  <Ionicons color="#fbf6ec" name="close" size={20} />
+                </Pressable>
+              </View>
+
+              <ScrollView
+                automaticallyAdjustKeyboardInsets
+                className="min-h-0"
+                contentContainerClassName="gap-4 px-5 py-5 pb-8"
+                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}>
+                <ListForm
+                  deleteError={deleteError}
+                  errors={errors}
+                  hasSubmitted={hasSubmitted}
+                  isDeleting={isDeleting}
+                  isSubmitting={isSubmitting}
+                  list={list}
+                  showIntro={false}
+                  submitError={submitError}
+                  touchedFields={touchedFields}
+                  values={values}
+                  onBlurField={onBlurField}
+                  onCancel={onCancel}
+                  onChange={onChange}
+                  onDelete={onDelete}
+                  onSubmit={onSubmit}
+                />
+              </ScrollView>
+            </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </Modal>
+  );
+}
+
 function ListDetailsHeader({
   list,
   onEdit,
@@ -121,6 +234,39 @@ function ListDetailsHeader({
   );
 }
 
+function EmptyListDetailsState() {
+  return (
+    <Card className="gap-5 p-5">
+      <View className="flex-row items-start gap-4">
+        <View className="w-20 gap-1.5">
+          <View className="h-12 rounded-app border border-archive-600 bg-shelf-700" />
+          <View className="flex-row gap-1.5">
+            <View className="h-9 flex-1 rounded-app border border-archive-700 bg-archive-900" />
+            <View className="h-9 flex-1 rounded-app border border-archive-700 bg-archive-900" />
+          </View>
+        </View>
+        <View className="min-w-0 flex-1 gap-2">
+          <Text className="text-xl font-bold text-archive-50">
+            Start building this list
+          </Text>
+          <Text className="text-sm leading-5 text-archive-300">
+            Add movies, series, or anime from Search, Discover, or any Title Details screen.
+          </Text>
+        </View>
+      </View>
+
+      <View className="gap-3">
+        <Button title="Add Items" onPress={() => router.push('/search')} />
+        <Button
+          title="Browse Discover"
+          variant="secondary"
+          onPress={() => router.push('/')}
+        />
+      </View>
+    </Card>
+  );
+}
+
 function ListItemsSection({
   itemErrorId,
   itemErrorMessage,
@@ -139,14 +285,7 @@ function ListItemsSection({
   onSaveNote: (item: UserListItem, note: string | null) => void;
 }) {
   if (list.items.length === 0) {
-    return (
-      <EmptyState
-        title="No titles yet"
-        message="Titles saved to this list will appear here. Find something from Search or Discover, then save it from Title Details."
-        actionLabel="Find Titles"
-        onAction={() => router.push('/search')}
-      />
-    );
+    return <EmptyListDetailsState />;
   }
 
   return (
@@ -391,7 +530,7 @@ export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
           />
 
           {isEditingList ? (
-            <ListForm
+            <ListEditSheet
               deleteError={deleteError}
               errors={visibleFormErrors}
               hasSubmitted={hasSubmittedForm}

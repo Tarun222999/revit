@@ -28,6 +28,8 @@ type ListFormProps = {
   ) => void;
   onDelete?: () => void;
   onSubmit: () => void;
+  showDeleteAction?: boolean;
+  showIntro?: boolean;
   submitError?: string | null;
   touchedFields?: ListFormTouchedFields;
   values: ListFormValues;
@@ -81,6 +83,8 @@ export function ListForm({
   onChange,
   onDelete,
   onSubmit,
+  showDeleteAction = true,
+  showIntro = true,
   submitError,
   touchedFields = {},
   values,
@@ -95,14 +99,16 @@ export function ListForm({
 
   return (
     <Card className="gap-4">
-      <View className="gap-1">
-        <Text className="text-xl font-bold text-archive-50">
-          {isEditMode ? 'Edit List' : 'Create List'}
-        </Text>
-        <Text className="text-sm leading-5 text-archive-300">
-          Lists can mix movies, series, and anime by default.
-        </Text>
-      </View>
+      {showIntro ? (
+        <View className="gap-1">
+          <Text className="text-xl font-bold text-archive-50">
+            {isEditMode ? 'Edit List' : 'Create List'}
+          </Text>
+          <Text className="text-sm leading-5 text-archive-300">
+            Lists can mix movies, series, and anime by default.
+          </Text>
+        </View>
+      ) : null}
 
       <TextField
         error={visibleErrors.name}
@@ -156,7 +162,7 @@ export function ListForm({
         />
       </View>
 
-      {isEditMode && onDelete ? (
+      {isEditMode && onDelete && showDeleteAction ? (
         <View className="gap-3 border-t border-archive-700 pt-5">
           <View className="gap-1">
             <Text className="text-base font-bold text-archive-50">
@@ -172,6 +178,7 @@ export function ListForm({
             onPress={onDelete}
             title="Delete List"
             variant="danger"
+            className="border border-reel-500/70 bg-transparent"
           />
         </View>
       ) : null}
