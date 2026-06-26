@@ -1,0 +1,45 @@
+# Dependencies and local package manager state
+node_modules/
+.npm/
+.pnpm-store/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+google-service-account*.json
+play-store-service-account*.json
+AuthKey_*.p8
+*.jks
+*.keystore
+
+# Generated build/export output
+dist/
+out/
+.expo/
+.expo-export-android/
+.expo-export-android-*/
+*.tsbuildinfo
+
+# Local logs and diagnostics
+logs/
+*.log
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+.codex-expo-web*.log
+
+# Project planning and agent-only context
+docs/
+.agents/
+.codex/
+AGENTS.md
+features.txt.txt
+.linear-tar-*.png
+
+# Draft/reference image assets not referenced by app.json or app code
+assets/images/Screen 23.png
+assets/images/revit-icon-1024.png
+assets/images/revit-icon-draft*
+assets/images/revit-android-icon-monochrome-preview.png
+
+# Temporary scaffold app used to merge Expo into this existing repo
+RevitExpoTemp/
