@@ -1,4 +1,3 @@
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 import { getAuthRedirectUrl } from '@/features/auth/utils/authRedirect';
@@ -30,18 +29,5 @@ export async function signInWithGoogle() {
     return null;
   }
 
-  const parsedUrl = Linking.parse(result.url);
-  const code = parsedUrl.queryParams?.code;
-
-  if (typeof code !== 'string') {
-    throw new Error('Google sign-in did not return an auth code.');
-  }
-
-  const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-  if (exchangeError) {
-    throw exchangeError;
-  }
-
-  return sessionData.session;
+  return result.url;
 }

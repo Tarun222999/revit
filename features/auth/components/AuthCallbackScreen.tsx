@@ -1,29 +1,43 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Screen } from '@/components/ui/Screen';
 import { supabase } from '@/lib/supabase/client';
 
+const handledAuthCodes = new Set<string>();
+
 export function AuthCallbackScreen() {
   const params = useLocalSearchParams<{ code?: string; error_description?: string }>();
   const [message, setMessage] = useState('Finishing sign in...');
+  const handledCodeRef = useRef<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    const code = Array.isArray(params.code) ? params.code[0] : params.code;
+    const errorDescription = Array.isArray(params.error_description)
+      ? params.error_description[0]
+      : params.error_description;
 
     async function finishCallback() {
-      if (params.error_description) {
-        setMessage(params.error_description);
+      if (errorDescription) {
+        setMessage(errorDescription);
         return;
       }
 
-      if (!params.code) {
+      if (!code) {
         setMessage('The sign-in link is missing a code. Please try again.');
         return;
       }
 
-      const { error } = await supabase.auth.exchangeCodeForSession(params.code);
+      if (handledCodeRef.current === code || handledAuthCodes.has(code)) {
+        return;
+      }
+
+      handledCodeRef.current = code;
+      handledAuthCodes.add(code);
+
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (!mounted) {
         return;
