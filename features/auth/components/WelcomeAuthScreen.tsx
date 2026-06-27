@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, type ImageSource } from 'expo-image';
+import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
@@ -132,7 +133,27 @@ export function WelcomeAuthScreen() {
     setLoadingProvider('google');
 
     try {
-      await signInWithGoogle();
+      const callbackUrl = await signInWithGoogle();
+
+      if (!callbackUrl) {
+        return;
+      }
+
+      const parsedUrl = Linking.parse(callbackUrl);
+      const code = parsedUrl.queryParams?.code;
+      const errorDescription = parsedUrl.queryParams?.error_description;
+
+      if (typeof code !== 'string' && typeof errorDescription !== 'string') {
+        throw new Error('Google sign-in did not return an auth code.');
+      }
+
+      router.replace({
+        pathname: '/(auth)/callback',
+        params: {
+          ...(typeof code === 'string' ? { code } : {}),
+          ...(typeof errorDescription === 'string' ? { error_description: errorDescription } : {}),
+        },
+      });
     } catch (signInError) {
       setError(signInError instanceof Error ? signInError.message : 'Google sign-in failed.');
     } finally {
