@@ -54,7 +54,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Revit to choose an avatar from your photo library."
+          "photosPermission": "Allow Revit to choose an avatar from your photo library.",
+          "microphonePermission": false
         }
       ]
     ],

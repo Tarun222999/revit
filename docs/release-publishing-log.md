@@ -42,6 +42,318 @@ Accepted v1 tradeoffs:
 
 ## Timeline
 
+### 2026-06-27: Play Store Listing Draft Prepared
+
+Goal:
+
+- Prepare low-risk Play Store listing materials while Google Play Console developer account verification is pending.
+
+Actions:
+
+- Created a draft-only Play Store submission prep document:
+
+```text
+docs/play-store-submission-prep.md
+```
+
+- Drafted:
+  - recommended app category
+  - tag candidates
+  - short description options
+  - full description
+  - support/contact wording
+  - store listing claims to avoid
+
+Result:
+
+- Store listing copy is prepared for review only.
+- No Play Console dashboard action was taken.
+- No EAS production build was run.
+- No APK/AAB was uploaded.
+- No release was submitted.
+
+Next action:
+
+- User should review the store listing copy.
+- After approval, prepare the next item one step at a time, recommended next: Data Safety draft.
+
+### 2026-06-27: Play Store Data Safety Draft Prepared
+
+Goal:
+
+- Prepare a draft Data Safety worksheet while Google Play Console developer account verification is pending.
+
+Actions:
+
+- Updated:
+
+```text
+docs/play-store-submission-prep.md
+```
+
+- Added draft Data Safety answers covering:
+  - data collected
+  - sharing position
+  - encryption in transit
+  - account creation
+  - deletion availability
+  - likely data types
+  - data types not currently collected
+  - final verification notes
+- Checked current dependencies for analytics, crash reporting, ads, and related SDKs.
+
+Result:
+
+- Data Safety prep is documented as draft-only.
+- No Play Console dashboard action was taken.
+- No EAS production build was run.
+- No APK/AAB was uploaded.
+- No release was submitted.
+
+Next action:
+
+- Review the Data Safety draft before using it in Play Console.
+- Recommended next prep item: privacy policy/support URL plan.
+
+### 2026-06-27: Expo Image Picker Microphone Permission Disabled
+
+Goal:
+
+- Remove the generated Android microphone permission source before Play Store submission.
+
+Action:
+
+- Updated the `expo-image-picker` plugin config in:
+
+```text
+app.json
+```
+
+- Added:
+
+```text
+microphonePermission: false
+```
+
+Reason:
+
+- Revit uses image picking for optional profile avatars.
+- Revit does not record audio.
+- `expo-image-picker` can add `android.permission.RECORD_AUDIO` by default unless microphone permission is disabled.
+
+Result:
+
+- The app config now explicitly tells the image picker plugin not to add microphone permission.
+- The existing Android `blockedPermissions` guard remains in place for `android.permission.RECORD_AUDIO`.
+- `npx expo config --type public` passed.
+- The public Android config no longer includes `android.permissions = ["android.permission.RECORD_AUDIO"]`.
+
+Next action:
+
+- Later verify the final Android build manifest before Play submission.
+
+### 2026-06-27: Play Store Content Rating Draft Prepared
+
+Goal:
+
+- Prepare a draft Content Rating worksheet while Google Play Console developer account verification is pending.
+
+Actions:
+
+- Updated:
+
+```text
+docs/play-store-submission-prep.md
+```
+
+- Added draft Content Rating answers covering:
+  - likely app category
+  - no mature built-in content
+  - no ads
+  - no gambling
+  - no public user-generated content
+  - no user-to-user communication
+  - no streaming/playback
+  - private reviews and lists nuance
+  - external metadata nuance
+  - target audience recommendation
+
+Result:
+
+- Content Rating prep is documented as draft-only.
+- No Play Console dashboard action was taken.
+- No EAS production build was run.
+- No APK/AAB was uploaded.
+- No release was submitted.
+
+Next action:
+
+- Review the Content Rating draft before using it in Play Console.
+- Recommended next prep item in this thread: App Access draft.
+
+### 2026-06-27: Play Store App Access Draft Prepared
+
+Goal:
+
+- Prepare draft Play Console sign-in details while Google Play Console developer account verification is pending.
+
+Actions:
+
+- Updated:
+
+```text
+docs/play-store-submission-prep.md
+```
+
+- Added draft App Access / Sign-In Details answers covering:
+  - app requires login
+  - Android launch sign-in method
+  - hidden/dormant email auth
+  - dedicated reviewer account strategy
+  - draft reviewer instructions
+  - fallback if no demo account is ready
+  - security notes
+  - final verification checklist
+
+Result:
+
+- App Access prep is documented as draft-only.
+- No reviewer credentials were created or stored in the repo.
+- No Play Console dashboard action was taken.
+- No EAS production build was run.
+- No APK/AAB was uploaded.
+- No release was submitted.
+
+Next action:
+
+- Create a dedicated reviewer Google account later, only when release-build testing is ready.
+- Recommended next prep item in this thread: internal testing plan.
+
+### 2026-06-27: Public Legal And Support URLs Selected
+
+Goal:
+
+- Record the public URLs to use for Play Store and release metadata.
+
+Action:
+
+- Updated:
+
+```text
+docs/play-store-submission-prep.md
+```
+
+- Recorded user-supplied public URLs:
+
+```text
+Privacy Policy: https://revit.tarunapps.com/revit/privacy/
+Terms: https://revit.tarunapps.com/revit/terms/
+Support: https://revit.tarunapps.com/revit/support/
+Landing page: https://revit.tarunapps.com/revit/
+```
+
+Result:
+
+- Play Store prep now has the final privacy policy URL candidate.
+- The key Google Play privacy policy URL is:
+
+```text
+https://revit.tarunapps.com/revit/privacy/
+```
+
+- No Play Console dashboard action was taken.
+- No EAS production build was run.
+- No APK/AAB was uploaded.
+- No release was submitted.
+
+Next action:
+
+- Confirm each public URL loads from a normal browser before Play submission.
+- Support email was still TBD at this point and needed to be finalized before Play submission.
+- Recommended next prep item in this thread: internal testing plan.
+
+### 2026-06-27: Support Email Selected
+
+Goal:
+
+- Record the support email to use for Play Store and release metadata.
+
+Action:
+
+- Updated:
+
+```text
+docs/play-store-submission-prep.md
+```
+
+- Recorded user-supplied support email:
+
+```text
+mt790191@gmail.com
+```
+
+Result:
+
+- Play Store prep now has a support email value.
+- No Play Console dashboard action was taken.
+- No EAS production build was run.
+- No APK/AAB was uploaded.
+- No release was submitted.
+
+Next action:
+
+- Confirm the support email can receive release/support messages.
+- Recommended next prep item in this thread: internal testing plan.
+
+### 2026-06-27: Play Internal Testing Plan Drafted
+
+Goal:
+
+- Prepare a small Android-only internal testing plan for the first private Play-distributed build.
+
+Actions:
+
+- Updated:
+
+```text
+docs/play-store-submission-prep.md
+```
+
+- Recorded:
+  - Android-only initial scope
+  - internal testing track
+  - initial tester Gmail addresses
+  - known Android test device
+  - simple checklist plus tiny bug report template
+  - account deletion testing decision
+  - blockers before upload
+
+Initial tester emails:
+
+```text
+mt790191@gmail.com
+tarunkumar.m495@gmail.com
+```
+
+Known test device:
+
+```text
+Motorola Edge 60 Fusion
+```
+
+Result:
+
+- Internal testing prep is documented as draft-only.
+- No tester list was entered in Play Console.
+- No Play Console dashboard action was taken.
+- No EAS production build was run.
+- No APK/AAB was uploaded.
+- No release was submitted.
+
+Next action:
+
+- Recommended next prep item in this thread: screenshot checklist.
+
 ### 2026-06-23: Phase 8 Auth Scope Reduced
 
 Goal:
