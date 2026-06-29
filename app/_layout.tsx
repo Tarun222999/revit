@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import '../global.css';
 
-import { AuthGate } from '@/features/auth/components/AuthGate';
+import { AuthGate } from '@/features/auth/AuthGate';
 import { AuthProvider } from '@/features/auth/context/AuthProvider';
 import { QueryProvider } from '@/lib/query/QueryProvider';
 

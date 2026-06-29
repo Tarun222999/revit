@@ -1,7 +1,7 @@
 import { router, usePathname } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import type { PropsWithChildren } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentProfile } from '@/features/profile/hooks/useCurrentProfile';
@@ -22,6 +22,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     pathname === '/legal/credits' ||
     pathname === '/support';
   const isAuthRoute = isWelcomeRoute || isEmailCodeRoute || isCallbackRoute || isOnboardingRoute;
+
   const redirectTarget = useMemo(() => {
     if (authLoading || (user && profileQuery.isLoading && !isCallbackRoute)) {
       return null;
@@ -74,13 +75,20 @@ export function AuthGate({ children }: PropsWithChildren) {
     Boolean(!user && !authLoading && !isAuthRoute && !isPublicInfoRoute) ||
     Boolean(user && !profileQuery.data && !profileQuery.isLoading && !isOnboardingRoute);
 
-  if (isResolvingAuthRoute) {
-    return (
-      <View className="flex-1 items-center justify-center bg-archive-900">
-        <ActivityIndicator color="#d7a94d" />
-      </View>
-    );
-  }
-
-  return <>{children}</>;
+  return (
+    <View style={styles.container}>
+      {children}
+      {isResolvingAuthRoute ? (
+        <View className="items-center justify-center bg-archive-900" style={StyleSheet.absoluteFill}>
+          <ActivityIndicator color="#d7a94d" />
+        </View>
+      ) : null}
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});
