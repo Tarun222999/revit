@@ -1,5 +1,5 @@
 import { router, usePathname } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { PropsWithChildren } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 
@@ -8,6 +8,7 @@ import { useCurrentProfile } from '@/features/profile/hooks/useCurrentProfile';
 
 export function AuthGate({ children }: PropsWithChildren) {
   const pathname = usePathname();
+  const lastRedirectKeyRef = useRef<string | null>(null);
   const { user, loading: authLoading } = useAuth();
   const profileQuery = useCurrentProfile(user?.id);
 
@@ -21,35 +22,24 @@ export function AuthGate({ children }: PropsWithChildren) {
     pathname === '/legal/credits' ||
     pathname === '/support';
   const isAuthRoute = isWelcomeRoute || isEmailCodeRoute || isCallbackRoute || isOnboardingRoute;
-
-  useEffect(() => {
+  const redirectTarget = useMemo(() => {
     if (authLoading || (user && profileQuery.isLoading && !isCallbackRoute)) {
-      return;
+      return null;
     }
 
     if (!user) {
-      if (!isAuthRoute && !isPublicInfoRoute) {
-        router.replace('/welcome');
-      }
-
-      return;
+      return !isAuthRoute && !isPublicInfoRoute ? '/welcome' : null;
     }
 
     if (isCallbackRoute) {
-      return;
+      return null;
     }
 
     if (!profileQuery.data) {
-      if (!isOnboardingRoute) {
-        router.replace('/onboarding');
-      }
-
-      return;
+      return !isOnboardingRoute ? '/onboarding' : null;
     }
 
-    if (isAuthRoute) {
-      router.replace('/(tabs)');
-    }
+    return isAuthRoute ? '/(tabs)' : null;
   }, [
     authLoading,
     isAuthRoute,
@@ -60,6 +50,22 @@ export function AuthGate({ children }: PropsWithChildren) {
     profileQuery.isLoading,
     user,
   ]);
+
+  useEffect(() => {
+    if (!redirectTarget) {
+      lastRedirectKeyRef.current = null;
+      return;
+    }
+
+    const redirectKey = `${pathname}->${redirectTarget}`;
+
+    if (lastRedirectKeyRef.current === redirectKey) {
+      return;
+    }
+
+    lastRedirectKeyRef.current = redirectKey;
+    router.replace(redirectTarget);
+  }, [pathname, redirectTarget]);
 
   const isResolvingAuthRoute =
     authLoading ||

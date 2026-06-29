@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Screen } from '@/components/ui/Screen';
+import { getCurrentProfile } from '@/features/profile/api/profile-api';
 import { supabase } from '@/lib/supabase/client';
 
 const handledAuthCodes = new Set<string>();
@@ -20,35 +21,56 @@ export function AuthCallbackScreen() {
       : params.error_description;
 
     async function finishCallback() {
-      if (errorDescription) {
-        setMessage(errorDescription);
-        return;
+      try {
+        if (errorDescription) {
+          setMessage(errorDescription);
+          return;
+        }
+
+        if (!code) {
+          setMessage('The sign-in link is missing a code. Please try again.');
+          return;
+        }
+
+        if (handledCodeRef.current === code || handledAuthCodes.has(code)) {
+          return;
+        }
+
+        handledCodeRef.current = code;
+        handledAuthCodes.add(code);
+
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          setMessage(error.message);
+          return;
+        }
+
+        const userId = data.session?.user.id;
+
+        if (!userId) {
+          setMessage('Sign-in completed, but no user session was returned.');
+          return;
+        }
+
+        const profile = await getCurrentProfile(userId);
+
+        if (!mounted) {
+          return;
+        }
+
+        router.replace(profile ? '/(tabs)' : '/(auth)/onboarding');
+      } catch (callbackError) {
+        if (!mounted) {
+          return;
+        }
+
+        setMessage(callbackError instanceof Error ? callbackError.message : 'Could not finish sign in.');
       }
-
-      if (!code) {
-        setMessage('The sign-in link is missing a code. Please try again.');
-        return;
-      }
-
-      if (handledCodeRef.current === code || handledAuthCodes.has(code)) {
-        return;
-      }
-
-      handledCodeRef.current = code;
-      handledAuthCodes.add(code);
-
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-      if (!mounted) {
-        return;
-      }
-
-      if (error) {
-        setMessage(error.message);
-        return;
-      }
-
-      router.replace('/(auth)/onboarding');
     }
 
     finishCallback();
