@@ -15,7 +15,7 @@ The app is intentionally personal and management-focused: Discover is the browsi
   <img src="./publish-screenshots/rating.jpeg" alt="Revit rating modal" width="180" />
 </p>
 
-Store-ready phone and tablet screenshots are also kept in `publish-store-assets/`.
+
 
 ## Features
 
