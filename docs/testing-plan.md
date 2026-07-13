@@ -9,8 +9,8 @@ The goal is not to test every line of code. The goal is to protect the important
 ## Current Baseline
 
 - Jest, `jest-expo`, and React Native Testing Library are configured.
-- The automated suite currently contains 41 passing tests across seven test files.
-- Unit, model, validation, and focused component behavior are covered; route-boundary and built-app coverage remain future work.
+- The automated suite currently contains 53 passing tests across eight test files.
+- Unit, model, validation, focused component, and route-boundary behavior are covered; data-hook and built-app coverage remain future work.
 - `npm run typecheck` passes.
 - `npm run lint` passes.
 - The app uses Expo 54, React Native 0.81, React 19, TypeScript, Expo Router, Supabase, and TanStack Query.
@@ -24,7 +24,8 @@ The goal is not to test every line of code. The goal is to protect the important
 - Step 3: journal and media models — complete.
 - Step 4: list and profile validation — complete.
 - Step 5: important components — complete.
-- Step 6: navigation and auth boundaries — next, pending approval.
+- Step 6: navigation and auth boundaries — complete.
+- Step 7: data hooks and mutation states — next, pending approval.
 
 ## Recommended Testing Stack
 
@@ -261,6 +262,17 @@ Learning outcome:
 - Test navigation without manually launching the app.
 - Understand route state, redirects, and deep-link inputs.
 
+Completed in this step:
+
+- unauthenticated private-route redirects to Welcome
+- signed-in users without profiles redirect to Onboarding
+- signed-in users with profiles leave auth routes for the tab shell
+- public legal/support routes remain available without a session
+- callback routes handle missing codes and route users based on profile presence
+- title, list, profile, and journal-modal route parameters reach their screens
+
+The tests use mocked Expo Router hooks and route wrappers so they stay local and deterministic. A full built-app navigation pass remains part of the later Maestro and device checks.
+
 ### Step 7: Test data hooks and mutation states
 
 Mock Supabase and Edge Function responses. Do not use production data.
@@ -369,4 +381,4 @@ For every implementation step:
 4. I explain any failure in plain language.
 5. We pause for your approval before moving to the next step.
 
-The next implementation step after approval will be Step 6: testing navigation and auth boundaries.
+The next implementation step after approval will be Step 7: testing data hooks and mutation states.
