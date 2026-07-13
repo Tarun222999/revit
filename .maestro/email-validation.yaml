@@ -1,0 +1,10 @@
+appId: "${MAESTRO_APP_ID}"
+---
+- launchApp:
+    clearState: true
+- tapOn: "Continue with Email"
+- assertVisible: "Where should we send it?"
+- tapOn: "you@example.com"
+- inputText: "not-an-email"
+- tapOn: "Send Code"
+- assertVisible: "Enter a valid email address."
