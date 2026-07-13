@@ -4,3 +4,8 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 
 process.env.EXPO_PUBLIC_SUPABASE_URL = 'https://example.supabase.co';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = 'jest-placeholder-anon-key';
+
+jest.mock('@react-native-community/datetimepicker', () => ({
+  __esModule: true,
+  default: () => null,
+}));

@@ -9,8 +9,8 @@ The goal is not to test every line of code. The goal is to protect the important
 ## Current Baseline
 
 - Jest, `jest-expo`, and React Native Testing Library are configured.
-- The first foundation test passes from `npm run test`.
-- The app has one automated test file so far; product behavior is not covered yet.
+- The automated suite currently contains 41 passing tests across seven test files.
+- Unit, model, validation, and focused component behavior are covered; route-boundary and built-app coverage remain future work.
 - `npm run typecheck` passes.
 - `npm run lint` passes.
 - The app uses Expo 54, React Native 0.81, React 19, TypeScript, Expo Router, Supabase, and TanStack Query.
@@ -23,7 +23,8 @@ The goal is not to test every line of code. The goal is to protect the important
 - Step 2: journal form rules — complete.
 - Step 3: journal and media models — complete.
 - Step 4: list and profile validation — complete.
-- Step 5: important components — next, pending approval.
+- Step 5: important components — complete.
+- Step 6: navigation and auth boundaries — next, pending approval.
 
 ## Recommended Testing Stack
 
@@ -235,6 +236,15 @@ Learning outcome:
 - Query elements the way a user or assistive technology would find them.
 - Avoid tests coupled to CSS classes or component internals.
 
+Completed in the first component slice:
+
+- journal status selection, rating clearing, and spoiler toggling
+- released and unreleased journal-entry form behavior
+- list form validation and callback behavior
+- invalid email validation and the successful email-code transition
+
+The remaining loading, empty, error, and retry states will be added where they belong during Steps 6 and 7.
+
 ### Step 6: Test navigation and auth boundaries
 
 Use Expo Router testing utilities for:
@@ -359,4 +369,4 @@ For every implementation step:
 4. I explain any failure in plain language.
 5. We pause for your approval before moving to the next step.
 
-The next implementation step after approval will be Step 5: testing important components.
+The next implementation step after approval will be Step 6: testing navigation and auth boundaries.
