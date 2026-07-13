@@ -1,6 +1,6 @@
 # Revit
 
-Revit is a journal-first entertainment tracking app for movies, series, and anime. It is built as a production-ready Expo portfolio app where users can discover titles, save them to a personal journal, rate them, write short reviews, and organize mixed-media lists.
+Revit is a journal-first entertainment tracking app for movies, series, and anime. It is built as a production-ready Expo  app where users can discover titles, save them to a personal journal, rate them, write short reviews, and organize mixed-media lists.
 
 The app is intentionally personal and management-focused: Discover is the browsing surface, Journal is where entries live, Lists are for collections, and Profile/Account owns identity and account settings.
 
@@ -15,7 +15,7 @@ The app is intentionally personal and management-focused: Discover is the browsi
   <img src="./publish-screenshots/rating.jpeg" alt="Revit rating modal" width="180" />
 </p>
 
-Store-ready phone and tablet screenshots are also kept in `publish-store-assets/`.
+
 
 ## Features
 
