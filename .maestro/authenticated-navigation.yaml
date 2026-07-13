@@ -1,0 +1,19 @@
+appId: "${MAESTRO_APP_ID}"
+---
+- launchApp:
+    clearState: false
+- assertVisible: "Browse"
+- tapOn:
+    text: "Search"
+- assertVisible: "Search"
+- tapOn:
+    text: "Journal"
+- assertVisible: "My Journal"
+- tapOn:
+    text: "Lists"
+- assertVisible: "Lists"
+- tapOn:
+    text: "Create"
+- assertVisible: "Create List"
+- tapOn: "Create List"
+- assertVisible: "List name is required."

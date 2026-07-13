@@ -1,0 +1,15 @@
+appId: "${MAESTRO_APP_ID}"
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Start your shelf"
+- tapOn: "Terms"
+- assertVisible: "Terms of Use"
+- launchApp:
+    clearState: true
+- tapOn: "Privacy Policy"
+- assertVisible: "Privacy Policy"
+- launchApp:
+    clearState: true
+- openLink: "revit://support"
+- assertVisible: "Support"

@@ -9,8 +9,8 @@ The goal is not to test every line of code. The goal is to protect the important
 ## Current Baseline
 
 - Jest, `jest-expo`, and React Native Testing Library are configured.
-- The automated suite currently contains 53 passing tests across eight test files.
-- Unit, model, validation, focused component, and route-boundary behavior are covered; data-hook and built-app coverage remain future work.
+- The automated suite currently contains 64 passing tests across nine test files.
+- Unit, model, validation, focused component, route-boundary, and data-hook behavior are covered; built-app coverage remains future work.
 - `npm run typecheck` passes.
 - `npm run lint` passes.
 - The app uses Expo 54, React Native 0.81, React 19, TypeScript, Expo Router, Supabase, and TanStack Query.
@@ -25,7 +25,8 @@ The goal is not to test every line of code. The goal is to protect the important
 - Step 4: list and profile validation — complete.
 - Step 5: important components — complete.
 - Step 6: navigation and auth boundaries — complete.
-- Step 7: data hooks and mutation states — next, pending approval.
+- Step 7: data hooks and mutation states — complete.
+- Step 8: Maestro smoke suite — flow files added; device execution pending.
 
 ## Recommended Testing Stack
 
@@ -292,6 +293,17 @@ Learning outcome:
 - Test both success and failure.
 - Understand why loading and error states are part of the feature contract.
 
+Completed in this step:
+
+- search disabled, success, empty, and error states
+- discovery retry recovery after a failed request
+- media-details query gating until a route id exists
+- journal create/delete cache writes and list invalidation
+- list-create invalidation
+- profile cache updates and account-deletion cleanup/sign-out
+
+Supabase and Edge Function boundaries remain mocked, so these tests are safe to run locally without production data or a device.
+
 ### Step 8: Add a small Maestro smoke suite
 
 Start with flows that do not require automating third-party OAuth screens:
@@ -304,6 +316,14 @@ Start with flows that do not require automating third-party OAuth screens:
 - legal/support routes open
 
 Authentication providers, Apple capability, and deep-link handoff will remain part of the manual device checklist unless a stable test environment is available.
+
+Implementation status:
+
+- Added `.maestro/public-auth-and-legal.yaml` for unauthenticated launch, legal routes, and the public Support deep link.
+- Added `.maestro/email-validation.yaml` for email navigation and invalid-email validation.
+- Added `.maestro/authenticated-navigation.yaml` for tab access and list-form validation after onboarding.
+- Added `.maestro/README.md` with platform identifiers, run commands, and preconditions.
+- The Maestro CLI and an installed simulator/device are not available in this workspace, so execution remains pending.
 
 Learning outcome:
 
@@ -381,4 +401,4 @@ For every implementation step:
 4. I explain any failure in plain language.
 5. We pause for your approval before moving to the next step.
 
-The next implementation step after approval will be Step 7: testing data hooks and mutation states.
+The next action after approval will be Step 8 execution on an installed simulator/device. Step 9 should wait until these smoke flows have been run and any device-specific failures are reviewed.
