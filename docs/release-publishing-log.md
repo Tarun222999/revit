@@ -1058,6 +1058,330 @@ Next action:
 
 - Rebuild the Android preview APK and verify the splash on device.
 
+### 2026-06-30: Google Play Developer Account Verified
+
+Goal:
+
+- Confirm the Play Console account is ready to create the first app.
+
+Result:
+
+- Google Play Console now shows the verified developer account:
+
+```text
+Developer name: TarunApps
+Account type: Personal account
+```
+
+- The console shows the `Create your first app` prompt.
+
+Next action:
+
+- Create the Revit app entry in Google Play Console, without uploading an AAB yet.
+
+### 2026-06-30: Google Play App Entry Created
+
+Goal:
+
+- Create the Play Console app shell for Revit.
+
+Result:
+
+- Created the Google Play Console app entry:
+
+```text
+App name: Revit
+Developer account: TarunApps
+Package name: com.tarun.revit
+```
+
+Notes:
+
+- This creates the app dashboard only.
+- No app bundle was uploaded.
+- Nothing was submitted for review or published.
+
+Next action:
+
+- Set up internal testing before any public release work.
+
+### 2026-06-30: Google Play Internal Tester Selected
+
+Goal:
+
+- Set up the first internal tester for private Play Store testing.
+
+Result:
+
+- Internal testing setup shows:
+
+```text
+Select testers: complete
+```
+
+- Initial tester group contains the developer/tester account only.
+
+Notes:
+
+- No release was created yet.
+- No AAB was uploaded.
+- Nothing was rolled out or published.
+
+Next action:
+
+- Build a production Android AAB and use it to create the first internal testing release.
+
+### 2026-06-30: First Android Production AAB Build Attempt Queued After Build Credit Warning
+
+Goal:
+
+- Build the first Android production AAB for Google Play internal testing.
+
+Action:
+
+- Ran:
+
+```text
+npx eas-cli@latest build -p android --profile production
+```
+
+Result:
+
+- EAS resolved the production build environment.
+- EAS loaded:
+
+```text
+EXPO_PUBLIC_SUPABASE_ANON_KEY
+EXPO_PUBLIC_SUPABASE_URL
+```
+
+- EAS incremented the remote Android version code:
+
+```text
+1 -> 2
+```
+
+- EAS printed a build-credit warning:
+
+```text
+You've reached your included build credits this billing period.
+New builds are blocked until your billing period resets.
+```
+
+- EAS also uploaded the project and showed a build logs URL:
+
+```text
+https://expo.dev/accounts/tarun495/projects/revit/builds/3e1ec607-9037-4573-a686-9d2a785ba641
+```
+
+- Terminal showed:
+
+```text
+Build queued...
+```
+
+Notes:
+
+- The production AAB is needed for Google Play internal testing.
+- Do not start additional EAS builds until this build is confirmed either running, completed, failed, or blocked by billing.
+- EAS warned that `android.versionCode` in `app.json` is ignored because `eas.json` uses remote app version source.
+- EAS warned that Expo Go is used for development; this is a warning, not the current blocker.
+
+Next action:
+
+- Check the EAS build page status. If the build remains blocked due to credits, wait for the billing reset or upgrade before retrying.
+
+### 2026-06-30: First Android Production AAB Build Finished
+
+Goal:
+
+- Confirm whether the queued production Android build completed despite the EAS build-credit warning.
+
+Result:
+
+- The production Android build finished.
+
+Notes:
+
+- This build should provide the `.aab` artifact required for Google Play internal testing.
+- This is not a public Play Store release until the AAB is uploaded, reviewed in Play Console, and rolled out to a testing or production track.
+
+Next action:
+
+- Download or use the EAS production AAB artifact and upload it to the Play Console internal testing release draft.
+
+### 2026-06-30: First Google Play Internal Testing Release Published
+
+Goal:
+
+- Publish the first Play Store internal testing release for private tester access.
+
+Action:
+
+- Uploaded the production Android AAB from EAS build:
+
+```text
+application-3e1ec607-9037-4573-a686-9d2a785ba641.aab
+```
+
+- Created and published the internal testing release.
+
+Result:
+
+- Internal testing track is active.
+- Release:
+
+```text
+1.0.0 (2)
+```
+
+- Status:
+
+```text
+Available to internal testers
+Not reviewed
+```
+
+- Release date shown in Play Console:
+
+```text
+30 Jun 23:56
+```
+
+Notes:
+
+- This is not a public production release.
+- The release is available only to configured internal testers.
+- Play Console showed a deobfuscation-file warning; accepted for this internal test.
+
+Next action:
+
+- Install Revit through the Play internal testing link and run the internal testing checklist.
+
+### 2026-07-01: Play Console Setup Progress Reviewed After Internal Test
+
+Goal:
+
+- Review the Play Console state after internal testing setup and app-content form progress.
+
+Observed state:
+
+- Production:
+
+```text
+Inactive
+```
+
+- Open testing:
+
+```text
+Inactive
+```
+
+- Closed testing:
+
+```text
+Inactive
+```
+
+- Internal testing:
+
+```text
+Active · Not reviewed
+```
+
+- App content/setup checklist shows several completed sections, including:
+
+```text
+Data safety
+Government apps
+Financial features
+Health
+Select an app category and provide contact details
+```
+
+- Remaining visible setup item:
+
+```text
+Set up your Store Listing
+```
+
+Notes:
+
+- Internal testing is complete enough for the current private testing lane.
+- Production release still requires the Google Play closed testing requirement for personal developer accounts: at least 12 opted-in testers for at least 14 days before production access.
+
+Next action:
+
+- Complete the main store listing draft/details.
+
+### 2026-07-01: Play Store Listing Graphics Generated
+
+Goal:
+
+- Create Play Console-ready graphics and screenshots without requiring a physical tablet or Android emulator.
+
+Action:
+
+- Used real phone screenshots from:
+
+```text
+publish-screenshots/
+```
+
+- Generated compliant Play Store assets under:
+
+```text
+publish-store-assets/
+```
+
+Result:
+
+- Phone screenshots:
+
+```text
+publish-store-assets/phone-screenshots/*.png
+1080 x 1920
+```
+
+- 7-inch tablet screenshots:
+
+```text
+publish-store-assets/7-inch-tablet-screenshots/*.png
+1200 x 1920
+```
+
+- 10-inch tablet screenshots:
+
+```text
+publish-store-assets/10-inch-tablet-screenshots/*.png
+1600 x 2560
+```
+
+- Play Store icon:
+
+```text
+publish-store-assets/graphics/play-store-icon-512.png
+512 x 512
+```
+
+- Feature graphic:
+
+```text
+publish-store-assets/graphics/feature-graphic-1024x500.png
+1024 x 500
+```
+
+Notes:
+
+- The screenshot assets use real app UI placed inside compliant branded canvases.
+- The tablet assets are store-listing compositions based on real phone UI because no tablet/emulator capture is available.
+- Added `publish-screenshots/` and `publish-store-assets/` to `.easignore` so store-only graphics are not uploaded to EAS Build.
+
+Next action:
+
+- Upload the generated graphics to the Play Console Store Listing section and address any Play Console validation warnings.
+
 ## Upcoming Attempts
 
 ### EAS Build Setup
