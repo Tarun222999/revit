@@ -20,7 +20,10 @@ The goal is not to test every line of code. The goal is to protect the important
 
 - Step 0: testing contract and roadmap — complete.
 - Step 1: test foundation — complete.
-- Step 2: journal form rules — next, pending approval.
+- Step 2: journal form rules — complete.
+- Step 3: journal and media models — complete.
+- Step 4: list and profile validation — complete.
+- Step 5: important components — next, pending approval.
 
 ## Recommended Testing Stack
 
@@ -356,4 +359,4 @@ For every implementation step:
 4. I explain any failure in plain language.
 5. We pause for your approval before moving to the next step.
 
-The next implementation step after approval will be Step 2: testing the journal form rules in `features/journal/model/journalEntryForm.ts`.
+The next implementation step after approval will be Step 5: testing important components.
