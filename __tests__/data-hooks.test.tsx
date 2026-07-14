@@ -325,8 +325,10 @@ describe('journal and list mutations', () => {
       );
     });
 
-    expect(result.current.isError).toBe(true);
-    expect(result.current.error).toBe(mutationError);
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+      expect(result.current.error).toBe(mutationError);
+    });
     expect(setQueryData).not.toHaveBeenCalled();
     expect(invalidateQueries).not.toHaveBeenCalled();
     await unmount();
@@ -436,8 +438,10 @@ describe('profile mutations', () => {
       ).rejects.toThrow('Could not update your profile.');
     });
 
-    expect(result.current.isError).toBe(true);
-    expect(result.current.error).toBe(mutationError);
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+      expect(result.current.error).toBe(mutationError);
+    });
     expect(setQueryData).not.toHaveBeenCalled();
     await unmount();
   });
@@ -475,8 +479,10 @@ describe('profile mutations', () => {
       await expect(result.current.mutateAsync()).rejects.toThrow('Account deletion failed.');
     });
 
-    expect(result.current.isError).toBe(true);
-    expect(result.current.error).toBe(mutationError);
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+      expect(result.current.error).toBe(mutationError);
+    });
     expect(clear).not.toHaveBeenCalled();
     expect(mockSignOut).not.toHaveBeenCalled();
     await unmount();

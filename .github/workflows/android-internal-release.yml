@@ -1,0 +1,47 @@
+name: Android Internal Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit_to_play:
+        description: Submit the completed build to Google Play internal testing as a draft
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-internal-release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    name: build and submit Android internal release
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: play-internal
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Android production artifact
+        run: npx eas-cli@latest build --platform android --profile production --non-interactive
+
+      - name: Submit to Google Play internal testing
+        if: ${{ inputs.submit_to_play }}
+        run: npx eas-cli@latest submit --platform android --profile production --latest --non-interactive
