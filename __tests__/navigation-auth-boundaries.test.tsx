@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react-native';
-import type { User } from '@supabase/supabase-js';
+import { AuthError } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import { router, useLocalSearchParams, usePathname } from 'expo-router';
 import { Text } from 'react-native';
 
@@ -7,7 +8,7 @@ import { AuthGate } from '@/features/auth/AuthGate';
 import { AuthCallbackScreen } from '@/features/auth/components/AuthCallbackScreen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentProfile } from '@/features/profile/hooks/useCurrentProfile';
-import { getCurrentProfile } from '@/features/profile/api/profile-api';
+import { getCurrentProfile, type Profile } from '@/features/profile/api/profile-api';
 import { supabase } from '@/lib/supabase/client';
 
 import TitleDetailsRoute from '../app/title/[id]';
@@ -74,6 +75,51 @@ const mockUsePathname = jest.mocked(usePathname);
 const mockUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockExchangeCodeForSession = jest.mocked(supabase.auth.exchangeCodeForSession);
 
+const authUser: User = {
+  app_metadata: { provider: 'google', providers: ['google'] },
+  aud: 'authenticated',
+  created_at: '2026-07-13T10:00:00.000Z',
+  id: 'user-1',
+  user_metadata: {},
+};
+
+const authSession: Session = {
+  access_token: 'access-token',
+  expires_in: 3600,
+  refresh_token: 'refresh-token',
+  token_type: 'bearer',
+  user: authUser,
+};
+
+const profile: Profile = {
+  avatar_path: null,
+  bio: null,
+  created_at: '2026-07-13T10:00:00.000Z',
+  display_name: 'Maya',
+  id: 'user-1',
+  updated_at: '2026-07-13T10:00:00.000Z',
+  username: 'maya',
+};
+
+type AuthCallbackResponse = Awaited<ReturnType<typeof supabase.auth.exchangeCodeForSession>>;
+
+const successfulCallbackResponse: AuthCallbackResponse = {
+  data: { session: authSession, user: authUser },
+  error: null,
+};
+
+const failedCallbackResponse: AuthCallbackResponse = {
+  data: { session: null, user: null },
+  error: new AuthError('The sign-in code is invalid.', 400, 'invalid_grant'),
+};
+
+// Supabase's success response type requires a session, but the callback guards
+// against a malformed runtime response so it can fail safely instead of routing.
+const noSessionCallbackResponse = {
+  data: { session: null, user: null },
+  error: null,
+} as unknown as AuthCallbackResponse;
+
 function setAuthState({
   user = null,
   loading = false,
@@ -129,7 +175,7 @@ describe('auth route boundaries', () => {
   });
 
   it('sends a signed-in user without a profile to onboarding', async () => {
-    setAuthState({ user: { id: 'user-1' } as User });
+    setAuthState({ user: authUser });
 
     await render(
       <AuthGate>
@@ -142,7 +188,7 @@ describe('auth route boundaries', () => {
 
   it('sends a signed-in user with a profile to the tab shell when they are on auth routes', async () => {
     mockUsePathname.mockReturnValue('/welcome');
-    setAuthState({ user: { id: 'user-1' } as User });
+    setAuthState({ user: authUser });
     setProfileState({ id: 'profile-1' });
 
     await render(
@@ -188,11 +234,8 @@ describe('auth callback boundaries', () => {
 
   it('routes a completed callback with a profile to the app shell', async () => {
     mockUseLocalSearchParams.mockReturnValue({ code: 'code-with-profile' });
-    mockExchangeCodeForSession.mockResolvedValue({
-      data: { session: { user: { id: 'user-1' } } },
-      error: null,
-    } as never);
-    mockGetCurrentProfile.mockResolvedValue({ id: 'profile-1' } as never);
+    mockExchangeCodeForSession.mockResolvedValue(successfulCallbackResponse);
+    mockGetCurrentProfile.mockResolvedValue(profile);
 
     await render(<AuthCallbackScreen />);
 
@@ -200,12 +243,39 @@ describe('auth callback boundaries', () => {
     expect(mockExchangeCodeForSession).toHaveBeenCalledWith('code-with-profile');
   });
 
+  it('shows an auth error and does not route when code exchange fails', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ code: 'invalid-code' });
+    mockExchangeCodeForSession.mockResolvedValue(failedCallbackResponse);
+
+    await render(<AuthCallbackScreen />);
+
+    await waitFor(() => expect(screen.getByText('The sign-in code is invalid.')).toBeTruthy());
+    expect(mockGetCurrentProfile).not.toHaveBeenCalled();
+    expect(mockRouterReplace).not.toHaveBeenCalled();
+  });
+
+  it('shows a no-session message and does not route when the callback returns no session', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ code: 'code-without-session' });
+    mockExchangeCodeForSession.mockResolvedValue(noSessionCallbackResponse);
+
+    await render(<AuthCallbackScreen />);
+
+    await waitFor(() =>
+      expect(screen.getByText('Sign-in completed, but no user session was returned.')).toBeTruthy(),
+    );
+    expect(mockGetCurrentProfile).not.toHaveBeenCalled();
+    expect(mockRouterReplace).not.toHaveBeenCalled();
+  });
+
   it('routes a completed callback without a profile to onboarding', async () => {
     mockUseLocalSearchParams.mockReturnValue({ code: 'code-without-profile' });
     mockExchangeCodeForSession.mockResolvedValue({
-      data: { session: { user: { id: 'user-2' } } },
-      error: null,
-    } as never);
+      ...successfulCallbackResponse,
+      data: {
+        session: { ...authSession, user: { ...authUser, id: 'user-2' } },
+        user: { ...authUser, id: 'user-2' },
+      },
+    });
     mockGetCurrentProfile.mockResolvedValue(null);
 
     await render(<AuthCallbackScreen />);

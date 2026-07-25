@@ -34,7 +34,7 @@ import { currentProfileQueryKey } from '@/features/profile/hooks/useCurrentProfi
 import { useDeleteAccount } from '@/features/profile/hooks/useDeleteAccount';
 import { useUpdateProfile } from '@/features/profile/hooks/useUpdateProfile';
 import { supabase } from '@/lib/supabase/client';
-import type { JournalEntry } from '@/features/journal/types';
+import type { CreateJournalEntryInput, JournalEntry } from '@/features/journal/types';
 import type { NormalizedMediaItem } from '@/types/media';
 
 jest.mock('@/features/discovery/api/discover-api', () => ({
@@ -108,6 +108,18 @@ const journalEntry = {
   updated_at: '2026-07-13T10:00:00.000Z',
   user_id: 'user-1',
 } satisfies JournalEntry;
+
+const createJournalEntryInput: CreateJournalEntryInput = {
+  completedOn: '2026-07-13',
+  containsSpoilers: false,
+  mediaItemId: 'media-1',
+  rating: 4.5,
+  reviewBody: '',
+  reviewHeadline: '',
+  startedOn: null,
+  status: 'completed',
+  userId: 'user-1',
+};
 
 const profile = {
   avatar_path: null,
@@ -282,10 +294,8 @@ describe('journal and list mutations', () => {
 
     await act(async () => {
       await result.current.mutateAsync({
-        mediaItemId: 'media-1',
-        status: 'completed',
-        userId: 'user-1',
-      } as never);
+        ...createJournalEntryInput,
+      });
     });
 
     expect(setQueryData).toHaveBeenCalledWith(
@@ -295,6 +305,32 @@ describe('journal and list mutations', () => {
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: journalEntriesQueryKey('user-1'),
     });
+    await unmount();
+  });
+
+  it('exposes journal creation failures without changing cached data', async () => {
+    const mutationError = new Error('Could not save journal entry.');
+    mockCreateJournalEntry.mockRejectedValue(mutationError);
+    const queryClient = createTestQueryClient();
+    const setQueryData = jest.spyOn(queryClient, 'setQueryData');
+    const invalidateQueries = jest.spyOn(queryClient, 'invalidateQueries');
+
+    const { result, unmount } = await renderHook(() => useCreateJournalEntry(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await act(async () => {
+      await expect(result.current.mutateAsync(createJournalEntryInput)).rejects.toThrow(
+        'Could not save journal entry.',
+      );
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+      expect(result.current.error).toBe(mutationError);
+    });
+    expect(setQueryData).not.toHaveBeenCalled();
+    expect(invalidateQueries).not.toHaveBeenCalled();
     await unmount();
   });
 
@@ -381,6 +417,35 @@ describe('profile mutations', () => {
     await unmount();
   });
 
+  it('exposes profile update failures without replacing the cached profile', async () => {
+    const mutationError = new Error('Could not update your profile.');
+    mockUpdateProfile.mockRejectedValue(mutationError);
+    const queryClient = createTestQueryClient();
+    const setQueryData = jest.spyOn(queryClient, 'setQueryData');
+
+    const { result, unmount } = await renderHook(() => useUpdateProfile(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await act(async () => {
+      await expect(
+        result.current.mutateAsync({
+          bio: 'A short bio',
+          displayName: 'Maya',
+          userId: 'user-1',
+          username: 'maya',
+        }),
+      ).rejects.toThrow('Could not update your profile.');
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+      expect(result.current.error).toBe(mutationError);
+    });
+    expect(setQueryData).not.toHaveBeenCalled();
+    await unmount();
+  });
+
   it('clears cached data and signs out locally after account deletion', async () => {
     mockDeleteAccount.mockResolvedValue({ deleted: true });
     mockSignOut.mockResolvedValue({ error: null });
@@ -397,6 +462,29 @@ describe('profile mutations', () => {
 
     expect(clear).toHaveBeenCalled();
     expect(mockSignOut).toHaveBeenCalledWith({ scope: 'local' });
+    await unmount();
+  });
+
+  it('does not clear cached data or sign out when account deletion fails', async () => {
+    const mutationError = new Error('Account deletion failed.');
+    mockDeleteAccount.mockRejectedValue(mutationError);
+    const queryClient = createTestQueryClient();
+    const clear = jest.spyOn(queryClient, 'clear');
+
+    const { result, unmount } = await renderHook(() => useDeleteAccount(), {
+      wrapper: createWrapper(queryClient),
+    });
+
+    await act(async () => {
+      await expect(result.current.mutateAsync()).rejects.toThrow('Account deletion failed.');
+    });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+      expect(result.current.error).toBe(mutationError);
+    });
+    expect(clear).not.toHaveBeenCalled();
+    expect(mockSignOut).not.toHaveBeenCalled();
     await unmount();
   });
 });
