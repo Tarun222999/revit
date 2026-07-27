@@ -1,4 +1,6 @@
+import * as Linking from 'expo-linking';
 import { router, Stack } from 'expo-router';
+import { Alert } from 'react-native';
 import { useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -15,6 +17,7 @@ import { TitleDetailsHero } from '@/features/media/components/TitleDetailsHero';
 import { TitleDetailsMetadataCard } from '@/features/media/components/TitleDetailsMetadataCard';
 import { TitleDetailsSummaryCard } from '@/features/media/components/TitleDetailsSummaryCard';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
+import { useMediaTrailer } from '@/features/media/hooks/useMediaTrailer';
 import { getTitleDetailMetrics } from '@/features/media/model/titleDetails';
 
 type TitleDetailsScreenProps = {
@@ -29,6 +32,9 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
   const { user } = useAuth();
   const detailsQuery = useMediaDetails(titleId);
   const item = detailsQuery.data?.item;
+  const trailerQuery = useMediaTrailer(
+    item?.source === 'tmdb' ? item.sourceId : undefined,
+  );
   const mediaItemId = item?.id;
   const entryQuery = useJournalEntryForMedia(user?.id, mediaItemId);
   const membershipsQuery = useMediaListMemberships(user?.id, mediaItemId);
@@ -47,6 +53,22 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
         ...(entry?.id ? { entryId: entry.id } : {}),
       },
     });
+  };
+
+  const openTrailer = async () => {
+    const trailer = trailerQuery.data?.trailer;
+
+    if (!trailer) {
+      return;
+    }
+
+    const url = `https://www.youtube.com/watch?v=${encodeURIComponent(trailer.key)}`;
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Trailer unavailable', 'Unable to open this trailer right now.');
+    }
   };
 
   return (
@@ -101,6 +123,8 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
             journalEntryLoading={entryQuery.isLoading}
             onOpenAddToList={() => setShowAddToListPanel(true)}
             onOpenJournalEntry={openJournalEntry}
+            canOpenTrailer={Boolean(trailerQuery.data?.trailer)}
+            onOpenTrailer={openTrailer}
           />
 
           {showAddToListPanel && user?.id && mediaItemId ? (
