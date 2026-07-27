@@ -9,7 +9,6 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Screen } from '@/components/ui/Screen';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TextField } from '@/components/ui/TextField';
 import type { SearchMediaType } from '@/features/discovery/api/search-api';
 import { SearchResultCard } from '@/features/discovery/components/SearchResultCard';
@@ -71,11 +70,6 @@ function SearchHeader({
 }) {
   return (
     <View className="gap-5">
-      <SectionHeader
-        title="Search"
-        subtitle="Find movies, series, and anime by title."
-      />
-
       <View className="gap-4">
         <TextField
           label="Title"

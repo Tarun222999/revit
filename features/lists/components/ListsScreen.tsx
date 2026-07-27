@@ -9,7 +9,6 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { ListCard } from '@/features/lists/components/ListCard';
 import {
@@ -276,24 +275,16 @@ export function ListsScreen() {
 
   return (
     <Screen scroll className="gap-5">
-      <View className="gap-4">
-        <View className="flex-row items-start justify-between gap-4">
-          <View className="min-w-0 flex-1">
-            <SectionHeader
-              title="Lists"
-              subtitle="Curate movies, series, and anime into custom collections."
-            />
-          </View>
-          {!isCreatingList ? (
-            <Button
-              title="Create"
-              disabled={!user || authLoading}
-              className="min-h-10 px-4"
-              onPress={startCreateList}
-            />
-          ) : null}
+      {!isCreatingList ? (
+        <View className="items-end">
+          <Button
+            title="Create"
+            disabled={!user || authLoading}
+            className="min-h-10 px-4"
+            onPress={startCreateList}
+          />
         </View>
-      </View>
+      ) : null}
 
       {!authLoading && user && isCreatingList ? (
         <ListForm

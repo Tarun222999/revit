@@ -9,7 +9,6 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { JournalCalendarView } from '@/features/journal/components/JournalCalendarView';
 import { JournalFilterBoard } from '@/features/journal/components/JournalFilterBoard';
@@ -450,11 +449,6 @@ export function JournalScreen() {
 
   return (
     <Screen scroll className="gap-5">
-      <SectionHeader
-        title="My Journal"
-        subtitle="Browse and manage the titles you have logged."
-      />
-
       <JournalViewSegment
         activeView={activeView}
         onViewChange={setActiveView}
