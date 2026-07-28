@@ -2,16 +2,16 @@
 
 ## Document Status
 
-- Status: Draft for review
+- Status: Approved
 - Product direction: Approved in `docs/v1.1/journal-refinement.md`
-- Implementation: Not approved
+- Implementation: Approved to proceed one step at a time
 - Parent Linear issue: [TAR-119](https://linear.app/tarun495/issue/TAR-119/v11-update-user-journal-journey)
-- Linear sub-issues: Not created
-- Last updated: July 27, 2026
+- Linear sub-issues: Not used for this phase
+- Last updated: July 28, 2026
 
-Creating this document does not authorize code, database, or Linear changes.
-The implementation sequence and schema contract must be explicitly approved
-before implementation begins.
+This document authorizes the ordered implementation phase. It does not authorize
+skipping steps: each implementation step still requires explicit user approval
+before work on that step begins.
 
 ## Purpose
 
@@ -24,7 +24,7 @@ It defines:
 - the migration and data-safety expectations
 - the required query and mutation behavior
 - the order in which implementation should proceed
-- the proposed Linear sub-issues under TAR-119
+- the named implementation workstreams under TAR-119
 - the verification required before each step is considered complete
 - the mapping from TAR-119 acceptance examples to implementation work
 
@@ -47,9 +47,8 @@ Approval of this document authorizes the ordered implementation phase, not all
 steps at once. Material schema or UX changes discovered during implementation
 must be added to the Decision Log and reviewed before continuing.
 
-Linear sub-issues should be created only after the user approves the issue list.
-Once created, add each issue identifier and link to the tracking table in this
-document.
+The user chose not to create Linear sub-issues for this phase. Track progress in
+this document instead.
 
 ## Phase Goal
 
@@ -414,10 +413,10 @@ Migration requirements:
 - run database advisors and review every relevant warning
 - remove obsolete columns only in a later verified cleanup migration
 
-## Proposed Linear Sub-Issues
+## Implementation Workstreams
 
-No Linear sub-issues have been created. These titles and scopes require approval
-first.
+No Linear sub-issues will be created. These approved titles remain as the named
+implementation workstreams for tracking scope and dependencies.
 
 | Step | Proposed issue title | Depends on |
 | --- | --- | --- |
@@ -437,7 +436,7 @@ first.
 
 ### Step 1. Define And Approve The Implementation Contract
 
-Linear title:
+Workstream title:
 
 `Define the v1.1 Journal implementation contract`
 
@@ -448,14 +447,14 @@ Scope:
 - confirm staged migration and rollback rules
 - confirm transaction-safe lifecycle operations
 - confirm query boundaries and cache invalidation
-- approve the proposed Linear issue breakdown
+- approve the proposed workstream breakdown
 
 Expected outcome:
 
 - this document is marked Approved
 - unresolved schema decisions are closed or explicitly deferred
 - no implementation ambiguity remains for Step 2
-- approved Linear sub-issues may be created and linked
+- approved workstreams are ready to track in this document
 
 Verification:
 
@@ -467,7 +466,7 @@ Stop after Step 1 and wait for explicit approval before Step 2.
 
 ### Step 2. Add Schema, RLS, And Safe Data Migration
 
-Linear title:
+Workstream title:
 
 `Add Journal event schema and migrate existing entries`
 
@@ -499,7 +498,7 @@ Stop after Step 2 and wait for explicit approval before Step 3.
 
 ### Step 3. Build The Journal Data Layer
 
-Linear title:
+Workstream title:
 
 `Build the Journal event and title-state data layer`
 
@@ -528,7 +527,7 @@ Stop after Step 3 and wait for explicit approval before Step 4.
 
 ### Step 4. Implement Atomic Lifecycle Transitions
 
-Linear title:
+Workstream title:
 
 `Implement atomic Journal lifecycle transitions`
 
@@ -559,7 +558,7 @@ Stop after Step 4 and wait for explicit approval before Step 5.
 
 ### Step 5. Rework The Intent-Based Journal Modal
 
-Linear title:
+Workstream title:
 
 `Rework the Journal modal into intent-based flows`
 
@@ -591,7 +590,7 @@ Stop after Step 5 and wait for explicit approval before Step 6.
 
 ### Step 6. Build Your Journal And History On Title Details
 
-Linear title:
+Workstream title:
 
 `Replace Title Details entry controls with Your Journal and History`
 
@@ -624,7 +623,7 @@ Stop after Step 6 and wait for explicit approval before Step 7.
 
 ### Step 7. Rebuild Timeline From Events
 
-Linear title:
+Workstream title:
 
 `Rebuild Timeline from dated Journal events`
 
@@ -655,7 +654,7 @@ Stop after Step 7 and wait for explicit approval before Step 8.
 
 ### Step 8. Add Planner And Plan Management
 
-Linear title:
+Workstream title:
 
 `Add Planner view and complete plan management`
 
@@ -685,7 +684,7 @@ Stop after Step 8 and wait for explicit approval before Step 9.
 
 ### Step 9. Rebuild Calendar Around Events And Plans
 
-Linear title:
+Workstream title:
 
 `Rebuild Calendar around events and scheduled plans`
 
@@ -716,7 +715,7 @@ Stop after Step 9 and wait for explicit approval before Step 10.
 
 ### Step 10. Add Fast Capture And Navigation Restoration
 
-Linear title:
+Workstream title:
 
 `Add Journal fast capture and navigation restoration`
 
@@ -745,7 +744,7 @@ Stop after Step 10 and wait for explicit approval before Step 11.
 
 ### Step 11. Complete Integration Testing And UX Hardening
 
-Linear title:
+Workstream title:
 
 `Complete Journal integration testing and UX hardening`
 
@@ -828,47 +827,68 @@ with the full suite in Step 11.
 
 Update this table only when work actually changes state.
 
-| Step | Linear issue | Status | Approval / verification note |
+| Step | External tracker | Status | Approval / verification note |
 | --- | --- | --- | --- |
-| 1. Implementation contract | Pending approval | In review | This document created July 27, 2026 |
-| 2. Schema and migration | Pending approval | Not started | Blocked by Step 1 approval |
-| 3. Data layer | Pending approval | Not started | Blocked by Step 2 approval |
-| 4. Lifecycle transitions | Pending approval | Not started | Blocked by Step 3 approval |
-| 5. Intent-based modal | Pending approval | Not started | Blocked by Step 4 approval |
-| 6. Your Journal and History | Pending approval | Not started | Blocked by Step 5 approval |
-| 7. Timeline | Pending approval | Not started | Blocked by Step 6 approval |
-| 8. Planner | Pending approval | Not started | Blocked by Step 7 approval |
-| 9. Calendar | Pending approval | Not started | Blocked by Step 8 approval |
-| 10. Fast capture and restoration | Pending approval | Not started | Blocked by Step 9 approval |
-| 11. Quality hardening | Pending approval | Not started | Blocked by Step 10 approval |
+| 1. Implementation contract | Not used | Complete | Approved July 28, 2026 |
+| 2. Schema and migration | Not used | Complete | Migration, backfill, RLS, indexes, generated types, and local verification completed July 28, 2026 |
+| 3. Data layer | Not used | Not started | Awaiting explicit instruction to begin Step 3 |
+| 4. Lifecycle transitions | Not used | Not started | Blocked by Step 3 approval |
+| 5. Intent-based modal | Not used | Not started | Blocked by Step 4 approval |
+| 6. Your Journal and History | Not used | Not started | Blocked by Step 5 approval |
+| 7. Timeline | Not used | Not started | Blocked by Step 6 approval |
+| 8. Planner | Not used | Not started | Blocked by Step 7 approval |
+| 9. Calendar | Not used | Not started | Blocked by Step 8 approval |
+| 10. Fast capture and restoration | Not used | Not started | Blocked by Step 9 approval |
+| 11. Quality hardening | Not used | Not started | Blocked by Step 10 approval |
 
 ## Decision Log
 
 | Date | Decision | Status |
 | --- | --- | --- |
-| July 27, 2026 | Use a descriptive implementation filename paired with `journal-refinement.md` | Draft |
-| July 27, 2026 | Propose one title-state row, an explicit active-plan flag/date, and many dated events | Draft |
-| July 27, 2026 | Propose 11 ordered Linear sub-issues under TAR-119 | Draft |
-| July 27, 2026 | Require staged migration and delay obsolete-column removal until verification | Draft |
+| July 27, 2026 | Use a descriptive implementation filename paired with `journal-refinement.md` | Approved |
+| July 27, 2026 | Use one title-state row, an explicit active-plan flag/date, and many dated events | Approved |
+| July 27, 2026 | Use 11 ordered implementation workstreams under TAR-119 | Approved |
+| July 27, 2026 | Require staged migration and delay obsolete-column removal until verification | Approved |
+| July 28, 2026 | Approve the implementation contract and ordered 11-step phase | Approved |
+| July 28, 2026 | Track the phase in this document without Linear sub-issues | Approved |
+| July 28, 2026 | Confirm v1 `started_on` means `Dropped on` for dropped rows and backfill it as a `stopped` event | Implemented |
+| July 28, 2026 | Grant authenticated CRUD explicitly on `journal_events` while enforcing owner-only RLS | Implemented |
+| July 28, 2026 | Retain all legacy Journal columns until a later verified cleanup migration | Implemented |
+
+## Step 2 Completion Record
+
+Completed July 28, 2026.
+
+- Added `has_active_plan` and `planned_for` to the title-state row.
+- Added private `journal_events` history with ownership constraints, event/rating/Notes checks, indexes, timestamps, RLS, and explicit authenticated Data API privileges.
+- Backfilled planned, completed, in-progress, and dropped rows only from user-selected dates.
+- Preserved undated completed rows without inventing an event date.
+- Kept all legacy source columns for the staged rollout.
+- Added an exact-pinned Supabase CLI and local project configuration.
+- Regenerated `lib/supabase/types.ts` from the migrated local schema.
+- Replayed the complete migration history successfully.
+- Verified representative backfill twice to prove it does not duplicate events.
+- Verified cross-owner parent attachment fails and owner-only RLS reads/updates work.
+- Verified RLS, authenticated CRUD grants, anonymous denial, four policies, and required indexes.
+- Ran Supabase security/performance advisors. Warnings were limited to pre-existing policies on older tables; the new `journal_events` policies produced no warning.
+- Passed typecheck, lint, and all 70 repository tests.
+- Did not apply the migration to a hosted Supabase project.
 
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
 
-- [ ] The proposed document scope is complete.
-- [ ] The title-state and active-plan representation is approved.
-- [ ] The `journal_events` contract is approved.
-- [ ] The migration handling for ambiguous legacy dates is approved.
-- [ ] The atomic transition approach can be finalized during the schema step.
-- [ ] The 11 proposed Linear sub-issues and order are approved.
-- [ ] The acceptance mapping covers TAR-119 completely.
-- [ ] Implementation may proceed to Step 2 after a separate explicit instruction.
+- [x] The proposed document scope is complete.
+- [x] The title-state and active-plan representation is approved.
+- [x] The `journal_events` contract is approved.
+- [x] The migration handling for ambiguous legacy dates is approved.
+- [x] The atomic transition approach can be finalized during the schema step.
+- [x] The 11 proposed implementation workstreams and order are approved.
+- [x] The acceptance mapping covers TAR-119 completely.
+- [x] Implementation may proceed to Step 2 after a separate explicit instruction.
 
 ## Next Review Action
 
-Review Step 1 only. After revisions, the user may:
-
-1. approve this implementation contract and the proposed Linear issue list,
-2. request changes to the contract or issue breakdown, or
-3. keep the document in Draft without authorizing implementation.
-
+Step 2 is complete. The next allowed implementation action is Step 3: the
+Journal event and title-state data layer. Begin it only after an explicit user
+instruction.

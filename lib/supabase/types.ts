@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       journal_entries: {
@@ -19,9 +14,11 @@ export type Database = {
           completed_on: string | null
           contains_spoilers: boolean
           created_at: string
+          has_active_plan: boolean
           id: string
           last_activity_at: string
           media_item_id: string
+          planned_for: string | null
           rating: number | null
           review_body: string | null
           review_headline: string | null
@@ -34,9 +31,11 @@ export type Database = {
           completed_on?: string | null
           contains_spoilers?: boolean
           created_at?: string
+          has_active_plan?: boolean
           id?: string
           last_activity_at?: string
           media_item_id: string
+          planned_for?: string | null
           rating?: number | null
           review_body?: string | null
           review_headline?: string | null
@@ -49,9 +48,11 @@ export type Database = {
           completed_on?: string | null
           contains_spoilers?: boolean
           created_at?: string
+          has_active_plan?: boolean
           id?: string
           last_activity_at?: string
           media_item_id?: string
+          planned_for?: string | null
           rating?: number | null
           review_body?: string | null
           review_headline?: string | null
@@ -74,6 +75,50 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          journal_entry_id: string
+          notes: string | null
+          rating: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date: string
+          event_type: string
+          id?: string
+          journal_entry_id: string
+          notes?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          journal_entry_id?: string
+          notes?: string | null
+          rating?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_events_entry_owner_fkey"
+            columns: ["journal_entry_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id", "user_id"]
           },
         ]
       }

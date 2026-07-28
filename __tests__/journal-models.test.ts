@@ -56,7 +56,9 @@ function makeJournalRow(): JournalListEntryRow {
     contains_spoilers: true,
     started_on: null,
     completed_on: '2025-04-20',
+    has_active_plan: false,
     last_activity_at: '2025-04-21T10:00:00.000Z',
+    planned_for: null,
     created_at: '2025-04-20T10:00:00.000Z',
     updated_at: '2025-04-21T10:00:00.000Z',
     media_items: {

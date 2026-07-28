@@ -4,14 +4,14 @@
 
 - Status: Approved product direction
 - Scope: Journal core-flow and end-to-end UX changes
-- Implementation: Not approved
-- Last updated: July 27, 2026
+- Implementation: Approved through `docs/v1.1/journal-refinement-implementation.md`
+- Last updated: July 28, 2026
 - Review pass: Title Details, entry actions, history, Planner, Timeline,
   Calendar, form resilience, deletion, accessibility, and data ownership
 
 This document defines the approved v1.1 Journal product direction and overrides
-conflicting v1 Journal behavior. It does not authorize implementation; a
-separate implementation phase must be reviewed and approved first.
+conflicting v1 Journal behavior. Implementation is authorized only through the
+approved ordered phase in `docs/v1.1/journal-refinement-implementation.md`.
 
 ## Purpose
 
@@ -805,6 +805,7 @@ The following decisions are approved for the v1.1 Journal plan:
 
 ## Implementation Boundary
 
-All product decisions in this document are approved. Implementation remains
-unapproved until a separate v1.1 implementation phase, schema contract, and
-ordered implementation sequence are reviewed and explicitly approved.
+All product decisions in this document are approved. The separate v1.1
+implementation phase, schema contract, and ordered sequence are approved in
+`docs/v1.1/journal-refinement-implementation.md`. Follow that sequence one step
+at a time and wait for explicit approval before beginning each next step.
