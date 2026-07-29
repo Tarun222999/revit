@@ -831,8 +831,8 @@ Update this table only when work actually changes state.
 | --- | --- | --- | --- |
 | 1. Implementation contract | Not used | Complete | Approved July 28, 2026 |
 | 2. Schema and migration | Not used | Complete | Migration, backfill, RLS, indexes, generated types, and local verification completed July 28, 2026 |
-| 3. Data layer | Not used | Not started | Awaiting explicit instruction to begin Step 3 |
-| 4. Lifecycle transitions | Not used | Not started | Blocked by Step 3 approval |
+| 3. Data layer | Not used | Complete | Typed read models, bounded queries, date-range loading, cache keys, invalidation, and focused verification completed July 28, 2026 |
+| 4. Lifecycle transitions | Not used | Not started | Awaiting explicit instruction to begin Step 4 |
 | 5. Intent-based modal | Not used | Not started | Blocked by Step 4 approval |
 | 6. Your Journal and History | Not used | Not started | Blocked by Step 5 approval |
 | 7. Timeline | Not used | Not started | Blocked by Step 6 approval |
@@ -874,6 +874,32 @@ Completed July 28, 2026.
 - Passed typecheck, lint, and all 70 repository tests.
 - Did not apply the migration to a hosted Supabase project.
 
+## Step 3 Completion Record
+
+Completed July 28, 2026.
+
+- Added feature-owned title-state, active-plan, event, summary, History,
+  Timeline, Planner, and Calendar types.
+- Added narrow row-to-view-model mapping with explicit status, event-type,
+  media, and date-only validation.
+- Added a Title Journal summary query that distinguishes a missing title row
+  from a failed request and returns the latest completed event plus an exact
+  completed-watch count.
+- Added bounded, deterministic keyset pagination for History and Timeline using
+  `event_date` first and system metadata only as stable tie-breakers.
+- Added an active-plan Planner query classified from an explicit device-local
+  `today` date into Today, Upcoming, Missed, and Someday.
+- Added a Calendar query that loads logged events and scheduled plans separately
+  for the requested visible grid range. Unscheduled plans are excluded.
+- Added v1.1 query keys and targeted invalidation for Title Details, History,
+  Timeline, Planner, and only affected cached Calendar ranges.
+- Added a guarded `canCreateTitleState` result that remains false during loading
+  and on failure, preventing duplicate-creating actions from treating an error
+  as an empty state.
+- Kept existing v1 Journal screens on their current data path; switching each
+  surface to these reads remains in its approved later implementation step.
+- Passed all 78 tests, TypeScript typechecking, and lint.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -889,6 +915,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 2 is complete. The next allowed implementation action is Step 3: the
-Journal event and title-state data layer. Begin it only after an explicit user
-instruction.
+Step 3 is complete. The next allowed implementation action is Step 4: atomic
+Journal lifecycle transitions. Begin it only after an explicit user instruction.

@@ -10,10 +10,106 @@ import type { MediaSource } from '@/types/media';
 export type JournalEntryRow = Tables<'journal_entries'>;
 export type JournalEntryInsert = TablesInsert<'journal_entries'>;
 export type JournalEntryUpdate = TablesUpdate<'journal_entries'>;
+export type JournalEventRow = Tables<'journal_events'>;
+export type JournalEventInsert = TablesInsert<'journal_events'>;
+export type JournalEventUpdate = TablesUpdate<'journal_events'>;
 export type MediaItemRow = Tables<'media_items'>;
 
 export type JournalEntry = Omit<JournalEntryRow, 'status'> & {
   status: JournalStatus;
+};
+
+export const JOURNAL_EVENT_TYPES = ['started', 'completed', 'stopped'] as const;
+
+export type JournalEventType = (typeof JOURNAL_EVENT_TYPES)[number];
+
+export type JournalPlan = {
+  plannedFor: string | null;
+};
+
+export type JournalTitleState = {
+  id: string;
+  mediaItemId: string;
+  status: JournalStatus;
+  activePlan: JournalPlan | null;
+};
+
+export type JournalEvent = {
+  id: string;
+  journalEntryId: string;
+  type: JournalEventType;
+  eventDate: string;
+  rating: number | null;
+  notes: string | null;
+};
+
+export type JournalMediaSummary = {
+  id: string;
+  source: MediaSource;
+  sourceId: string;
+  mediaType: MediaType;
+  title: string;
+  originalTitle: string | null;
+  releaseDate: string | null;
+  year: string | null;
+  imageUrl: string | null;
+};
+
+export type JournalTitleSummary = {
+  titleState: JournalTitleState;
+  latestCompletedEvent: JournalEvent | null;
+  completedWatchCount: number;
+};
+
+export type JournalEventCursor = {
+  eventDate: string;
+  createdAt: string;
+  id: string;
+};
+
+export type JournalHistoryPage = {
+  events: JournalEvent[];
+  nextCursor: JournalEventCursor | null;
+};
+
+export type JournalTimelineItem = {
+  event: JournalEvent;
+  media: JournalMediaSummary;
+  currentStatus: JournalStatus;
+};
+
+export type JournalTimelinePage = {
+  items: JournalTimelineItem[];
+  nextCursor: JournalEventCursor | null;
+};
+
+export type JournalPlannerSection = 'today' | 'upcoming' | 'missed' | 'someday';
+
+export type JournalPlannerItem = {
+  titleState: JournalTitleState;
+  media: JournalMediaSummary;
+  section: JournalPlannerSection;
+};
+
+export type JournalCalendarEventItem = {
+  event: JournalEvent;
+  media: JournalMediaSummary;
+};
+
+export type JournalCalendarPlanItem = {
+  journalEntryId: string;
+  plannedFor: string;
+  media: JournalMediaSummary;
+};
+
+export type JournalCalendarRange = {
+  startDate: string;
+  endDate: string;
+};
+
+export type JournalCalendarData = JournalCalendarRange & {
+  events: JournalCalendarEventItem[];
+  plans: JournalCalendarPlanItem[];
 };
 
 export type JournalEntryFormValues = {
