@@ -213,9 +213,41 @@ export async function getJournalTimelinePage({
   const { data, error } = await query;
   if (error) throw error;
 
+  const rows = (data ?? []) as unknown as JournalEventWithTitleRow[];
+  const completedEntryIds = [
+    ...new Set(
+      rows
+        .filter((row) => row.event_type === 'completed')
+        .map((row) => row.journal_entry_id),
+    ),
+  ];
+  const firstCompletionIds = new Set<string>();
+
+  if (completedEntryIds.length > 0) {
+    const { data: completionRows, error: completionError } = await supabase
+      .from('journal_events')
+      .select('id, journal_entry_id, event_date, created_at')
+      .eq('user_id', userId)
+      .eq('event_type', 'completed')
+      .in('journal_entry_id', completedEntryIds)
+      .order('event_date', { ascending: true })
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true });
+
+    if (completionError) throw completionError;
+    const seenEntries = new Set<string>();
+    for (const completion of completionRows ?? []) {
+      if (!seenEntries.has(completion.journal_entry_id)) {
+        seenEntries.add(completion.journal_entry_id);
+        firstCompletionIds.add(completion.id);
+      }
+    }
+  }
+
   return toJournalTimelinePage(
-    (data ?? []) as unknown as JournalEventWithTitleRow[],
+    rows,
     pageSize,
+    firstCompletionIds,
   );
 }
 

@@ -77,6 +77,15 @@ export type JournalTimelineItem = {
   event: JournalEvent;
   media: JournalMediaSummary;
   currentStatus: JournalStatus;
+  isRewatch: boolean;
+};
+
+export type JournalTimelineFilters = {
+  date: 'all' | 'this_month' | 'last_30_days' | 'this_year';
+  eventTypes: JournalEventType[];
+  mediaType: 'all' | MediaType;
+  query: string;
+  rating: JournalRatingFilter;
 };
 
 export type JournalTimelinePage = {

@@ -835,8 +835,8 @@ Update this table only when work actually changes state.
 | 4. Lifecycle transitions | Not used | Complete | Atomic owner-scoped RPCs, request idempotency, recomputation, rollback verification, and client mutation hooks completed July 29, 2026 |
 | 5. Intent-based modal | Not used | Complete | Focused intent forms, resilient save behavior, local-date rules, and dismissal protection completed July 29, 2026 |
 | 6. Your Journal and History | Not used | Complete | Compact summary, state-aware actions, on-demand History, and precise removals completed July 29, 2026 |
-| 7. Timeline | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
-| 8. Planner | Not used | Not started | Blocked by Step 7 approval |
+| 7. Timeline | Not used | Complete | Dated event cards, rewatch inference, compact filters, and stable pagination completed July 29, 2026 |
+| 8. Planner | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
 | 9. Calendar | Not used | Not started | Blocked by Step 8 approval |
 | 10. Fast capture and restoration | Not used | Not started | Blocked by Step 9 approval |
 | 11. Quality hardening | Not used | Not started | Blocked by Step 10 approval |
@@ -969,6 +969,22 @@ Completed July 29, 2026.
   retained separate List and trailer actions.
 - Passed focused action/read/mutation tests, TypeScript typechecking, and lint.
 
+## Step 7 Completion Record
+
+Completed July 29, 2026.
+
+- Rebuilt Timeline from dated `journal_events`; active plans and system
+  timestamps no longer determine visible activity.
+- Rendered multiple watches of one title as independent cards and inferred
+  rewatch labels from the title's earliest completed event.
+- Kept event-specific rating and Notes on each card and grouped solely by the
+  user-selected event date in reverse chronological order.
+- Added compact title search plus media, activity, rating, and date filters,
+  with active-filter empty states and no title/rating sorting controls.
+- Added bounded earlier-activity loading with stable database ordering and
+  preserved current results when a later page fails.
+- Passed focused Timeline/read/query tests, TypeScript typechecking, and lint.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -984,5 +1000,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 6 is complete. The user authorized continuous delivery through Step 10,
-with one commit per step. Step 7 is the active implementation action.
+Step 7 is complete. The user authorized continuous delivery through Step 10,
+with one commit per step. Step 8 is the active implementation action.

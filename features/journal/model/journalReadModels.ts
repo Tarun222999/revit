@@ -209,12 +209,17 @@ function requireJoinedTitle(row: JournalEventWithTitleRow) {
 
 export function toJournalTimelineItem(
   row: JournalEventWithTitleRow,
+  firstCompletionIds?: ReadonlySet<string>,
 ): JournalTimelineItem {
   const titleState = requireJoinedTitle(row);
 
   return {
     currentStatus: toJournalTitleState(titleState).status,
     event: toJournalEvent(row),
+    isRewatch:
+      row.event_type === 'completed' &&
+      Boolean(firstCompletionIds) &&
+      !firstCompletionIds?.has(row.id),
     media: toJournalMediaSummary(titleState.media_items),
   };
 }
@@ -222,8 +227,11 @@ export function toJournalTimelineItem(
 export function toJournalTimelinePage(
   rows: JournalEventWithTitleRow[],
   pageSize: number,
+  firstCompletionIds?: ReadonlySet<string>,
 ): JournalTimelinePage {
-  const page = splitPage(rows, pageSize, toJournalTimelineItem);
+  const page = splitPage(rows, pageSize, (row) =>
+    toJournalTimelineItem(row, firstCompletionIds),
+  );
   return { items: page.items, nextCursor: page.nextCursor };
 }
 
