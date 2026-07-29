@@ -7,7 +7,7 @@
 - Implementation: Approved to proceed one step at a time
 - Parent Linear issue: [TAR-119](https://linear.app/tarun495/issue/TAR-119/v11-update-user-journal-journey)
 - Linear sub-issues: Not used for this phase
-- Last updated: July 28, 2026
+- Last updated: July 29, 2026
 
 This document authorizes the ordered implementation phase. It does not authorize
 skipping steps: each implementation step still requires explicit user approval
@@ -832,8 +832,8 @@ Update this table only when work actually changes state.
 | 1. Implementation contract | Not used | Complete | Approved July 28, 2026 |
 | 2. Schema and migration | Not used | Complete | Migration, backfill, RLS, indexes, generated types, and local verification completed July 28, 2026 |
 | 3. Data layer | Not used | Complete | Typed read models, bounded queries, date-range loading, cache keys, invalidation, and focused verification completed July 28, 2026 |
-| 4. Lifecycle transitions | Not used | Not started | Awaiting explicit instruction to begin Step 4 |
-| 5. Intent-based modal | Not used | Not started | Blocked by Step 4 approval |
+| 4. Lifecycle transitions | Not used | Complete | Atomic owner-scoped RPCs, request idempotency, recomputation, rollback verification, and client mutation hooks completed July 29, 2026 |
+| 5. Intent-based modal | Not used | Not started | Awaiting explicit instruction to begin Step 5 |
 | 6. Your Journal and History | Not used | Not started | Blocked by Step 5 approval |
 | 7. Timeline | Not used | Not started | Blocked by Step 6 approval |
 | 8. Planner | Not used | Not started | Blocked by Step 7 approval |
@@ -900,6 +900,42 @@ Completed July 28, 2026.
   surface to these reads remains in its approved later implementation step.
 - Passed all 78 tests, TypeScript typechecking, and lint.
 
+## Step 4 Completion Record
+
+Completed July 29, 2026.
+
+- Added security-invoker database operations for saving, rescheduling, moving,
+  and removing an active plan; logging activity; editing or deleting one event;
+  and removing the complete Journal title.
+- Kept the existing owner-only RLS policies active inside every operation,
+  revoked default/anonymous function execution, and granted each lifecycle RPC
+  explicitly to authenticated users.
+- Added per-event operation IDs with a user-scoped unique index. Replaying the
+  same request returns its existing event; reusing that ID for different data
+  fails instead of silently changing history.
+- Locked the title-state row before related event changes so concurrent calls
+  serialize consistently and the unique user/title constraint remains the
+  final protection against duplicate title rows.
+- Implemented deterministic current-state recomputation from `event_date`, then
+  serialized creation metadata and event ID. System metadata is never promoted
+  to the user-visible activity date.
+- Applied context-specific plan resolution in the client contract: Planner and
+  planned-title activity resolves the plan, while previous-watch History and
+  historical edits preserve it.
+- Added explicit final-event deletion outcomes: keep the title in Someday or
+  remove it. An undecided request fails and rolls back the event deletion.
+- Added purpose-specific mutation APIs and hooks with input/result validation,
+  in-flight request coalescing, v1.1 targeted invalidation, and staged v1 cache
+  compatibility.
+- Added a rollback-only SQL transition matrix covering plan changes, first
+  watches, rewatches, previous watches, start/stop/resume, plan resolution,
+  event edit/delete, title removal, idempotent retry, failed-write rollback,
+  one-title uniqueness, and cross-owner denial.
+- Replayed the lifecycle migration and passed the SQL transition matrix against
+  an isolated local Postgres 17 Supabase database. No hosted database was
+  changed.
+- Passed all 89 application tests, TypeScript typechecking, and lint.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -915,5 +951,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 3 is complete. The next allowed implementation action is Step 4: atomic
-Journal lifecycle transitions. Begin it only after an explicit user instruction.
+Step 4 is complete. The next allowed implementation action is Step 5: the
+intent-based Journal modal. Begin it only after an explicit user instruction.

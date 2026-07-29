@@ -112,6 +112,73 @@ export type JournalCalendarData = JournalCalendarRange & {
   plans: JournalCalendarPlanItem[];
 };
 
+export type JournalMutationResult = {
+  userId: string;
+  mediaItemId: string;
+  journalEntryId: string;
+  eventId: string | null;
+  affectedDates: string[];
+  titleDeleted: boolean;
+  idempotentReplay: boolean;
+  eventCount?: number;
+  completedCount?: number;
+  hadActivePlan?: boolean;
+};
+
+export type SaveJournalPlanInput = {
+  mediaItemId: string;
+  plannedFor: string | null;
+  today: string;
+};
+
+export type RemoveJournalPlanInput = {
+  journalEntryId: string;
+};
+
+export type JournalLifecycleIntent =
+  | 'start'
+  | 'resume'
+  | 'complete'
+  | 'rewatch'
+  | 'previous_watch'
+  | 'stop';
+
+export type JournalLifecycleSource =
+  | 'title'
+  | 'planned_title'
+  | 'planner'
+  | 'history';
+
+export type LogJournalEventInput = {
+  mediaItemId: string;
+  intent: JournalLifecycleIntent;
+  source: JournalLifecycleSource;
+  eventDate: string;
+  rating: number | null;
+  notes: string;
+  requestId: string;
+  today: string;
+};
+
+export type UpdateJournalEventInput = {
+  eventId: string;
+  eventDate: string;
+  rating: number | null;
+  notes: string;
+  today: string;
+};
+
+export type EmptyJournalTitleAction = 'keep_someday' | 'remove';
+
+export type DeleteJournalEventInput = {
+  eventId: string;
+  emptyTitleAction?: EmptyJournalTitleAction;
+};
+
+export type RemoveJournalTitleInput = {
+  journalEntryId: string;
+};
+
 export type JournalEntryFormValues = {
   status: JournalStatus;
   rating: number | null;

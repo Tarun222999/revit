@@ -86,7 +86,9 @@ export type Database = {
           id: string
           journal_entry_id: string
           notes: string | null
+          operation_id: string | null
           rating: number | null
+          resolved_active_plan: boolean
           updated_at: string
           user_id: string
         }
@@ -97,7 +99,9 @@ export type Database = {
           id?: string
           journal_entry_id: string
           notes?: string | null
+          operation_id?: string | null
           rating?: number | null
+          resolved_active_plan?: boolean
           updated_at?: string
           user_id: string
         }
@@ -108,7 +112,9 @@ export type Database = {
           id?: string
           journal_entry_id?: string
           notes?: string | null
+          operation_id?: string | null
           rating?: number | null
+          resolved_active_plan?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -315,7 +321,52 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      journal_delete_event: {
+        Args: {
+          p_empty_title_action?: string | null
+          p_event_id: string
+        }
+        Returns: Json
+      }
+      journal_log_event: {
+        Args: {
+          p_event_date: string
+          p_event_type: string
+          p_media_item_id: string
+          p_notes: string | null
+          p_rating: number | null
+          p_request_id: string
+          p_resolve_active_plan: boolean
+          p_today: string
+        }
+        Returns: Json
+      }
+      journal_remove_plan: {
+        Args: { p_journal_entry_id: string }
+        Returns: Json
+      }
+      journal_remove_title: {
+        Args: { p_journal_entry_id: string }
+        Returns: Json
+      }
+      journal_save_plan: {
+        Args: {
+          p_media_item_id: string
+          p_planned_for: string | null
+          p_today: string
+        }
+        Returns: Json
+      }
+      journal_update_event: {
+        Args: {
+          p_event_date: string
+          p_event_id: string
+          p_notes: string | null
+          p_rating: number | null
+          p_today: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

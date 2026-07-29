@@ -1,0 +1,367 @@
+begin;
+
+create or replace function pg_temp.assert_true(value boolean, message text)
+returns void
+language plpgsql
+as $$
+begin
+  if value is not true then
+    raise exception 'Assertion failed: %', message;
+  end if;
+end;
+$$;
+
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password,
+  confirmed_at, created_at, updated_at
+)
+values
+  (
+    '11111111-1111-4111-8111-111111111111',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated', 'journal-one@example.test', '',
+    now(), now(), now()
+  ),
+  (
+    '22222222-2222-4222-8222-222222222222',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated', 'authenticated', 'journal-two@example.test', '',
+    now(), now(), now()
+  );
+
+insert into public.profiles (id, username, display_name)
+values
+  ('11111111-1111-4111-8111-111111111111', 'journal_one', 'Journal One'),
+  ('22222222-2222-4222-8222-222222222222', 'journal_two', 'Journal Two');
+
+insert into public.media_items (
+  id, source, source_id, media_type, title, genres, metadata
+)
+select
+  ('aaaaaaaa-aaaa-4aaa-8aaa-' || lpad(value::text, 12, '0'))::uuid,
+  'tmdb',
+  'movie:' || value,
+  'movie',
+  'Lifecycle title ' || value,
+  '[]'::jsonb,
+  '{}'::jsonb
+from generate_series(1, 8) as value;
+
+set local role authenticated;
+set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+
+-- Plans are title state, not activity. Save, reschedule, Someday, and remove
+-- must never create a journal event.
+select public.journal_save_plan(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000001', null, '2026-07-29'
+);
+select public.journal_save_plan(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000001', '2026-08-02', '2026-07-29'
+);
+select public.journal_save_plan(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000001', null, '2026-07-29'
+);
+select pg_temp.assert_true(
+  (select count(*) = 0 from public.journal_events),
+  'plan changes created false activity'
+);
+select public.journal_remove_plan(
+  (select id from public.journal_entries where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001')
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1 from public.journal_entries
+    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000001'
+  ),
+  'removing the only plan did not remove the empty title'
+);
+
+-- First watch, retry, rewatch, previous watch, start, stop, and resume all use
+-- one title row and independent event rows.
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', 'completed', '2026-07-28',
+  4.0, 'First watch', false,
+  '10000000-0000-4000-8000-000000000001', '2026-07-29'
+);
+select pg_temp.assert_true(
+  (public.journal_log_event(
+    'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', 'completed', '2026-07-28',
+    4.0, 'First watch', false,
+    '10000000-0000-4000-8000-000000000001', '2026-07-29'
+  )->>'idempotent_replay')::boolean,
+  'replayed request did not return its original event'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', 'completed', '2026-07-29',
+  4.5, 'Rewatch', false,
+  '10000000-0000-4000-8000-000000000002', '2026-07-29'
+);
+select public.journal_save_plan(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', '2026-08-05', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', 'completed', '2026-07-01',
+  null, 'Earlier watch', false,
+  '10000000-0000-4000-8000-000000000003', '2026-07-29'
+);
+select pg_temp.assert_true(
+  (select has_active_plan and planned_for = '2026-08-05'
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
+  'adding previous history changed the future plan'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', 'started', '2026-07-29',
+  null, null, false,
+  '10000000-0000-4000-8000-000000000004', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', 'stopped', '2026-07-29',
+  null, 'Paused', false,
+  '10000000-0000-4000-8000-000000000005', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000002', 'started', '2026-07-29',
+  null, 'Resumed', false,
+  '10000000-0000-4000-8000-000000000006', '2026-07-29'
+);
+select pg_temp.assert_true(
+  (select status = 'in_progress' from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
+  'resume did not become the current state'
+);
+select pg_temp.assert_true(
+  (select count(*) = 6 from public.journal_events
+   where journal_entry_id = (
+     select id from public.journal_entries
+     where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'
+   )),
+  'retry duplicated an event or lifecycle events were lost'
+);
+
+-- Moving the latest event earlier recomputes status without changing the plan.
+select public.journal_update_event(
+  (select id from public.journal_events
+   where operation_id = '10000000-0000-4000-8000-000000000006'),
+  '2026-06-30', null, 'Resumed earlier', '2026-07-29'
+);
+select pg_temp.assert_true(
+  (select status = 'dropped' and has_active_plan and planned_for = '2026-08-05'
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
+  'event edit did not recompute state or changed the plan'
+);
+select public.journal_delete_event(
+  (select id from public.journal_events
+   where operation_id = '10000000-0000-4000-8000-000000000005'),
+  null
+);
+select pg_temp.assert_true(
+  (select status = 'in_progress' and has_active_plan
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
+  'deleting one event did not preserve history/plan or recompute state'
+);
+
+-- Logging from a plan resolves it atomically; retrying cannot add a watch.
+select public.journal_save_plan(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000003', '2026-08-01', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000003', 'completed', '2026-07-29',
+  5.0, null, true,
+  '10000000-0000-4000-8000-000000000007', '2026-07-29'
+);
+select pg_temp.assert_true(
+  (select status = 'completed' and not has_active_plan and planned_for is null
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003'),
+  'planned completion did not resolve its active plan'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000003', 'completed', '2026-07-29',
+  5.0, null, true,
+  '10000000-0000-4000-8000-000000000007', '2026-07-29'
+);
+select pg_temp.assert_true(
+  (select count(*) = 1 from public.journal_events
+   where operation_id = '10000000-0000-4000-8000-000000000007'),
+  'planned completion retry created a duplicate watch'
+);
+select pg_temp.assert_true(
+  (public.journal_remove_plan(
+    (select id from public.journal_entries
+     where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003')
+  )->>'idempotent_replay')::boolean,
+  'repeated plan removal was not treated as a safe no-op'
+);
+select pg_temp.assert_true(
+  exists (
+    select 1 from public.journal_entries
+    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000003'
+      and status = 'completed'
+  ),
+  'repeated plan removal deleted a completed title'
+);
+
+-- A failed event insert rolls back the title insert as part of the same RPC.
+do $$
+begin
+  perform public.journal_log_event(
+    'aaaaaaaa-aaaa-4aaa-8aaa-000000000004', 'completed', '2026-07-29',
+    6.0, null, false,
+    '10000000-0000-4000-8000-000000000008', '2026-07-29'
+  );
+  raise exception 'Expected invalid rating failure.';
+exception
+  when check_violation then null;
+end;
+$$;
+select pg_temp.assert_true(
+  not exists (
+    select 1 from public.journal_entries
+    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000004'
+  ),
+  'failed event left a partial title row'
+);
+
+-- Deleting the final event requires an explicit keep/remove choice, and the
+-- failed undecided call must leave the event intact.
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000005', 'completed', '2026-07-29',
+  null, null, false,
+  '10000000-0000-4000-8000-000000000009', '2026-07-29'
+);
+do $$
+begin
+  perform public.journal_delete_event(
+    (select id from public.journal_events
+     where operation_id = '10000000-0000-4000-8000-000000000009'),
+    null
+  );
+  raise exception 'Expected empty-title decision failure.';
+exception
+  when invalid_parameter_value then null;
+end;
+$$;
+select pg_temp.assert_true(
+  exists (
+    select 1 from public.journal_events
+    where operation_id = '10000000-0000-4000-8000-000000000009'
+  ),
+  'failed delete did not roll back the event removal'
+);
+select public.journal_delete_event(
+  (select id from public.journal_events
+   where operation_id = '10000000-0000-4000-8000-000000000009'),
+  'keep_someday'
+);
+select pg_temp.assert_true(
+  (select status = 'planned' and has_active_plan and planned_for is null
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000005'),
+  'keep Someday choice did not preserve the title'
+);
+
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000006', 'completed', '2026-07-29',
+  null, null, false,
+  '10000000-0000-4000-8000-000000000010', '2026-07-29'
+);
+select public.journal_delete_event(
+  (select id from public.journal_events
+   where operation_id = '10000000-0000-4000-8000-000000000010'),
+  'remove'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1 from public.journal_entries
+    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000006'
+  ),
+  'remove choice did not delete the empty title'
+);
+
+-- Complete title removal cascades all events and reports its consequences.
+select public.journal_save_plan(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000007', '2026-08-10', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000007', 'completed', '2026-07-20',
+  3.5, null, false,
+  '10000000-0000-4000-8000-000000000011', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000007', 'completed', '2026-07-21',
+  4.0, null, false,
+  '10000000-0000-4000-8000-000000000012', '2026-07-29'
+);
+select pg_temp.assert_true(
+  (public.journal_remove_title(
+    (select id from public.journal_entries
+     where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000007')
+  )->>'completed_count')::integer = 2,
+  'title removal did not report completed watch count'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1 from public.journal_events
+    where operation_id in (
+      '10000000-0000-4000-8000-000000000011',
+      '10000000-0000-4000-8000-000000000012'
+    )
+  ),
+  'title removal did not cascade history'
+);
+
+-- Two independent requests for one media item may add two events, but the
+-- database uniqueness contract keeps exactly one title-state row.
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000008', 'completed', '2026-07-27',
+  null, null, false,
+  '10000000-0000-4000-8000-000000000013', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000008', 'completed', '2026-07-28',
+  null, null, false,
+  '10000000-0000-4000-8000-000000000014', '2026-07-29'
+);
+select pg_temp.assert_true(
+  (select count(*) = 1 from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000008'),
+  'independent requests created duplicate title rows'
+);
+
+-- Another authenticated user cannot mutate this user's title or events.
+set local request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
+do $$
+begin
+  perform public.journal_remove_title(
+    (select id from public.journal_entries
+     where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002')
+  );
+  raise exception 'Expected cross-owner mutation failure.';
+exception
+  when no_data_found then null;
+end;
+$$;
+
+reset role;
+select pg_temp.assert_true(
+  exists (
+    select 1 from public.journal_entries
+    where user_id = '11111111-1111-4111-8111-111111111111'
+      and media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'
+  ),
+  'cross-owner mutation changed the title'
+);
+
+select pg_temp.assert_true(
+  has_function_privilege('authenticated', 'public.journal_log_event(uuid,text,date,numeric,text,boolean,uuid,date)', 'EXECUTE'),
+  'authenticated role cannot execute lifecycle RPC'
+);
+select pg_temp.assert_true(
+  not has_function_privilege('anon', 'public.journal_log_event(uuid,text,date,numeric,text,boolean,uuid,date)', 'EXECUTE'),
+  'anonymous role can execute lifecycle RPC'
+);
+
+rollback;
