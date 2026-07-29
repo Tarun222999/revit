@@ -162,6 +162,24 @@ export async function getJournalHistoryPage({
   return toJournalHistoryPage(data ?? [], pageSize);
 }
 
+export async function getJournalEvent({
+  eventId,
+  userId,
+}: {
+  eventId: string;
+  userId: string;
+}) {
+  const { data, error } = await supabase
+    .from('journal_events')
+    .select('*')
+    .eq('id', eventId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? toJournalEvent(data) : null;
+}
+
 export async function getJournalTimelinePage({
   cursor,
   pageSize: requestedPageSize,

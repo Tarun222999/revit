@@ -833,8 +833,8 @@ Update this table only when work actually changes state.
 | 2. Schema and migration | Not used | Complete | Migration, backfill, RLS, indexes, generated types, and local verification completed July 28, 2026 |
 | 3. Data layer | Not used | Complete | Typed read models, bounded queries, date-range loading, cache keys, invalidation, and focused verification completed July 28, 2026 |
 | 4. Lifecycle transitions | Not used | Complete | Atomic owner-scoped RPCs, request idempotency, recomputation, rollback verification, and client mutation hooks completed July 29, 2026 |
-| 5. Intent-based modal | Not used | Not started | Awaiting explicit instruction to begin Step 5 |
-| 6. Your Journal and History | Not used | Not started | Blocked by Step 5 approval |
+| 5. Intent-based modal | Not used | Complete | Focused intent forms, resilient save behavior, local-date rules, and dismissal protection completed July 29, 2026 |
+| 6. Your Journal and History | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
 | 7. Timeline | Not used | Not started | Blocked by Step 6 approval |
 | 8. Planner | Not used | Not started | Blocked by Step 7 approval |
 | 9. Calendar | Not used | Not started | Blocked by Step 8 approval |
@@ -936,6 +936,22 @@ Completed July 29, 2026.
   changed.
 - Passed all 89 application tests, TypeScript typechecking, and lint.
 
+## Step 5 Completion Record
+
+Completed July 29, 2026.
+
+- Replaced the status-first modal with focused plan, edit-plan, log, rewatch,
+  previous-watch, start, resume, finish, stop, and selected-event edit modes.
+- Removed headline and spoiler controls from the active Journal flow and stored
+  rating and Notes on each completed event.
+- Used device-local dates, rejected future activity and past new plans, and kept
+  provider release metadata as a non-blocking warning.
+- Preserved entered values and stable request IDs across recoverable failures,
+  prevented repeat submissions, and warned before discarding dirty forms.
+- Added accessible rating adjustment and save announcements, intent-specific
+  labels and feedback, focused form tests, and event-level read support.
+- Passed focused tests, TypeScript typechecking, and lint without Docker.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -951,5 +967,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 4 is complete. The next allowed implementation action is Step 5: the
-intent-based Journal modal. Begin it only after an explicit user instruction.
+Step 5 is complete. The user authorized continuous delivery through Step 10,
+with one commit per step. Step 6 is the active implementation action.

@@ -149,6 +149,31 @@ export type JournalLifecycleSource =
   | 'planner'
   | 'history';
 
+export const JOURNAL_FORM_INTENTS = [
+  'plan',
+  'edit_plan',
+  'log',
+  'rewatch',
+  'previous_watch',
+  'start',
+  'resume',
+  'finish',
+  'stop',
+  'edit_event',
+] as const;
+
+export type JournalFormIntent = (typeof JOURNAL_FORM_INTENTS)[number];
+
+export type JournalIntentFormValues = {
+  date: string | null;
+  rating: number | null;
+  notes: string;
+};
+
+export type JournalIntentFormErrors = Partial<
+  Record<keyof JournalIntentFormValues, string>
+>;
+
 export type LogJournalEventInput = {
   mediaItemId: string;
   intent: JournalLifecycleIntent;

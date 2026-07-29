@@ -55,11 +55,11 @@ jest.mock('@/features/lists/components/ListDetailsScreen', () => ({
 }));
 
 jest.mock('@/features/journal/components/JournalEntryModalScreen', () => ({
-  JournalEntryModalScreen: ({ entryId, mediaItemId }: { entryId?: string; mediaItemId?: string }) =>
+  JournalEntryModalScreen: ({ eventId, intent, mediaItemId, source }: { eventId?: string; intent?: string; mediaItemId?: string; source?: string }) =>
     require('react').createElement(
       require('react-native').Text,
       null,
-      `Journal modal route: ${entryId} / ${mediaItemId}`,
+      `Journal modal route: ${eventId} / ${mediaItemId} / ${intent} / ${source}`,
     ),
 }));
 
@@ -305,15 +305,21 @@ describe('route parameter boundaries', () => {
     expect(screen.getByText('List route: list-123')).toBeTruthy();
   });
 
-  it('passes modal entry and media ids from the route', async () => {
+  it('passes modal intent, event, media, and source from the route', async () => {
     mockUseLocalSearchParams.mockReturnValue({
-      entryId: 'entry-123',
+      eventId: 'event-123',
+      intent: 'edit_event',
       mediaItemId: 'media-123',
+      source: 'history',
     });
 
     await render(<JournalEntryModalRoute />);
 
-    expect(screen.getByText('Journal modal route: entry-123 / media-123')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Journal modal route: event-123 / media-123 / edit_event / history',
+      ),
+    ).toBeTruthy();
   });
 
   it('keeps the profile route focused on the profile screen', async () => {

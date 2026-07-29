@@ -11,6 +11,8 @@ export const journalReadKeys = {
     [...journalReadKeys.user(userId), 'title-summary', mediaItemId] as const,
   history: (userId?: string, journalEntryId?: string) =>
     [...journalReadKeys.user(userId), 'history', journalEntryId] as const,
+  event: (userId?: string, eventId?: string) =>
+    [...journalReadKeys.user(userId), 'event', eventId] as const,
   timeline: (userId?: string) =>
     [...journalReadKeys.user(userId), 'timeline'] as const,
   planner: (userId?: string, today?: string) =>
@@ -26,6 +28,7 @@ export type JournalInvalidationContext = {
   mediaItemId: string;
   journalEntryId?: string;
   affectedDates?: string[];
+  eventId?: string | null;
 };
 
 function calendarKeyContainsDate(queryKey: QueryKey, dates: string[]) {
@@ -70,6 +73,14 @@ export async function invalidateJournalReadData(
           context.userId,
           context.journalEntryId,
         ),
+      }),
+    );
+  }
+
+  if (context.eventId) {
+    invalidations.push(
+      queryClient.invalidateQueries({
+        queryKey: journalReadKeys.event(context.userId, context.eventId),
       }),
     );
   }

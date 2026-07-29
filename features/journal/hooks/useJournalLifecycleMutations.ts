@@ -31,6 +31,7 @@ function useJournalLifecycleMutation<TInput>(
       await Promise.all([
         invalidateJournalReadData(queryClient, {
           affectedDates: result.affectedDates,
+          eventId: result.eventId,
           journalEntryId: result.journalEntryId,
           mediaItemId: result.mediaItemId,
           userId: result.userId,

@@ -2,6 +2,7 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 
 import {
   getJournalCalendarRange,
+  getJournalEvent,
   getJournalHistoryPage,
   getJournalPlanner,
   getJournalTimelinePage,
@@ -51,6 +52,15 @@ export function useJournalHistory(
         userId: userId ?? '',
       }),
     queryKey: journalReadKeys.history(userId, journalEntryId),
+  });
+}
+
+export function useJournalEvent(userId?: string, eventId?: string) {
+  return useQuery({
+    enabled: Boolean(userId && eventId),
+    queryFn: () =>
+      getJournalEvent({ eventId: eventId ?? '', userId: userId ?? '' }),
+    queryKey: journalReadKeys.event(userId, eventId),
   });
 }
 
