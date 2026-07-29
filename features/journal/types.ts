@@ -59,6 +59,7 @@ export type JournalTitleSummary = {
   titleState: JournalTitleState;
   latestCompletedEvent: JournalEvent | null;
   completedWatchCount: number;
+  activityCount: number;
 };
 
 export type JournalEventCursor = {

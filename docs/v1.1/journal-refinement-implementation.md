@@ -834,8 +834,8 @@ Update this table only when work actually changes state.
 | 3. Data layer | Not used | Complete | Typed read models, bounded queries, date-range loading, cache keys, invalidation, and focused verification completed July 28, 2026 |
 | 4. Lifecycle transitions | Not used | Complete | Atomic owner-scoped RPCs, request idempotency, recomputation, rollback verification, and client mutation hooks completed July 29, 2026 |
 | 5. Intent-based modal | Not used | Complete | Focused intent forms, resilient save behavior, local-date rules, and dismissal protection completed July 29, 2026 |
-| 6. Your Journal and History | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
-| 7. Timeline | Not used | Not started | Blocked by Step 6 approval |
+| 6. Your Journal and History | Not used | Complete | Compact summary, state-aware actions, on-demand History, and precise removals completed July 29, 2026 |
+| 7. Timeline | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
 | 8. Planner | Not used | Not started | Blocked by Step 7 approval |
 | 9. Calendar | Not used | Not started | Blocked by Step 8 approval |
 | 10. Fast capture and restoration | Not used | Not started | Blocked by Step 9 approval |
@@ -952,6 +952,23 @@ Completed July 29, 2026.
   labels and feedback, focused form tests, and event-level read support.
 - Passed focused tests, TypeScript typechecking, and lint without Docker.
 
+## Step 6 Completion Record
+
+Completed July 29, 2026.
+
+- Replaced `Your Entry` with a compact `Your Journal` summary containing the
+  current state, active plan, watch count, latest completed date, latest rating,
+  and latest Notes preview.
+- Replaced generic add/edit controls with a media- and state-aware primary,
+  secondary, and More action model.
+- Added on-demand paginated History with independent edit and delete actions
+  for every dated activity.
+- Added distinct confirmations for deleting activity, removing only a plan,
+  deleting the final activity, and removing the complete Journal title.
+- Kept Journal actions disabled while title state is loading or failed, and
+  retained separate List and trailer actions.
+- Passed focused action/read/mutation tests, TypeScript typechecking, and lint.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -967,5 +984,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 5 is complete. The user authorized continuous delivery through Step 10,
-with one commit per step. Step 6 is the active implementation action.
+Step 6 is complete. The user authorized continuous delivery through Step 10,
+with one commit per step. Step 7 is the active implementation action.

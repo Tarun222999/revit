@@ -72,6 +72,7 @@ describe('Journal lifecycle mutation hooks', () => {
 
     expect(mockInvalidateJournalReadData).toHaveBeenCalledWith(queryClient, {
       affectedDates: ['2026-07-29', '2026-08-01'],
+      eventId: 'event-1',
       journalEntryId: 'entry-1',
       mediaItemId: 'media-1',
       userId: 'user-1',

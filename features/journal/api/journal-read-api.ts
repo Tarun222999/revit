@@ -110,23 +110,32 @@ export async function getJournalTitleSummary({
   if (titleError) throw titleError;
   if (!titleRow) return null;
 
-  const { count, data: completedRows, error: completedError } = await supabase
-    .from('journal_events')
-    .select('*', { count: 'exact' })
-    .eq('user_id', userId)
-    .eq('journal_entry_id', titleRow.id)
-    .eq('event_type', 'completed')
-    .order('event_date', { ascending: false })
-    .order('created_at', { ascending: false })
-    .order('id', { ascending: false })
-    .limit(1);
+  const [completedResult, activityResult] = await Promise.all([
+    supabase
+      .from('journal_events')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .eq('journal_entry_id', titleRow.id)
+      .eq('event_type', 'completed')
+      .order('event_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(1),
+    supabase
+      .from('journal_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('journal_entry_id', titleRow.id),
+  ]);
 
-  if (completedError) throw completedError;
+  if (completedResult.error) throw completedResult.error;
+  if (activityResult.error) throw activityResult.error;
 
   return {
-    completedWatchCount: count ?? 0,
-    latestCompletedEvent: completedRows?.[0]
-      ? toJournalEvent(completedRows[0])
+    activityCount: activityResult.count ?? 0,
+    completedWatchCount: completedResult.count ?? 0,
+    latestCompletedEvent: completedResult.data?.[0]
+      ? toJournalEvent(completedResult.data[0])
       : null,
     titleState: toJournalTitleState(titleRow),
   };
