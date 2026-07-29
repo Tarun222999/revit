@@ -41,6 +41,7 @@ type JournalEntryModalScreenProps = {
   eventId?: string;
   intent?: string;
   mediaItemId?: string;
+  returnToJournal?: boolean;
   source?: string;
 };
 
@@ -61,9 +62,11 @@ function isLifecycleSource(value?: string): value is JournalLifecycleSource {
 
 function ModalMessage({
   message,
+  onClose = () => router.back(),
   title,
 }: {
   message: string;
+  onClose?: () => void;
   title: string;
 }) {
   return (
@@ -71,7 +74,7 @@ function ModalMessage({
       <EmptyState
         actionLabel="Close"
         message={message}
-        onAction={() => router.back()}
+        onAction={onClose}
         title={title}
       />
     </JournalEntryModalFrame>
@@ -82,6 +85,7 @@ export function JournalEntryModalScreen({
   eventId,
   intent: intentParam,
   mediaItemId,
+  returnToJournal = false,
   source: sourceParam,
 }: JournalEntryModalScreenProps) {
   const intent: JournalFormIntent = isJournalFormIntent(intentParam)
@@ -117,6 +121,10 @@ export function JournalEntryModalScreen({
   );
   const isDirty = hasJournalIntentFormChanged(initialValuesRef.current, values);
   const copy = JOURNAL_INTENT_COPY[intent];
+  const closeModal = () => {
+    if (returnToJournal) router.dismissTo('/journal');
+    else router.back();
+  };
 
   useEffect(() => {
     if (initializedEditRef.current) return;
@@ -140,7 +148,12 @@ export function JournalEntryModalScreen({
     }
   }, [eventQuery.data, intent, summaryQuery.data, summaryQuery.isSuccess]);
 
-  usePreventRemove(isDirty && !allowDismiss, () => {
+  usePreventRemove((returnToJournal || isDirty) && !allowDismiss, () => {
+    if (!isDirty) {
+      setAllowDismiss(true);
+      setTimeout(closeModal, 0);
+      return;
+    }
     Alert.alert(
       'Discard changes?',
       'Your unsaved Journal changes will be lost.',
@@ -151,7 +164,7 @@ export function JournalEntryModalScreen({
           text: 'Discard',
           onPress: () => {
             setAllowDismiss(true);
-            setTimeout(() => router.back(), 0);
+            setTimeout(closeModal, 0);
           },
         },
       ],
@@ -161,7 +174,7 @@ export function JournalEntryModalScreen({
   const requestDismiss = () => {
     if (mutationPending) return;
     if (!isDirty) {
-      router.back();
+      closeModal();
       return;
     }
 
@@ -175,7 +188,7 @@ export function JournalEntryModalScreen({
           text: 'Discard',
           onPress: () => {
             setAllowDismiss(true);
-            setTimeout(() => router.back(), 0);
+            setTimeout(closeModal, 0);
           },
         },
       ],
@@ -193,7 +206,7 @@ export function JournalEntryModalScreen({
   const finishSuccessfully = () => {
     setAllowDismiss(true);
     AccessibilityInfo.announceForAccessibility(`${copy.submitLabel} saved`);
-    setTimeout(() => router.back(), 0);
+    setTimeout(closeModal, 0);
   };
 
   const submit = async () => {
@@ -247,13 +260,20 @@ export function JournalEntryModalScreen({
     return (
       <ModalMessage
         message="Sign in before adding plans or activity to your Journal."
+        onClose={closeModal}
         title="Sign in required"
       />
     );
   }
 
   if (!mediaItemId) {
-    return <ModalMessage message="Open this from a title." title="Missing title" />;
+    return (
+      <ModalMessage
+        message="Open this from a title."
+        onClose={closeModal}
+        title="Missing title"
+      />
+    );
   }
 
   const loadingEdit =
@@ -286,11 +306,23 @@ export function JournalEntryModalScreen({
   }
 
   if (intent === 'edit_plan' && !summaryQuery.data?.titleState.activePlan) {
-    return <ModalMessage message="This title has no active plan." title="Plan not found" />;
+    return (
+      <ModalMessage
+        message="This title has no active plan."
+        onClose={closeModal}
+        title="Plan not found"
+      />
+    );
   }
 
   if (intent === 'edit_event' && !eventQuery.data) {
-    return <ModalMessage message="This activity is no longer available." title="Activity not found" />;
+    return (
+      <ModalMessage
+        message="This activity is no longer available."
+        onClose={closeModal}
+        title="Activity not found"
+      />
+    );
   }
 
   return (

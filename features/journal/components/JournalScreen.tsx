@@ -16,6 +16,10 @@ import { useJournalTimeline } from '@/features/journal/hooks/useJournalReads';
 import { getJournalCalendarMonthDate } from '@/features/journal/model/journalCalendar';
 import { localToday } from '@/features/journal/model/journalIntentForm';
 import {
+  getJournalFastCapture,
+  type JournalNavigationView,
+} from '@/features/journal/model/journalNavigation';
+import {
   DEFAULT_TIMELINE_FILTERS,
   filterJournalTimeline,
   hasActiveTimelineFilters,
@@ -27,7 +31,7 @@ import type {
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import { cn } from '@/lib/utils/cn';
 
-type JournalView = 'timeline' | 'planner' | 'calendar';
+type JournalView = JournalNavigationView;
 
 function openMedia(media: {
   id: string;
@@ -165,9 +169,36 @@ export function JournalScreen() {
   );
   const [calendarDate, setCalendarDate] = useState(localToday);
   const setView = useCallback((view: JournalView) => setActiveView(view), []);
+  const fastCapture = getJournalFastCapture(activeView);
+  const openFastCapture = () => {
+    if (!user) {
+      router.push('/welcome');
+      return;
+    }
+    router.push({
+      pathname: '/search',
+      params: {
+        journalCapture: fastCapture.capture,
+        journalReturn: 'true',
+      },
+    });
+  };
 
   return (
     <Screen scroll className="gap-5">
+      <View className="flex-row items-center justify-between gap-3">
+        <View className="min-w-0 flex-1">
+          <Text className="text-xl font-bold text-archive-50">Your Journal</Text>
+          <Text className="text-sm text-archive-300">
+            {activeView === 'planner' ? 'Decide what comes next.' : 'Keep your personal viewing record.'}
+          </Text>
+        </View>
+        <Button
+          className="min-h-10 px-4"
+          onPress={openFastCapture}
+          title={fastCapture.label}
+        />
+      </View>
       <JournalViewSegment activeView={activeView} onChange={setView} />
       {loading ? <LoadingState message="Loading Journal" /> : null}
       {!loading && !user ? (

@@ -838,8 +838,8 @@ Update this table only when work actually changes state.
 | 7. Timeline | Not used | Complete | Dated event cards, rewatch inference, compact filters, and stable pagination completed July 29, 2026 |
 | 8. Planner | Not used | Complete | Today/Upcoming/Missed/Someday sections and plan-only management completed July 29, 2026 |
 | 9. Calendar | Not used | Complete | Range-based event/plan calendar, accessible markers, and retained selection completed July 29, 2026 |
-| 10. Fast capture and restoration | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
-| 11. Quality hardening | Not used | Not started | Blocked by Step 10 approval |
+| 10. Fast capture and restoration | Not used | Complete | Intent-aware Search capture and Journal context restoration completed July 29, 2026 |
+| 11. Quality hardening | Not used | Not started | Awaiting explicit instruction after the requested Step 10 stop |
 
 ## Decision Log
 
@@ -1017,6 +1017,24 @@ Completed July 29, 2026.
 - Passed focused range, mixed-day, local-date, read, and query tests, TypeScript
   typechecking, and lint.
 
+## Step 10 Completion Record
+
+Completed July 29, 2026.
+
+- Added Journal-level `Log` actions to Timeline and Calendar and `Add plan` to
+  Planner, with a sign-in boundary before any capture form can open.
+- Reused the existing Search screen in an explicit Journal capture mode with
+  clear intent copy and a cancel-and-return action.
+- Resolved a selected result against its media type, current title state, and
+  active plan before opening the focused form, avoiding duplicate plans and
+  choosing rewatch/start/finish/resume behavior when appropriate.
+- Returned clean cancellation, dirty-form discard, hardware/back dismissal,
+  and successful saves to the originating mounted Journal screen.
+- Preserved the active Journal view, Timeline filters and scroll ownership, and
+  Calendar month/date state across the Search, Title Details, and modal path.
+- Passed all 113 repository tests, TypeScript typechecking, and lint. Manual
+  device gesture verification remains part of the separately authorized Step 11.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -1032,5 +1050,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 9 is complete. The user authorized continuous delivery through Step 10,
-with one commit per step. Step 10 is the active implementation action.
+Step 10 is complete. Stop here as requested. Step 11 quality hardening must not
+begin without a new explicit user instruction.

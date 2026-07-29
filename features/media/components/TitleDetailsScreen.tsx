@@ -1,7 +1,7 @@
 import * as Linking from 'expo-linking';
 import { router, Stack } from 'expo-router';
 import { Alert } from 'react-native';
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -17,6 +17,7 @@ import {
 } from '@/features/journal/hooks/useJournalLifecycleMutations';
 import { useJournalTitleSummary } from '@/features/journal/hooks/useJournalReads';
 import type { JournalTitleAction } from '@/features/journal/model/journalTitleActions';
+import { resolveJournalCaptureAction } from '@/features/journal/model/journalNavigation';
 import { AddToListPanel } from '@/features/lists/components/AddToListPanel';
 import { useMediaListMemberships } from '@/features/lists/hooks/useMediaListMemberships';
 import { TitleDetailsHero } from '@/features/media/components/TitleDetailsHero';
@@ -27,6 +28,8 @@ import { useMediaTrailer } from '@/features/media/hooks/useMediaTrailer';
 import { getTitleDetailMetrics } from '@/features/media/model/titleDetails';
 
 type TitleDetailsScreenProps = {
+  journalCapture?: string;
+  journalReturn?: boolean;
   titleId?: string;
 };
 
@@ -34,7 +37,11 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
+export function TitleDetailsScreen({
+  journalCapture,
+  journalReturn = false,
+  titleId,
+}: TitleDetailsScreenProps) {
   const { user } = useAuth();
   const detailsQuery = useMediaDetails(titleId);
   const item = detailsQuery.data?.item;
@@ -49,8 +56,12 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
   const summary = journalQuery.data ?? null;
   const [showAddToListPanel, setShowAddToListPanel] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const openedCaptureRef = useRef(false);
 
-  const openJournalIntent = (action: JournalTitleAction) => {
+  const openJournalIntent = useCallback((
+    action: JournalTitleAction,
+    returnToJournal = false,
+  ) => {
     if (!mediaItemId) {
       return;
     }
@@ -60,10 +71,41 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
       params: {
         intent: action.intent,
         mediaItemId,
+        ...(returnToJournal ? { returnToJournal: 'true' } : {}),
         source: action.source,
       },
     });
-  };
+  }, [mediaItemId]);
+
+  useEffect(() => {
+    if (
+      openedCaptureRef.current ||
+      !journalReturn ||
+      (journalCapture !== 'log' && journalCapture !== 'plan') ||
+      !item ||
+      !mediaItemId ||
+      !journalQuery.isSuccess
+    ) {
+      return;
+    }
+
+    const action = resolveJournalCaptureAction(
+      journalCapture,
+      item.mediaType,
+      summary,
+    );
+
+    openedCaptureRef.current = true;
+    openJournalIntent(action, true);
+  }, [
+    item,
+    journalCapture,
+    journalQuery.isSuccess,
+    journalReturn,
+    mediaItemId,
+    openJournalIntent,
+    summary,
+  ]);
 
   const openEventEdit = (eventId: string) => {
     if (!mediaItemId) return;

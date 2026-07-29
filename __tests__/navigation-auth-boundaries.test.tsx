@@ -45,8 +45,8 @@ jest.mock('@/lib/supabase/client', () => ({
 }));
 
 jest.mock('@/features/media/components/TitleDetailsScreen', () => ({
-  TitleDetailsScreen: ({ titleId }: { titleId?: string }) =>
-    require('react').createElement(require('react-native').Text, null, `Title route: ${titleId}`),
+  TitleDetailsScreen: ({ journalCapture, journalReturn, titleId }: { journalCapture?: string; journalReturn?: boolean; titleId?: string }) =>
+    require('react').createElement(require('react-native').Text, null, `Title route: ${titleId} / ${journalCapture} / ${journalReturn}`),
 }));
 
 jest.mock('@/features/lists/components/ListDetailsScreen', () => ({
@@ -55,11 +55,11 @@ jest.mock('@/features/lists/components/ListDetailsScreen', () => ({
 }));
 
 jest.mock('@/features/journal/components/JournalEntryModalScreen', () => ({
-  JournalEntryModalScreen: ({ eventId, intent, mediaItemId, source }: { eventId?: string; intent?: string; mediaItemId?: string; source?: string }) =>
+  JournalEntryModalScreen: ({ eventId, intent, mediaItemId, returnToJournal, source }: { eventId?: string; intent?: string; mediaItemId?: string; returnToJournal?: boolean; source?: string }) =>
     require('react').createElement(
       require('react-native').Text,
       null,
-      `Journal modal route: ${eventId} / ${mediaItemId} / ${intent} / ${source}`,
+      `Journal modal route: ${eventId} / ${mediaItemId} / ${intent} / ${source} / ${returnToJournal}`,
     ),
 }));
 
@@ -290,11 +290,17 @@ describe('route parameter boundaries', () => {
   });
 
   it('passes a title id from the route to the title details screen', async () => {
-    mockUseLocalSearchParams.mockReturnValue({ id: 'tmdb-movie-123' });
+    mockUseLocalSearchParams.mockReturnValue({
+      id: 'tmdb-movie-123',
+      journalCapture: 'log',
+      journalReturn: 'true',
+    });
 
     await render(<TitleDetailsRoute />);
 
-    expect(screen.getByText('Title route: tmdb-movie-123')).toBeTruthy();
+    expect(
+      screen.getByText('Title route: tmdb-movie-123 / log / true'),
+    ).toBeTruthy();
   });
 
   it('passes a list id from the route to the list details screen', async () => {
@@ -310,6 +316,7 @@ describe('route parameter boundaries', () => {
       eventId: 'event-123',
       intent: 'edit_event',
       mediaItemId: 'media-123',
+      returnToJournal: 'true',
       source: 'history',
     });
 
@@ -317,7 +324,7 @@ describe('route parameter boundaries', () => {
 
     expect(
       screen.getByText(
-        'Journal modal route: event-123 / media-123 / edit_event / history',
+        'Journal modal route: event-123 / media-123 / edit_event / history / true',
       ),
     ).toBeTruthy();
   });
