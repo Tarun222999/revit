@@ -8,24 +8,19 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { JournalCalendarView } from '@/features/journal/components/JournalCalendarView';
+import { JournalEventCalendarView } from '@/features/journal/components/JournalEventCalendarView';
 import { JournalPlannerView } from '@/features/journal/components/JournalPlannerView';
 import { JournalTimelineFilters } from '@/features/journal/components/JournalTimelineFilters';
 import { JournalTimelineView } from '@/features/journal/components/JournalTimelineView';
-import { useJournalEntries } from '@/features/journal/hooks/useJournalEntries';
 import { useJournalTimeline } from '@/features/journal/hooks/useJournalReads';
-import {
-  addJournalCalendarMonths,
-  getJournalCalendarMonth,
-  getJournalCalendarMonthDate,
-} from '@/features/journal/model/journalCalendar';
+import { getJournalCalendarMonthDate } from '@/features/journal/model/journalCalendar';
+import { localToday } from '@/features/journal/model/journalIntentForm';
 import {
   DEFAULT_TIMELINE_FILTERS,
   filterJournalTimeline,
   hasActiveTimelineFilters,
 } from '@/features/journal/model/journalTimeline';
 import type {
-  JournalListEntry,
   JournalTimelineFilters as TimelineFilters,
   JournalTimelineItem,
 } from '@/features/journal/types';
@@ -161,52 +156,14 @@ function TimelineContent({
   );
 }
 
-function getDefaultCalendarMonthDate(entries: JournalListEntry[]) {
-  const current = getJournalCalendarMonthDate(new Date().toISOString());
-  const latest = [...entries].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-  return latest ? getJournalCalendarMonthDate(latest.createdAt) : current;
-}
-
-function LegacyCalendarContent({ userId }: { userId: string }) {
-  const query = useJournalEntries(userId);
-  const entries = query.data ?? [];
-  const [monthDate, setMonthDate] = useState(() => getDefaultCalendarMonthDate(entries));
-  const month = useMemo(
-    () => getJournalCalendarMonth(entries, monthDate),
-    [entries, monthDate],
-  );
-
-  if (query.isLoading) return <LoadingState message="Loading Calendar" />;
-  if (query.isError) {
-    return (
-      <ErrorState
-        message={query.error instanceof Error ? query.error.message : 'Unable to load Calendar.'}
-        onRetry={() => query.refetch()}
-        title="Calendar unavailable"
-      />
-    );
-  }
-  if (!entries.length) {
-    return <EmptyState message="Your dated Journal activity will appear here." title="Calendar is empty" />;
-  }
-
-  return (
-    <JournalCalendarView
-      disableNextMonth={month.monthDate >= getJournalCalendarMonthDate(new Date().toISOString())}
-      month={month}
-      onEntryPress={(entry) =>
-        openMedia({ id: entry.mediaItemId, source: entry.source, sourceId: entry.sourceId })
-      }
-      onNextMonth={() => setMonthDate((current) => addJournalCalendarMonths(current, 1))}
-      onPreviousMonth={() => setMonthDate((current) => addJournalCalendarMonths(current, -1))}
-    />
-  );
-}
-
 export function JournalScreen() {
   const { loading, user } = useAuth();
   const [activeView, setActiveView] = useState<JournalView>('timeline');
   const [timelineFilters, setTimelineFilters] = useState(DEFAULT_TIMELINE_FILTERS);
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    getJournalCalendarMonthDate(localToday()),
+  );
+  const [calendarDate, setCalendarDate] = useState(localToday);
   const setView = useCallback((view: JournalView) => setActiveView(view), []);
 
   return (
@@ -227,7 +184,13 @@ export function JournalScreen() {
         />
       ) : null}
       {!loading && user && activeView === 'calendar' ? (
-        <LegacyCalendarContent userId={user.id} />
+        <JournalEventCalendarView
+          monthDate={calendarMonth}
+          onMonthChange={setCalendarMonth}
+          onSelectedDateChange={setCalendarDate}
+          selectedDate={calendarDate}
+          userId={user.id}
+        />
       ) : null}
       {!loading && user && activeView === 'planner' ? (
         <JournalPlannerView userId={user.id} />

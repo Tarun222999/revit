@@ -837,8 +837,8 @@ Update this table only when work actually changes state.
 | 6. Your Journal and History | Not used | Complete | Compact summary, state-aware actions, on-demand History, and precise removals completed July 29, 2026 |
 | 7. Timeline | Not used | Complete | Dated event cards, rewatch inference, compact filters, and stable pagination completed July 29, 2026 |
 | 8. Planner | Not used | Complete | Today/Upcoming/Missed/Someday sections and plan-only management completed July 29, 2026 |
-| 9. Calendar | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
-| 10. Fast capture and restoration | Not used | Not started | Blocked by Step 9 approval |
+| 9. Calendar | Not used | Complete | Range-based event/plan calendar, accessible markers, and retained selection completed July 29, 2026 |
+| 10. Fast capture and restoration | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
 | 11. Quality hardening | Not used | Not started | Blocked by Step 10 approval |
 
 ## Decision Log
@@ -1000,6 +1000,23 @@ Completed July 29, 2026.
 - Passed focused Planner classification/action and lifecycle tests, TypeScript
   typechecking, and lint.
 
+## Step 9 Completion Record
+
+Completed July 29, 2026.
+
+- Rebuilt Calendar from the visible six-week event/plan range, including
+  adjacent-month dates, without using system timestamps as Journal dates.
+- Rendered logged activity and scheduled plans with different colors and
+  different icon shapes, plus screen-reader labels that state both meanings.
+- Added separate Logged and Planned groups for the selected day; a mixed day
+  retains both and an unscheduled Someday plan is excluded by the query.
+- Enabled future month navigation, replaced the v1 metric tiles with one
+  factual watches/plans summary, and kept the grid as the primary surface.
+- Lifted selected month/day state above the Calendar view so Title Details
+  navigation does not reset the user's place.
+- Passed focused range, mixed-day, local-date, read, and query tests, TypeScript
+  typechecking, and lint.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -1015,5 +1032,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 8 is complete. The user authorized continuous delivery through Step 10,
-with one commit per step. Step 9 is the active implementation action.
+Step 9 is complete. The user authorized continuous delivery through Step 10,
+with one commit per step. Step 10 is the active implementation action.

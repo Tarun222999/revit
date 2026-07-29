@@ -122,6 +122,21 @@ export type JournalCalendarData = JournalCalendarRange & {
   plans: JournalCalendarPlanItem[];
 };
 
+export type JournalEventCalendarDay = {
+  date: string;
+  events: JournalCalendarEventItem[];
+  isCurrentMonth: boolean;
+  plans: JournalCalendarPlanItem[];
+};
+
+export type JournalEventCalendarMonth = JournalCalendarRange & {
+  completedCount: number;
+  days: JournalEventCalendarDay[];
+  eventCount: number;
+  monthDate: string;
+  planCount: number;
+};
+
 export type JournalMutationResult = {
   userId: string;
   mediaItemId: string;
