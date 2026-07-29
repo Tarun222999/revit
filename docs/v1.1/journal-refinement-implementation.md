@@ -836,8 +836,8 @@ Update this table only when work actually changes state.
 | 5. Intent-based modal | Not used | Complete | Focused intent forms, resilient save behavior, local-date rules, and dismissal protection completed July 29, 2026 |
 | 6. Your Journal and History | Not used | Complete | Compact summary, state-aware actions, on-demand History, and precise removals completed July 29, 2026 |
 | 7. Timeline | Not used | Complete | Dated event cards, rewatch inference, compact filters, and stable pagination completed July 29, 2026 |
-| 8. Planner | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
-| 9. Calendar | Not used | Not started | Blocked by Step 8 approval |
+| 8. Planner | Not used | Complete | Today/Upcoming/Missed/Someday sections and plan-only management completed July 29, 2026 |
+| 9. Calendar | Not used | In progress | Authorized as part of the approved Steps 5-10 continuous delivery |
 | 10. Fast capture and restoration | Not used | Not started | Blocked by Step 9 approval |
 | 11. Quality hardening | Not used | Not started | Blocked by Step 10 approval |
 
@@ -985,6 +985,21 @@ Completed July 29, 2026.
   preserved current results when a later page fails.
 - Passed focused Timeline/read/query tests, TypeScript typechecking, and lint.
 
+## Step 8 Completion Record
+
+Completed July 29, 2026.
+
+- Added Planner as the third Journal navigation view and classified every
+  active plan into Today, Upcoming, Missed, or Someday from the device-local day.
+- Added plan-aware log/start actions, including completed-title rewatch plans,
+  and resolved those plans through the existing atomic lifecycle operations.
+- Added schedule/reschedule, Move to Someday, and Remove plan controls with
+  plan-specific confirmation and failure feedback.
+- Kept completed state visible alongside future rewatch plans, retained one
+  active plan per title, and left Lists completely independent.
+- Passed focused Planner classification/action and lifecycle tests, TypeScript
+  typechecking, and lint.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -1000,5 +1015,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 7 is complete. The user authorized continuous delivery through Step 10,
-with one commit per step. Step 8 is the active implementation action.
+Step 8 is complete. The user authorized continuous delivery through Step 10,
+with one commit per step. Step 9 is the active implementation action.

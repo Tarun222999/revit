@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { JournalCalendarView } from '@/features/journal/components/JournalCalendarView';
+import { JournalPlannerView } from '@/features/journal/components/JournalPlannerView';
 import { JournalTimelineFilters } from '@/features/journal/components/JournalTimelineFilters';
 import { JournalTimelineView } from '@/features/journal/components/JournalTimelineView';
 import { useJournalEntries } from '@/features/journal/hooks/useJournalEntries';
@@ -31,7 +32,7 @@ import type {
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import { cn } from '@/lib/utils/cn';
 
-type JournalView = 'timeline' | 'calendar';
+type JournalView = 'timeline' | 'planner' | 'calendar';
 
 function openMedia(media: {
   id: string;
@@ -51,7 +52,7 @@ function JournalViewSegment({
 }) {
   return (
     <View className="flex-row rounded-app border border-archive-700 bg-archive-800 p-1">
-      {(['timeline', 'calendar'] as const).map((view) => (
+      {(['timeline', 'planner', 'calendar'] as const).map((view) => (
         <Pressable
           accessibilityRole="tab"
           accessibilityState={{ selected: activeView === view }}
@@ -227,6 +228,9 @@ export function JournalScreen() {
       ) : null}
       {!loading && user && activeView === 'calendar' ? (
         <LegacyCalendarContent userId={user.id} />
+      ) : null}
+      {!loading && user && activeView === 'planner' ? (
+        <JournalPlannerView userId={user.id} />
       ) : null}
     </Screen>
   );
