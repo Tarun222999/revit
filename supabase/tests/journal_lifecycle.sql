@@ -387,23 +387,97 @@ select pg_temp.assert_true(
    )),
   'the compatibility bridge lost or duplicated a watch'
 );
+create temporary table expected_legacy_plan_history
+on commit drop
+as
+select id, event_date
+from public.journal_events
+where journal_entry_id = (
+  select id from public.journal_entries
+  where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'
+)
+  and event_type = 'completed';
 update public.journal_entries
 set status = 'planned', started_on = '2026-09-20'
 where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009';
 select pg_temp.assert_true(
+  (select status = 'completed'
+      and has_active_plan
+      and planned_for = '2026-09-20'
+      and completed_on = '2026-07-29'
+      and undated_completed_count = 0
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'),
+  'a v1 rewatch plan replaced completed v1.1 title semantics'
+);
+select pg_temp.assert_true(
+  not exists (
+    (select id, event_date from expected_legacy_plan_history
+     except
+     select id, event_date
+     from public.journal_events
+     where journal_entry_id = (
+       select id from public.journal_entries
+       where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'
+     ) and event_type = 'completed')
+    union all
+    (select id, event_date
+     from public.journal_events
+     where journal_entry_id = (
+       select id from public.journal_entries
+       where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'
+     ) and event_type = 'completed'
+     except
+     select id, event_date from expected_legacy_plan_history)
+  ),
+  'a v1 rewatch plan changed completed event IDs or dates'
+);
+select public.journal_remove_plan(
+  (select id from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009')
+);
+select pg_temp.assert_true(
+  (select status = 'completed'
+      and not has_active_plan
+      and planned_for is null
+      and completed_on = '2026-07-29'
+      and undated_completed_count = 0
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'),
+  'removing a v1 rewatch plan did not preserve completed title semantics'
+);
+select pg_temp.assert_true(
   (select count(*) = 2
+      and array_agg(event_date order by event_date) =
+        array['2026-07-15'::date, '2026-07-29'::date]
    from public.journal_events
    where journal_entry_id = (
      select id from public.journal_entries
      where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'
-   )),
-  'a v1 plan overwrote existing v1.1 history'
+   ) and event_type = 'completed'),
+  'removing a v1 rewatch plan changed completed history count or dates'
 );
 select pg_temp.assert_true(
-  (select has_active_plan and planned_for = '2026-09-20'
-   from public.journal_entries
-   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'),
-  'a v1 reschedule did not update the active v1.1 plan'
+  not exists (
+    (select id, event_date from expected_legacy_plan_history
+     except
+     select id, event_date
+     from public.journal_events
+     where journal_entry_id = (
+       select id from public.journal_entries
+       where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'
+     ) and event_type = 'completed')
+    union all
+    (select id, event_date
+     from public.journal_events
+     where journal_entry_id = (
+       select id from public.journal_entries
+       where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'
+     ) and event_type = 'completed'
+     except
+     select id, event_date from expected_legacy_plan_history)
+  ),
+  'removing a v1 rewatch plan changed completed event IDs or dates'
 );
 
 -- An old completion without completed_on remains an undated watch identity.

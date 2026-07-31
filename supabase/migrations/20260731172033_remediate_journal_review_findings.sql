@@ -77,7 +77,10 @@ set search_path = ''
 as $$
 declare
   v_legacy_changed boolean;
+  v_legacy_plan_write boolean := false;
+  v_latest_event public.journal_events%rowtype;
   v_plan_changed boolean;
+  v_requested_status text := new.status;
 begin
   -- Entry writes caused by the event bridge are already normalized.
   if pg_trigger_depth() > 1 then
@@ -105,20 +108,69 @@ begin
   new.legacy_bridge_statement_at := statement_timestamp();
 
   -- A v1 planned row used started_on as its optional plan date.
-  if new.status = 'planned'
+  if v_requested_status = 'planned'
     and not v_plan_changed
     and (tg_op = 'UPDATE' or (not new.has_active_plan and new.planned_for is null)) then
     new.has_active_plan := true;
     new.planned_for := new.started_on;
+    v_legacy_plan_write := true;
+
+    -- v1 used one row for either activity or a plan. In v1.1, keep the plan
+    -- independent and restore the canonical current activity from history.
+    select *
+    into v_latest_event
+    from public.journal_events
+    where journal_entry_id = new.id
+      and user_id = new.user_id
+    order by event_date desc, created_at desc, id desc
+    limit 1;
+
+    if found then
+      new.status := case v_latest_event.event_type
+        when 'started' then 'in_progress'
+        when 'completed' then 'completed'
+        when 'stopped' then 'dropped'
+      end;
+      new.started_on := case
+        when v_latest_event.event_type in ('started', 'stopped')
+          then v_latest_event.event_date
+        else null
+      end;
+      new.completed_on := case
+        when v_latest_event.event_type = 'completed'
+          then v_latest_event.event_date
+        else null
+      end;
+      new.rating := case
+        when v_latest_event.event_type = 'completed' then v_latest_event.rating
+        when v_latest_event.is_legacy_mirror then new.rating
+        else null
+      end;
+      new.review_headline := case
+        when v_latest_event.is_legacy_mirror then new.review_headline
+        else null
+      end;
+      new.review_body := v_latest_event.notes;
+      new.contains_spoilers := case
+        when v_latest_event.is_legacy_mirror then new.contains_spoilers
+        else false
+      end;
+    elsif new.undated_completed_count > 0 then
+      new.status := 'completed';
+      new.started_on := null;
+      new.completed_on := null;
+    end if;
   elsif tg_op = 'UPDATE' and old.status = 'planned' and not v_plan_changed then
     new.has_active_plan := false;
     new.planned_for := null;
   end if;
 
-  if new.status = 'completed' and new.completed_on is null then
-    new.undated_completed_count := 1;
-  elsif new.status <> 'planned' then
-    new.undated_completed_count := 0;
+  if not v_legacy_plan_write then
+    if new.status = 'completed' and new.completed_on is null then
+      new.undated_completed_count := 1;
+    elsif new.status <> 'planned' then
+      new.undated_completed_count := 0;
+    end if;
   end if;
 
   return new;
@@ -133,6 +185,7 @@ set search_path = ''
 as $$
 declare
   v_legacy_changed boolean;
+  v_plan_changed boolean;
   v_event_type text;
   v_event_date date;
 begin
@@ -151,6 +204,19 @@ begin
   );
 
   if not v_legacy_changed then
+    return null;
+  end if;
+
+  v_plan_changed := tg_op = 'UPDATE' and (
+    new.has_active_plan is distinct from old.has_active_plan
+    or new.planned_for is distinct from old.planned_for
+  );
+
+  -- The BEFORE bridge already restored canonical activity for this legacy
+  -- plan statement. Do not reinterpret those restored fields as a new event.
+  if new.has_active_plan
+    and v_plan_changed
+    and new.legacy_bridge_statement_at = statement_timestamp() then
     return null;
   end if;
 
