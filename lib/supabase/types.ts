@@ -18,6 +18,7 @@ export type Database = {
           id: string
           last_activity_at: string
           legacy_bridge_statement_at: string | null
+          legacy_plan_resolution_statement_at: string | null
           media_item_id: string
           planned_for: string | null
           rating: number | null
@@ -37,6 +38,7 @@ export type Database = {
           id?: string
           last_activity_at?: string
           legacy_bridge_statement_at?: string | null
+          legacy_plan_resolution_statement_at?: string | null
           media_item_id: string
           planned_for?: string | null
           rating?: number | null
@@ -56,6 +58,7 @@ export type Database = {
           id?: string
           last_activity_at?: string
           legacy_bridge_statement_at?: string | null
+          legacy_plan_resolution_statement_at?: string | null
           media_item_id?: string
           planned_for?: string | null
           rating?: number | null

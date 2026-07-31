@@ -6,7 +6,8 @@
 
 alter table public.journal_entries
 add column if not exists undated_completed_count integer not null default 0,
-add column if not exists legacy_bridge_statement_at timestamptz;
+add column if not exists legacy_bridge_statement_at timestamptz,
+add column if not exists legacy_plan_resolution_statement_at timestamptz;
 
 alter table public.journal_entries
 drop constraint if exists journal_entries_undated_completed_count_check;
@@ -76,6 +77,7 @@ security invoker
 set search_path = ''
 as $$
 declare
+  v_legacy_activity_transition boolean;
   v_legacy_changed boolean;
   v_legacy_plan_write boolean := false;
   v_latest_event public.journal_events%rowtype;
@@ -100,12 +102,28 @@ begin
     new.has_active_plan is distinct from old.has_active_plan
     or new.planned_for is distinct from old.planned_for
   );
+  v_legacy_activity_transition := tg_op = 'UPDATE'
+    and old.has_active_plan
+    and not v_plan_changed
+    and v_requested_status in ('in_progress', 'completed', 'dropped')
+    and (
+      v_requested_status is distinct from old.status
+      or (
+        v_requested_status = 'completed'
+        and new.completed_on is distinct from old.completed_on
+      )
+      or (
+        v_requested_status in ('in_progress', 'dropped')
+        and new.started_on is distinct from old.started_on
+      )
+    );
 
   if not v_legacy_changed then
     return new;
   end if;
 
   new.legacy_bridge_statement_at := statement_timestamp();
+  new.legacy_plan_resolution_statement_at := null;
 
   -- A v1 planned row used started_on as its optional plan date.
   if v_requested_status = 'planned'
@@ -160,9 +178,10 @@ begin
       new.started_on := null;
       new.completed_on := null;
     end if;
-  elsif tg_op = 'UPDATE' and old.status = 'planned' and not v_plan_changed then
+  elsif v_legacy_activity_transition then
     new.has_active_plan := false;
     new.planned_for := null;
+    new.legacy_plan_resolution_statement_at := statement_timestamp();
   end if;
 
   if not v_legacy_plan_write then
@@ -218,6 +237,19 @@ begin
     and v_plan_changed
     and new.legacy_bridge_statement_at = statement_timestamp() then
     return null;
+  end if;
+
+  if new.legacy_plan_resolution_statement_at = statement_timestamp() then
+    -- The v1 row is about to represent new activity that resolves its plan.
+    -- Freeze its previous mirror as immutable history before inserting the
+    -- new current mirror below.
+    update public.journal_events
+    set
+      is_legacy_mirror = false,
+      legacy_bridge_statement_at = null
+    where journal_entry_id = new.id
+      and user_id = new.user_id
+      and is_legacy_mirror;
   end if;
 
   v_event_type := case new.status

@@ -45,7 +45,7 @@ select
   'Lifecycle title ' || value,
   '[]'::jsonb,
   '{}'::jsonb
-from generate_series(1, 10) as value;
+from generate_series(1, 13) as value;
 
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
@@ -478,6 +478,151 @@ select pg_temp.assert_true(
      select id, event_date from expected_legacy_plan_history)
   ),
   'removing a v1 rewatch plan changed completed event IDs or dates'
+);
+
+-- A v1 activity transition resolves the plan that the same v1 client wrote,
+-- while preserving the pre-plan completion as dated history. Exercise each
+-- legacy activity shape used by the approved lifecycle.
+insert into public.journal_entries (
+  user_id, media_item_id, status, completed_on
+)
+select
+  '11111111-1111-4111-8111-111111111111',
+  ('aaaaaaaa-aaaa-4aaa-8aaa-' || lpad(value::text, 12, '0'))::uuid,
+  'completed',
+  '2026-07-15'::date
+from generate_series(11, 13) as value;
+
+create temporary table expected_same_v1_origins
+on commit drop
+as
+select event.journal_entry_id, event.id, event.event_date
+from public.journal_events as event
+join public.journal_entries as entry on entry.id = event.journal_entry_id
+where entry.media_item_id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000011',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000012',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000013'
+)
+  and event.is_legacy_mirror;
+
+update public.journal_entries
+set status = 'planned', started_on = '2026-09-20'
+where media_item_id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000011',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000012',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000013'
+);
+select pg_temp.assert_true(
+  (select count(*) = 3
+   from public.journal_entries
+   where media_item_id in (
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000011',
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000012',
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000013'
+   )
+     and status = 'completed'
+     and has_active_plan
+     and planned_for = '2026-09-20'),
+  'same-v1-client setup did not preserve completed state with its plan'
+);
+
+update public.journal_entries
+set
+  status = case media_item_id
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000011' then 'completed'
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000012' then 'in_progress'
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000013' then 'dropped'
+  end,
+  started_on = case
+    when media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000011' then null
+    else '2026-09-20'::date
+  end,
+  completed_on = case
+    when media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000011'
+      then '2026-09-20'::date
+    else null
+  end
+where media_item_id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000011',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000012',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000013'
+);
+
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.journal_entries as entry
+    join (
+      values
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000011'::uuid, 'completed'::text),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000012'::uuid, 'in_progress'::text),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000013'::uuid, 'dropped'::text)
+    ) as expected(media_item_id, status)
+      on expected.media_item_id = entry.media_item_id
+    where entry.status <> expected.status
+      or entry.has_active_plan
+      or entry.planned_for is not null
+      or entry.undated_completed_count <> 0
+  ),
+  'a same-v1-client activity transition did not resolve its bridged plan'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from expected_same_v1_origins as expected
+    left join public.journal_events as event
+      on event.id = expected.id
+      and event.journal_entry_id = expected.journal_entry_id
+      and event.event_date = expected.event_date
+    where event.id is null
+  ),
+  'resolving a same-v1-client plan changed its original event ID or date'
+);
+select pg_temp.assert_true(
+  (select count(*) = 3
+   from expected_same_v1_origins as expected
+   join public.journal_events as event on event.id = expected.id
+   where not event.is_legacy_mirror),
+  'resolved legacy plans did not freeze their original mirrors as history'
+);
+select pg_temp.assert_true(
+  (select count(*) = 3
+   from public.journal_events as event
+   join public.journal_entries as entry on entry.id = event.journal_entry_id
+   where entry.media_item_id in (
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000011',
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000012',
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000013'
+   )
+     and event.event_date = '2026-09-20'
+     and event.is_legacy_mirror
+     and (
+       (entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000011'
+         and event.event_type = 'completed')
+       or (entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000012'
+         and event.event_type = 'started')
+       or (entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000013'
+         and event.event_type = 'stopped')
+     )),
+  'same-v1-client plan resolutions did not create coherent activity events'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.journal_entries as entry
+    where entry.media_item_id in (
+      'aaaaaaaa-aaaa-4aaa-8aaa-000000000011',
+      'aaaaaaaa-aaaa-4aaa-8aaa-000000000012',
+      'aaaaaaaa-aaaa-4aaa-8aaa-000000000013'
+    )
+      and (
+        select count(*)
+        from public.journal_events as event
+        where event.journal_entry_id = entry.id
+      ) <> 2
+  ),
+  'same-v1-client plan resolution lost or duplicated history'
 );
 
 -- An old completion without completed_on remains an undated watch identity.
