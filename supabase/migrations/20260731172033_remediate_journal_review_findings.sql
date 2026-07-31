@@ -128,19 +128,19 @@ begin
   v_v11_event_flow := tg_op = 'UPDATE'
     and old.legacy_bridge_statement_at = statement_timestamp();
   v_legacy_activity_transition := tg_op = 'UPDATE'
-    and old.has_active_plan
     and not v_plan_changed
     and not v_v11_event_flow
     and v_requested_status in ('in_progress', 'completed', 'dropped')
     and (
-      v_requested_status is distinct from old.status
+      v_requested_status is distinct from old.effective_status
       or (
-        v_requested_status = 'completed'
-        and new.completed_on is distinct from old.completed_on
-      )
-      or (
-        v_requested_status in ('in_progress', 'dropped')
-        and new.started_on is distinct from old.started_on
+        old.has_active_plan
+        and (
+          (v_requested_status = 'completed'
+            and new.completed_on is distinct from old.completed_on)
+          or (v_requested_status in ('in_progress', 'dropped')
+            and new.started_on is distinct from old.started_on)
+        )
       )
     );
 
@@ -226,6 +226,8 @@ begin
       new.effective_status := 'completed';
     end if;
   elsif v_legacy_activity_transition then
+    -- A v1 status transition is a new dated activity, whether or not it also
+    -- resolves a plan. Preserve the previous mirror/undated identity.
     new.has_active_plan := false;
     new.planned_for := null;
     new.effective_status := v_requested_status;
@@ -290,9 +292,9 @@ begin
   end if;
 
   if new.legacy_plan_resolution_statement_at = statement_timestamp() then
-    -- The v1 row is about to represent new activity that resolves its plan.
+    -- The v1 row is about to represent a genuine new activity transition.
     -- Freeze its previous mirror as immutable history before inserting the
-    -- new current mirror below.
+    -- new current mirror below, regardless of whether a plan was active.
     update public.journal_events
     set
       is_legacy_mirror = false,
@@ -426,7 +428,7 @@ begin
         when undated_completed_count > 0 then 'completed'
         else 'planned'
       end,
-      started_on = null,
+      started_on = case when has_active_plan then planned_for else null end,
       completed_on = null,
       rating = null,
       review_headline = null,

@@ -45,7 +45,7 @@ select
   'Lifecycle title ' || value,
   '[]'::jsonb,
   '{}'::jsonb
-from generate_series(1, 16) as value;
+from generate_series(1, 23) as value;
 
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
@@ -632,6 +632,166 @@ select pg_temp.assert_true(
   'same-v1-client plan resolution lost or duplicated history'
 );
 
+-- A v1 status transition is a new activity even when there is no active
+-- plan. Preserve every dated origin and create one new current mirror.
+insert into public.journal_entries (
+  user_id, media_item_id, status, started_on, completed_on
+)
+values
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000017', 'completed', null, '2026-07-15'),
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000018', 'completed', null, '2026-07-15'),
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000019', 'in_progress', '2026-07-15', null),
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000020', 'dropped', '2026-07-15', null);
+
+create temporary table expected_unplanned_v1_origins
+on commit drop
+as
+select event.journal_entry_id, event.id, event.event_type, event.event_date
+from public.journal_events as event
+join public.journal_entries as entry on entry.id = event.journal_entry_id
+where entry.media_item_id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000017',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000018',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000019',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000020'
+);
+
+update public.journal_entries
+set
+  status = case media_item_id
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000017' then 'in_progress'
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000018' then 'dropped'
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000019' then 'completed'
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000020' then 'in_progress'
+  end,
+  started_on = case
+    when media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000019' then null
+    else '2026-08-01'::date
+  end,
+  completed_on = case
+    when media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000019'
+      then '2026-08-01'::date
+    else null
+  end
+where media_item_id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000017',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000018',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000019',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000020'
+);
+
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from expected_unplanned_v1_origins as expected
+    left join public.journal_events as event
+      on event.id = expected.id
+      and event.journal_entry_id = expected.journal_entry_id
+      and event.event_type = expected.event_type
+      and event.event_date = expected.event_date
+    where event.id is null or event.is_legacy_mirror
+  ),
+  'an unplanned v1 status transition changed or failed to freeze its origin'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.journal_entries as entry
+    join (
+      values
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000017'::uuid, 'in_progress'::text, 'started'::text),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000018'::uuid, 'dropped'::text, 'stopped'::text),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000019'::uuid, 'completed'::text, 'completed'::text),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000020'::uuid, 'in_progress'::text, 'started'::text)
+    ) as expected(media_item_id, status, event_type)
+      on expected.media_item_id = entry.media_item_id
+    where entry.status <> expected.status
+      or entry.effective_status <> expected.status
+      or entry.has_active_plan
+      or (select count(*) from public.journal_events as event
+          where event.journal_entry_id = entry.id) <> 2
+      or (select count(*) from public.journal_events as event
+          where event.journal_entry_id = entry.id
+            and event.is_legacy_mirror
+            and event.event_type = expected.event_type
+            and event.event_date = '2026-08-01') <> 1
+  ),
+  'an unplanned v1 transition did not create exactly one coherent activity'
+);
+
+create temporary table expected_same_status_edit
+on commit drop
+as
+select event.id
+from public.journal_events as event
+join public.journal_entries as entry on entry.id = event.journal_entry_id
+where entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000017'
+  and event.is_legacy_mirror;
+update public.journal_entries
+set status = 'in_progress', started_on = '2026-08-02'
+where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000017';
+select pg_temp.assert_true(
+  (select count(*) = 2 from public.journal_events
+   where journal_entry_id = (
+     select id from public.journal_entries
+     where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000017'
+   ))
+  and exists (
+    select 1
+    from public.journal_events as event
+    join expected_same_status_edit as expected on expected.id = event.id
+    where event.event_date = '2026-08-02'
+      and event.is_legacy_mirror
+  ),
+  'a same-status v1 date edit created another activity instead of editing'
+);
+
+-- Undated origins also survive no-plan transitions without an invented date.
+insert into public.journal_entries (user_id, media_item_id, status)
+values
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000021', 'completed'),
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000022', 'completed');
+update public.journal_entries
+set
+  status = case media_item_id
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000021' then 'in_progress'
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000022' then 'dropped'
+  end,
+  started_on = '2026-08-01'
+where media_item_id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000021',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000022'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.journal_entries as entry
+    join (
+      values
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000021'::uuid, 'in_progress'::text, 'started'::text),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000022'::uuid, 'dropped'::text, 'stopped'::text)
+    ) as expected(media_item_id, status, event_type)
+      on expected.media_item_id = entry.media_item_id
+    where entry.status <> expected.status
+      or entry.effective_status <> expected.status
+      or entry.undated_completed_count <> 1
+      or (select count(*) from public.journal_events as event
+          where event.journal_entry_id = entry.id
+            and event.event_type = expected.event_type
+            and event.event_date = '2026-08-01') <> 1
+      or (select count(*) + entry.undated_completed_count
+          from public.journal_events as event
+          where event.journal_entry_id = entry.id) <> 2
+  ),
+  'an unplanned v1 transition discarded an undated completion identity'
+);
+
 -- Resolving a bridged plan adds activity without replacing an older undated
 -- completion. The legacy projection and v1.1 effective state remain distinct
 -- while the plan is active, then converge after resolution.
@@ -791,6 +951,32 @@ exception
   when invalid_parameter_value then null;
 end;
 $$;
+
+-- Deleting the last event keeps a scheduled active plan visible to both
+-- installed v1 clients and the v1.1 plan projection.
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000023', 'completed', '2026-07-29',
+  null, null, false,
+  '10000000-0000-4000-8000-000000000017', '2026-07-29'
+);
+select public.journal_save_plan(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000023', '2026-09-20', '2026-07-29'
+);
+select public.journal_delete_event(
+  (select id from public.journal_events
+   where operation_id = '10000000-0000-4000-8000-000000000017'),
+  null
+);
+select pg_temp.assert_true(
+  (select status = 'planned'
+      and started_on = '2026-09-20'
+      and effective_status = 'planned'
+      and has_active_plan
+      and planned_for = '2026-09-20'
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000023'),
+  'deleting the last event changed a scheduled plan into Someday for v1'
+);
 
 -- Another authenticated user cannot mutate this user's title or events.
 set local request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
