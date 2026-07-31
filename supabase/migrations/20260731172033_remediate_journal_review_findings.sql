@@ -6,8 +6,24 @@
 
 alter table public.journal_entries
 add column if not exists undated_completed_count integer not null default 0,
+add column if not exists effective_status text,
 add column if not exists legacy_bridge_statement_at timestamptz,
 add column if not exists legacy_plan_resolution_statement_at timestamptz;
+
+update public.journal_entries
+set effective_status = status
+where effective_status is null;
+
+alter table public.journal_entries
+alter column effective_status set default 'planned',
+alter column effective_status set not null;
+
+alter table public.journal_entries
+drop constraint if exists journal_entries_effective_status_check;
+
+alter table public.journal_entries
+add constraint journal_entries_effective_status_check
+check (effective_status in ('planned', 'in_progress', 'completed', 'dropped'));
 
 alter table public.journal_entries
 drop constraint if exists journal_entries_undated_completed_count_check;
@@ -80,6 +96,7 @@ declare
   v_legacy_activity_transition boolean;
   v_legacy_changed boolean;
   v_legacy_plan_write boolean := false;
+  v_v11_event_flow boolean;
   v_latest_event public.journal_events%rowtype;
   v_plan_changed boolean;
   v_requested_status text := new.status;
@@ -87,6 +104,12 @@ begin
   -- Entry writes caused by the event bridge are already normalized.
   if pg_trigger_depth() > 1 then
     return new;
+  end if;
+
+  -- Canonical state is bridge-owned. Client writes express intent through
+  -- legacy activity fields or the independent plan columns.
+  if tg_op = 'UPDATE' then
+    new.effective_status := old.effective_status;
   end if;
 
   v_legacy_changed := tg_op = 'INSERT' or (
@@ -102,9 +125,12 @@ begin
     new.has_active_plan is distinct from old.has_active_plan
     or new.planned_for is distinct from old.planned_for
   );
+  v_v11_event_flow := tg_op = 'UPDATE'
+    and old.legacy_bridge_statement_at = statement_timestamp();
   v_legacy_activity_transition := tg_op = 'UPDATE'
     and old.has_active_plan
     and not v_plan_changed
+    and not v_v11_event_flow
     and v_requested_status in ('in_progress', 'completed', 'dropped')
     and (
       v_requested_status is distinct from old.status
@@ -118,15 +144,48 @@ begin
       )
     );
 
-  if not v_legacy_changed then
+  if not v_legacy_changed and not v_plan_changed then
     return new;
   end if;
 
   new.legacy_bridge_statement_at := statement_timestamp();
   new.legacy_plan_resolution_statement_at := null;
 
-  -- A v1 planned row used started_on as its optional plan date.
-  if v_requested_status = 'planned'
+  -- v1.1 owns the independent plan columns. Mirror those writes into the
+  -- legacy projection without changing the canonical v1.1 activity state.
+  if v_plan_changed then
+    if new.has_active_plan then
+      new.status := 'planned';
+      new.started_on := new.planned_for;
+      new.completed_on := null;
+    else
+      new.status := new.effective_status;
+      select *
+      into v_latest_event
+      from public.journal_events
+      where journal_entry_id = new.id
+        and user_id = new.user_id
+      order by event_date desc, created_at desc, id desc
+      limit 1;
+      new.started_on := case
+        when found and v_latest_event.event_type in ('started', 'stopped')
+          then v_latest_event.event_date
+        else null
+      end;
+      new.completed_on := case
+        when found and v_latest_event.event_type = 'completed'
+          then v_latest_event.event_date
+        else null
+      end;
+    end if;
+  -- A v1 planned row used started_on as its optional plan date. Keep that
+  -- legacy projection readable while deriving v1.1 state independently.
+  elsif v_v11_event_flow and old.has_active_plan then
+    new.effective_status := v_requested_status;
+    new.status := 'planned';
+    new.started_on := old.planned_for;
+    new.completed_on := null;
+  elsif v_requested_status = 'planned'
     and not v_plan_changed
     and (tg_op = 'UPDATE' or (not new.has_active_plan and new.planned_for is null)) then
     new.has_active_plan := true;
@@ -144,20 +203,10 @@ begin
     limit 1;
 
     if found then
-      new.status := case v_latest_event.event_type
+      new.effective_status := case v_latest_event.event_type
         when 'started' then 'in_progress'
         when 'completed' then 'completed'
         when 'stopped' then 'dropped'
-      end;
-      new.started_on := case
-        when v_latest_event.event_type in ('started', 'stopped')
-          then v_latest_event.event_date
-        else null
-      end;
-      new.completed_on := case
-        when v_latest_event.event_type = 'completed'
-          then v_latest_event.event_date
-        else null
       end;
       new.rating := case
         when v_latest_event.event_type = 'completed' then v_latest_event.rating
@@ -174,17 +223,18 @@ begin
         else false
       end;
     elsif new.undated_completed_count > 0 then
-      new.status := 'completed';
-      new.started_on := null;
-      new.completed_on := null;
+      new.effective_status := 'completed';
     end if;
   elsif v_legacy_activity_transition then
     new.has_active_plan := false;
     new.planned_for := null;
+    new.effective_status := v_requested_status;
     new.legacy_plan_resolution_statement_at := statement_timestamp();
+  elsif v_legacy_changed then
+    new.effective_status := v_requested_status;
   end if;
 
-  if not v_legacy_plan_write then
+  if not v_legacy_plan_write and not v_legacy_activity_transition then
     if new.status = 'completed' and new.completed_on is null then
       new.undated_completed_count := 1;
     elsif new.status <> 'planned' then
@@ -233,9 +283,9 @@ begin
 
   -- The BEFORE bridge already restored canonical activity for this legacy
   -- plan statement. Do not reinterpret those restored fields as a new event.
-  if new.has_active_plan
-    and v_plan_changed
-    and new.legacy_bridge_statement_at = statement_timestamp() then
+  if v_plan_changed
+    and new.legacy_bridge_statement_at = statement_timestamp()
+    and new.legacy_plan_resolution_statement_at is distinct from statement_timestamp() then
     return null;
   end if;
 
@@ -367,9 +417,14 @@ begin
   if not found then
     update public.journal_entries
     set
-      status = case
+      effective_status = case
         when undated_completed_count > 0 then 'completed'
-        else status
+        else 'planned'
+      end,
+      status = case
+        when has_active_plan then 'planned'
+        when undated_completed_count > 0 then 'completed'
+        else 'planned'
       end,
       started_on = null,
       completed_on = null,
@@ -384,17 +439,24 @@ begin
 
   update public.journal_entries
   set
-    status = case v_latest.event_type
+    effective_status = case v_latest.event_type
       when 'started' then 'in_progress'
       when 'completed' then 'completed'
       when 'stopped' then 'dropped'
     end,
+    status = case
+      when has_active_plan then 'planned'
+      when v_latest.event_type = 'started' then 'in_progress'
+      when v_latest.event_type = 'completed' then 'completed'
+      when v_latest.event_type = 'stopped' then 'dropped'
+    end,
     started_on = case
+      when has_active_plan then planned_for
       when v_latest.event_type in ('started', 'stopped') then v_latest.event_date
       else null
     end,
     completed_on = case
-      when v_latest.event_type = 'completed' then v_latest.event_date
+      when not has_active_plan and v_latest.event_type = 'completed' then v_latest.event_date
       else null
     end,
     rating = case
@@ -407,7 +469,8 @@ begin
     contains_spoilers = case
       when v_latest.is_legacy_mirror then contains_spoilers
       else false
-    end
+    end,
+    legacy_bridge_statement_at = statement_timestamp()
   where id = v_entry_id
     and user_id = v_user_id;
 
@@ -562,27 +625,37 @@ begin
     limit 1;
 
     update public.journal_entries
-    set status = case v_latest_event_type
-      when 'started' then 'in_progress'
-      when 'completed' then 'completed'
-      when 'stopped' then 'dropped'
-    end
+    set
+      effective_status = case v_latest_event_type
+        when 'started' then 'in_progress'
+        when 'completed' then 'completed'
+        when 'stopped' then 'dropped'
+      end,
+      status = case
+        when has_active_plan then 'planned'
+        when v_latest_event_type = 'started' then 'in_progress'
+        when v_latest_event_type = 'completed' then 'completed'
+        when v_latest_event_type = 'stopped' then 'dropped'
+      end
     where id = v_entry.id
       and user_id = v_user_id;
   elsif v_entry.undated_completed_count > 0 then
     update public.journal_entries
-    set status = 'completed'
+    set
+      effective_status = 'completed',
+      status = case when has_active_plan then 'planned' else 'completed' end
     where id = v_entry.id
       and user_id = v_user_id;
   elsif v_entry.has_active_plan then
     update public.journal_entries
-    set status = 'planned'
+    set effective_status = 'planned', status = 'planned'
     where id = v_entry.id
       and user_id = v_user_id;
   elsif p_empty_title_action = 'keep_someday' then
     update public.journal_entries
     set
       status = 'planned',
+      effective_status = 'planned',
       has_active_plan = true,
       planned_for = null
     where id = v_entry.id
@@ -683,13 +756,22 @@ begin
     set
       has_active_plan = false,
       planned_for = null,
+      effective_status = case v_latest_event_type
+        when 'started' then 'in_progress'
+        when 'completed' then 'completed'
+        when 'stopped' then 'dropped'
+        else case
+          when undated_completed_count > 0 then 'completed'
+          else effective_status
+        end
+      end,
       status = case v_latest_event_type
         when 'started' then 'in_progress'
         when 'completed' then 'completed'
         when 'stopped' then 'dropped'
         else case
           when undated_completed_count > 0 then 'completed'
-          else status
+          else effective_status
         end
       end
     where id = v_entry.id

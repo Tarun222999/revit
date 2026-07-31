@@ -14,6 +14,7 @@ export type Database = {
           completed_on: string | null
           contains_spoilers: boolean
           created_at: string
+          effective_status: string
           has_active_plan: boolean
           id: string
           last_activity_at: string
@@ -34,6 +35,7 @@ export type Database = {
           completed_on?: string | null
           contains_spoilers?: boolean
           created_at?: string
+          effective_status?: string
           has_active_plan?: boolean
           id?: string
           last_activity_at?: string
@@ -54,6 +56,7 @@ export type Database = {
           completed_on?: string | null
           contains_spoilers?: boolean
           created_at?: string
+          effective_status?: string
           has_active_plan?: boolean
           id?: string
           last_activity_at?: string

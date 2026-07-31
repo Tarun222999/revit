@@ -45,7 +45,7 @@ select
   'Lifecycle title ' || value,
   '[]'::jsonb,
   '{}'::jsonb
-from generate_series(1, 13) as value;
+from generate_series(1, 16) as value;
 
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
@@ -126,7 +126,8 @@ select public.journal_log_event(
   '10000000-0000-4000-8000-000000000006', '2026-07-29'
 );
 select pg_temp.assert_true(
-  (select status = 'in_progress' from public.journal_entries
+  (select status = 'planned' and effective_status = 'in_progress'
+   from public.journal_entries
    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
   'resume did not become the current state'
 );
@@ -146,7 +147,8 @@ select public.journal_update_event(
   '2026-06-30', null, 'Resumed earlier', '2026-07-29'
 );
 select pg_temp.assert_true(
-  (select status = 'dropped' and has_active_plan and planned_for = '2026-08-05'
+  (select status = 'planned' and effective_status = 'dropped'
+      and has_active_plan and planned_for = '2026-08-05'
    from public.journal_entries
    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
   'event edit did not recompute state or changed the plan'
@@ -157,7 +159,8 @@ select public.journal_delete_event(
   null
 );
 select pg_temp.assert_true(
-  (select status = 'in_progress' and has_active_plan
+  (select status = 'planned' and effective_status = 'in_progress'
+      and has_active_plan
    from public.journal_entries
    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
   'deleting one event did not preserve history/plan or recompute state'
@@ -401,10 +404,12 @@ update public.journal_entries
 set status = 'planned', started_on = '2026-09-20'
 where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009';
 select pg_temp.assert_true(
-  (select status = 'completed'
+  (select status = 'planned'
+      and effective_status = 'completed'
       and has_active_plan
       and planned_for = '2026-09-20'
-      and completed_on = '2026-07-29'
+      and started_on = '2026-09-20'
+      and completed_on is null
       and undated_completed_count = 0
    from public.journal_entries
    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000009'),
@@ -521,7 +526,8 @@ select pg_temp.assert_true(
      'aaaaaaaa-aaaa-4aaa-8aaa-000000000012',
      'aaaaaaaa-aaaa-4aaa-8aaa-000000000013'
    )
-     and status = 'completed'
+     and status = 'planned'
+     and effective_status = 'completed'
      and has_active_plan
      and planned_for = '2026-09-20'),
   'same-v1-client setup did not preserve completed state with its plan'
@@ -561,6 +567,7 @@ select pg_temp.assert_true(
     ) as expected(media_item_id, status)
       on expected.media_item_id = entry.media_item_id
     where entry.status <> expected.status
+      or entry.effective_status <> expected.status
       or entry.has_active_plan
       or entry.planned_for is not null
       or entry.undated_completed_count <> 0
@@ -623,6 +630,100 @@ select pg_temp.assert_true(
       ) <> 2
   ),
   'same-v1-client plan resolution lost or duplicated history'
+);
+
+-- Resolving a bridged plan adds activity without replacing an older undated
+-- completion. The legacy projection and v1.1 effective state remain distinct
+-- while the plan is active, then converge after resolution.
+insert into public.journal_entries (user_id, media_item_id, status)
+select
+  '11111111-1111-4111-8111-111111111111',
+  ('aaaaaaaa-aaaa-4aaa-8aaa-' || lpad(value::text, 12, '0'))::uuid,
+  'completed'
+from generate_series(14, 16) as value;
+
+update public.journal_entries
+set status = 'planned', started_on = '2026-09-20'
+where media_item_id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000014',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000015',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000016'
+);
+select pg_temp.assert_true(
+  (select count(*) = 3
+   from public.journal_entries
+   where media_item_id in (
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000014',
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000015',
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000016'
+   )
+     and status = 'planned'
+     and effective_status = 'completed'
+     and has_active_plan
+     and planned_for = '2026-09-20'
+     and undated_completed_count = 1),
+  'legacy plan readback or v1.1 effective state was incoherent'
+);
+
+update public.journal_entries
+set
+  status = case media_item_id
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000014' then 'completed'
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000015' then 'in_progress'
+    when 'aaaaaaaa-aaaa-4aaa-8aaa-000000000016' then 'dropped'
+  end,
+  started_on = case
+    when media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000014' then null
+    else '2026-09-20'::date
+  end,
+  completed_on = case
+    when media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000014'
+      then '2026-09-20'::date
+    else null
+  end
+where media_item_id in (
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000014',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000015',
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000016'
+);
+
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.journal_entries as entry
+    join (
+      values
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000014'::uuid, 'completed'::text, 2, 2),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000015'::uuid, 'in_progress'::text, 2, 1),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000016'::uuid, 'dropped'::text, 2, 1)
+    ) as expected(media_item_id, status, activity_count, completed_count)
+      on expected.media_item_id = entry.media_item_id
+    where entry.status <> expected.status
+      or entry.effective_status <> expected.status
+      or entry.has_active_plan
+      or entry.planned_for is not null
+      or entry.undated_completed_count <> 1
+      or (select count(*) + entry.undated_completed_count
+          from public.journal_events as event
+          where event.journal_entry_id = entry.id) <> expected.activity_count
+      or (select count(*) + entry.undated_completed_count
+          from public.journal_events as event
+          where event.journal_entry_id = entry.id
+            and event.event_type = 'completed') <> expected.completed_count
+  ),
+  'resolving an undated legacy plan lost identity or reported wrong counts'
+);
+select pg_temp.assert_true(
+  (select count(*) = 3
+   from public.journal_events as event
+   join public.journal_entries as entry on entry.id = event.journal_entry_id
+   where entry.media_item_id in (
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000014',
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000015',
+     'aaaaaaaa-aaaa-4aaa-8aaa-000000000016'
+   )
+     and event.event_date = '2026-09-20'),
+  'undated plan resolutions did not create exactly one dated event each'
 );
 
 -- An old completion without completed_on remains an undated watch identity.

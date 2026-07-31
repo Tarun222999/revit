@@ -15,6 +15,7 @@ import type {
 
 function makeTitleRow(overrides: Partial<JournalEntryRow> = {}): JournalEntryRow {
   return {
+    effective_status: 'completed',
     completed_on: null,
     contains_spoilers: false,
     created_at: '2026-07-01T10:00:00.000Z',
@@ -69,6 +70,22 @@ describe('v1.1 Journal read models', () => {
         makeTitleRow({ has_active_plan: true, planned_for: null }),
       ),
     ).toMatchObject({ activePlan: { plannedFor: null } });
+  });
+
+  it('uses v1.1 effective state when the legacy projection shows a plan', () => {
+    expect(
+      toJournalTitleState(
+        makeTitleRow({
+          effective_status: 'completed',
+          has_active_plan: true,
+          planned_for: '2026-09-20',
+          status: 'planned',
+        }),
+      ),
+    ).toMatchObject({
+      activePlan: { plannedFor: '2026-09-20' },
+      status: 'completed',
+    });
   });
 
   it('treats a dated completion as a rewatch after an undated legacy completion', () => {

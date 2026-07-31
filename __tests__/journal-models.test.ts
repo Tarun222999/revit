@@ -46,6 +46,7 @@ function makeEntry(overrides: Partial<JournalListEntry> = {}): JournalListEntry 
 
 function makeJournalRow(): JournalListEntryRow {
   return {
+    effective_status: 'completed',
     id: 'entry-1',
     user_id: 'user-1',
     media_item_id: 'media-1',

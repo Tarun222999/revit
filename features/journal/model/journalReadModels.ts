@@ -23,7 +23,7 @@ export type JournalTitleStateRow = Pick<
   JournalEntryRow,
   | 'id'
   | 'media_item_id'
-  | 'status'
+  | 'effective_status'
   | 'has_active_plan'
   | 'planned_for'
   | 'undated_completed_count'
@@ -122,8 +122,8 @@ export function toJournalMediaSummary(
 }
 
 export function toJournalTitleState(row: JournalTitleStateRow): JournalTitleState {
-  if (!isJournalStatus(row.status)) {
-    throw new Error(`Unsupported journal status: ${row.status}`);
+  if (!isJournalStatus(row.effective_status)) {
+    throw new Error(`Unsupported journal status: ${row.effective_status}`);
   }
 
   if (!row.has_active_plan && row.planned_for != null) {
@@ -138,7 +138,7 @@ export function toJournalTitleState(row: JournalTitleStateRow): JournalTitleStat
     activePlan: row.has_active_plan ? { plannedFor: row.planned_for } : null,
     id: row.id,
     mediaItemId: row.media_item_id,
-    status: row.status,
+    status: row.effective_status,
     undatedCompletedCount: row.undated_completed_count,
   };
 }

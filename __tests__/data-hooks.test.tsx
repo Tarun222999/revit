@@ -97,6 +97,7 @@ const mediaItem = {
 } satisfies NormalizedMediaItem;
 
 const journalEntry = {
+  effective_status: 'completed',
   completed_on: '2026-07-13',
   contains_spoilers: false,
   created_at: '2026-07-13T10:00:00.000Z',

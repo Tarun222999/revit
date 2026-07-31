@@ -39,7 +39,7 @@ const MEDIA_SUMMARY_SELECT = `
 const TITLE_WITH_MEDIA_SELECT = `
   id,
   media_item_id,
-  status,
+  effective_status,
   has_active_plan,
   planned_for,
   undated_completed_count,
@@ -53,7 +53,7 @@ const EVENT_WITH_TITLE_SELECT = `
   journal_entries!journal_events_entry_owner_fkey!inner (
     id,
     media_item_id,
-    status,
+    effective_status,
     has_active_plan,
     planned_for,
     undated_completed_count,
@@ -105,7 +105,7 @@ export async function getJournalTitleSummary({
   const { data: titleRow, error: titleError } = await supabase
     .from('journal_entries')
     .select(
-      'id, media_item_id, status, has_active_plan, planned_for, undated_completed_count',
+      'id, media_item_id, effective_status, has_active_plan, planned_for, undated_completed_count',
     )
     .eq('user_id', userId)
     .eq('media_item_id', mediaItemId)
