@@ -4,6 +4,7 @@ import { JournalEntryForm } from '../features/journal/components/JournalEntryFor
 import { JournalStatusSelector } from '../features/journal/components/JournalStatusSelector';
 import { RatingInput } from '../features/journal/components/RatingInput';
 import { SpoilerToggle } from '../features/journal/components/SpoilerToggle';
+import { TitleDetailsJournalActions } from '../features/journal/components/TitleDetailsJournalActions';
 import { ListForm, type ListFormValues } from '../features/lists/components/ListForm';
 import type { JournalEntryFormValues } from '../features/journal/types';
 
@@ -23,6 +24,36 @@ function makeJournalFormValues(
 }
 
 describe('journal controls', () => {
+  it('offers signed-out users a working Journal sign-in action', async () => {
+    const onSignIn = jest.fn();
+
+    await render(
+      <TitleDetailsJournalActions
+        addToListLoading={false}
+        canAddToList={false}
+        canUseJournal={false}
+        isSignedIn={false}
+        mediaType="movie"
+        onAddToList={jest.fn()}
+        onIntent={jest.fn()}
+        onRemovePlan={jest.fn()}
+        onRemoveTitle={jest.fn()}
+        onSignIn={onSignIn}
+        onToggleHistory={jest.fn()}
+        onWatchTrailer={jest.fn()}
+        removing={false}
+        showTrailer={false}
+        summary={null}
+      />,
+    );
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Sign in to use Journal' }),
+    );
+
+    expect(onSignIn).toHaveBeenCalledTimes(1);
+  });
+
   it('reports a selected journal status', async () => {
     const onChange = jest.fn();
 

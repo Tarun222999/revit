@@ -13,9 +13,11 @@ type Props = {
   addToListLoading: boolean;
   canAddToList: boolean;
   canUseJournal: boolean;
+  isSignedIn: boolean;
   mediaType: MediaType;
   onAddToList: () => void;
   onIntent: (action: JournalTitleAction) => void;
+  onSignIn: () => void;
   onRemovePlan: () => void;
   onRemoveTitle: () => void;
   onToggleHistory: () => void;
@@ -29,9 +31,11 @@ export function TitleDetailsJournalActions({
   addToListLoading,
   canAddToList,
   canUseJournal,
+  isSignedIn,
   mediaType,
   onAddToList,
   onIntent,
+  onSignIn,
   onRemovePlan,
   onRemoveTitle,
   onToggleHistory,
@@ -50,18 +54,20 @@ export function TitleDetailsJournalActions({
   return (
     <View className="gap-3">
       <Button
-        disabled={!canUseJournal || removing}
-        onPress={() => onIntent(actions.primary)}
-        title={actions.primary.label}
+        disabled={(isSignedIn && !canUseJournal) || removing}
+        onPress={isSignedIn ? () => onIntent(actions.primary) : onSignIn}
+        title={isSignedIn ? actions.primary.label : 'Sign in to use Journal'}
       />
+      {isSignedIn ? (
+        <Button
+          disabled={!canUseJournal || removing}
+          onPress={runSecondary}
+          title={actions.secondary.label}
+          variant="secondary"
+        />
+      ) : null}
       <Button
-        disabled={!canUseJournal || removing}
-        onPress={runSecondary}
-        title={actions.secondary.label}
-        variant="secondary"
-      />
-      <Button
-        disabled={!canUseJournal || removing}
+        disabled={(isSignedIn && !canUseJournal) || removing}
         onPress={() => setShowMore((current) => !current)}
         title={showMore ? 'Close more actions' : 'More actions'}
         variant="ghost"
@@ -69,24 +75,24 @@ export function TitleDetailsJournalActions({
 
       {showMore ? (
         <View className="gap-2 rounded-app border border-archive-700 bg-archive-800 p-3">
-          {summary?.activityCount ? (
+          {isSignedIn && summary?.activityCount ? (
             <Button title="View history" variant="ghost" onPress={onToggleHistory} />
           ) : null}
-          {actions.planAction ? (
+          {isSignedIn && actions.planAction ? (
             <Button
               title={actions.planAction.label}
               variant="ghost"
               onPress={() => onIntent(actions.planAction!)}
             />
           ) : null}
-          {actions.stopAction ? (
+          {isSignedIn && actions.stopAction ? (
             <Button
               title={actions.stopAction.label}
               variant="ghost"
               onPress={() => onIntent(actions.stopAction!)}
             />
           ) : null}
-          {summary?.titleState.activePlan ? (
+          {isSignedIn && summary?.titleState.activePlan ? (
             <Button title="Remove plan" variant="ghost" onPress={onRemovePlan} />
           ) : null}
           <Button
@@ -110,9 +116,13 @@ export function TitleDetailsJournalActions({
         </View>
       ) : null}
 
-      {!canUseJournal ? (
+      {!isSignedIn ? (
         <Text className="text-center text-xs leading-4 text-archive-300">
-          Sign in, or retry the Journal summary, before changing this title.
+          Sign in to plan, log watches, and keep history for this title.
+        </Text>
+      ) : !canUseJournal ? (
+        <Text className="text-center text-xs leading-4 text-archive-300">
+          Retry the Journal summary before changing this title.
         </Text>
       ) : null}
     </View>

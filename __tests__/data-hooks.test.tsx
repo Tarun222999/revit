@@ -103,6 +103,7 @@ const journalEntry = {
   has_active_plan: false,
   id: 'entry-1',
   last_activity_at: '2026-07-13T10:00:00.000Z',
+  legacy_bridge_statement_at: null,
   media_item_id: 'media-1',
   planned_for: null,
   rating: 4.5,
@@ -111,6 +112,7 @@ const journalEntry = {
   started_on: null,
   status: 'completed',
   updated_at: '2026-07-13T10:00:00.000Z',
+  undated_completed_count: 0,
   user_id: 'user-1',
 } satisfies JournalEntry;
 

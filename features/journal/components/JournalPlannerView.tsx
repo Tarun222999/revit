@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, SectionList, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -160,44 +160,58 @@ export function JournalPlannerView({ userId }: { userId: string }) {
   const query = useJournalPlanner(userId, today);
   const items = query.data ?? [];
 
-  if (query.isLoading) return <LoadingState message="Loading Planner" />;
+  if (query.isLoading) {
+    return (
+      <View className="px-5 pt-5">
+        <LoadingState message="Loading Planner" />
+      </View>
+    );
+  }
   if (query.isError) {
     return (
-      <ErrorState
-        message={query.error instanceof Error ? query.error.message : 'Unable to load Planner.'}
-        onRetry={() => query.refetch()}
-        title="Planner unavailable"
-      />
+      <View className="px-5 pt-5">
+        <ErrorState
+          message={query.error instanceof Error ? query.error.message : 'Unable to load Planner.'}
+          onRetry={() => query.refetch()}
+          title="Planner unavailable"
+        />
+      </View>
     );
   }
   if (!items.length) {
     return (
-      <EmptyState
-        actionLabel="Find titles"
-        message="Plans live here without becoming Timeline activity."
-        onAction={() => router.push('/search')}
-        title="No active plans"
-      />
+      <View className="px-5 pt-5">
+        <EmptyState
+          actionLabel="Find titles"
+          message="Plans live here without becoming Timeline activity."
+          onAction={() => router.push('/search')}
+          title="No active plans"
+        />
+      </View>
     );
   }
 
+  const sections = SECTIONS.map((section) => ({
+    ...section,
+    data: items.filter((item) => item.section === section.key),
+  })).filter((section) => section.data.length > 0);
+
   return (
-    <View className="gap-6">
-      {SECTIONS.map((section) => {
-        const sectionItems = items.filter((item) => item.section === section.key);
-        if (!sectionItems.length) return null;
-        return (
-          <View className="gap-3" key={section.key}>
-            <View className="gap-1">
-              <Text className="text-xl font-bold text-archive-50">{section.title}</Text>
-              <Text className="text-sm text-archive-300">{section.description}</Text>
-            </View>
-            {sectionItems.map((item) => (
-              <PlannerCard item={item} key={item.titleState.id} />
-            ))}
-          </View>
-        );
-      })}
-    </View>
+    <SectionList
+      className="flex-1"
+      contentContainerClassName="gap-3 px-5 pb-28 pt-5"
+      keyExtractor={(item) => item.titleState.id}
+      renderItem={({ item }) => <PlannerCard item={item} />}
+      renderSectionHeader={({ section }) => (
+        <View className="gap-1 bg-archive-900 pb-1 pt-3">
+          <Text className="text-xl font-bold text-archive-50">{section.title}</Text>
+          <Text className="text-sm text-archive-300">{section.description}</Text>
+        </View>
+      )}
+      sections={sections}
+      showsVerticalScrollIndicator={false}
+      stickySectionHeadersEnabled={false}
+      testID="journal-planner-list"
+    />
   );
 }

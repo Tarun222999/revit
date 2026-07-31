@@ -17,6 +17,7 @@ function summary(
       id: 'entry-1',
       mediaItemId: 'media-1',
       status,
+      undatedCompletedCount: 0,
     },
   };
 }

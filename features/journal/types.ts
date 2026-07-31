@@ -32,6 +32,7 @@ export type JournalTitleState = {
   mediaItemId: string;
   status: JournalStatus;
   activePlan: JournalPlan | null;
+  undatedCompletedCount: number;
 };
 
 export type JournalEvent = {

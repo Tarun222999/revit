@@ -58,7 +58,9 @@ function makeJournalRow(): JournalListEntryRow {
     completed_on: '2025-04-20',
     has_active_plan: false,
     last_activity_at: '2025-04-21T10:00:00.000Z',
+    legacy_bridge_statement_at: null,
     planned_for: null,
+    undated_completed_count: 0,
     created_at: '2025-04-20T10:00:00.000Z',
     updated_at: '2025-04-21T10:00:00.000Z',
     media_items: {

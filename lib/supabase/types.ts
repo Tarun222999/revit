@@ -17,6 +17,7 @@ export type Database = {
           has_active_plan: boolean
           id: string
           last_activity_at: string
+          legacy_bridge_statement_at: string | null
           media_item_id: string
           planned_for: string | null
           rating: number | null
@@ -25,6 +26,7 @@ export type Database = {
           started_on: string | null
           status: string
           updated_at: string
+          undated_completed_count: number
           user_id: string
         }
         Insert: {
@@ -34,6 +36,7 @@ export type Database = {
           has_active_plan?: boolean
           id?: string
           last_activity_at?: string
+          legacy_bridge_statement_at?: string | null
           media_item_id: string
           planned_for?: string | null
           rating?: number | null
@@ -42,6 +45,7 @@ export type Database = {
           started_on?: string | null
           status: string
           updated_at?: string
+          undated_completed_count?: number
           user_id: string
         }
         Update: {
@@ -51,6 +55,7 @@ export type Database = {
           has_active_plan?: boolean
           id?: string
           last_activity_at?: string
+          legacy_bridge_statement_at?: string | null
           media_item_id?: string
           planned_for?: string | null
           rating?: number | null
@@ -59,6 +64,7 @@ export type Database = {
           started_on?: string | null
           status?: string
           updated_at?: string
+          undated_completed_count?: number
           user_id?: string
         }
         Relationships: [
@@ -84,7 +90,9 @@ export type Database = {
           event_date: string
           event_type: string
           id: string
+          is_legacy_mirror: boolean
           journal_entry_id: string
+          legacy_bridge_statement_at: string | null
           notes: string | null
           operation_id: string | null
           rating: number | null
@@ -97,7 +105,9 @@ export type Database = {
           event_date: string
           event_type: string
           id?: string
+          is_legacy_mirror?: boolean
           journal_entry_id: string
+          legacy_bridge_statement_at?: string | null
           notes?: string | null
           operation_id?: string | null
           rating?: number | null
@@ -110,7 +120,9 @@ export type Database = {
           event_date?: string
           event_type?: string
           id?: string
+          is_legacy_mirror?: boolean
           journal_entry_id?: string
+          legacy_bridge_statement_at?: string | null
           notes?: string | null
           operation_id?: string | null
           rating?: number | null
@@ -321,6 +333,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      journal_get_completion_origins: {
+        Args: { p_journal_entry_ids: string[] }
+        Returns: {
+          first_completed_event_id: string | null
+          has_undated_completion: boolean
+          journal_entry_id: string
+        }[]
+      }
       journal_delete_event: {
         Args: {
           p_empty_title_action?: string | null

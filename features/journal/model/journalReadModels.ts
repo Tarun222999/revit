@@ -21,7 +21,12 @@ import type { MediaSource } from '@/types/media';
 
 export type JournalTitleStateRow = Pick<
   JournalEntryRow,
-  'id' | 'media_item_id' | 'status' | 'has_active_plan' | 'planned_for'
+  | 'id'
+  | 'media_item_id'
+  | 'status'
+  | 'has_active_plan'
+  | 'planned_for'
+  | 'undated_completed_count'
 >;
 
 export type JournalTitleStateWithMediaRow = JournalTitleStateRow & {
@@ -134,6 +139,7 @@ export function toJournalTitleState(row: JournalTitleStateRow): JournalTitleStat
     id: row.id,
     mediaItemId: row.media_item_id,
     status: row.status,
+    undatedCompletedCount: row.undated_completed_count,
   };
 }
 
@@ -209,17 +215,22 @@ function requireJoinedTitle(row: JournalEventWithTitleRow) {
 
 export function toJournalTimelineItem(
   row: JournalEventWithTitleRow,
-  firstCompletionIds?: ReadonlySet<string>,
+  completionOrigins?: ReadonlyMap<
+    string,
+    { firstCompletedEventId: string | null; hasUndatedCompletion: boolean }
+  >,
 ): JournalTimelineItem {
   const titleState = requireJoinedTitle(row);
+  const completionOrigin = completionOrigins?.get(row.journal_entry_id);
 
   return {
     currentStatus: toJournalTitleState(titleState).status,
     event: toJournalEvent(row),
     isRewatch:
       row.event_type === 'completed' &&
-      Boolean(firstCompletionIds) &&
-      !firstCompletionIds?.has(row.id),
+      Boolean(completionOrigin) &&
+      (completionOrigin?.hasUndatedCompletion ||
+        completionOrigin?.firstCompletedEventId !== row.id),
     media: toJournalMediaSummary(titleState.media_items),
   };
 }
@@ -227,10 +238,13 @@ export function toJournalTimelineItem(
 export function toJournalTimelinePage(
   rows: JournalEventWithTitleRow[],
   pageSize: number,
-  firstCompletionIds?: ReadonlySet<string>,
+  completionOrigins?: ReadonlyMap<
+    string,
+    { firstCompletedEventId: string | null; hasUndatedCompletion: boolean }
+  >,
 ): JournalTimelinePage {
   const page = splitPage(rows, pageSize, (row) =>
-    toJournalTimelineItem(row, firstCompletionIds),
+    toJournalTimelineItem(row, completionOrigins),
   );
   return { items: page.items, nextCursor: page.nextCursor };
 }

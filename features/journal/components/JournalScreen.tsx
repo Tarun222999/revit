@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -91,72 +91,83 @@ function TimelineContent({
   );
   const activeFilters = hasActiveTimelineFilters(filters);
 
-  if (query.isLoading) return <LoadingState message="Loading Timeline" />;
+  if (query.isLoading) {
+    return (
+      <View className="px-5 pt-5">
+        <LoadingState message="Loading Timeline" />
+      </View>
+    );
+  }
   if (query.isError && !query.data) {
     return (
-      <ErrorState
-        message={query.error instanceof Error ? query.error.message : 'Unable to load Timeline.'}
-        onRetry={() => query.refetch()}
-        title="Timeline unavailable"
-      />
+      <View className="px-5 pt-5">
+        <ErrorState
+          message={query.error instanceof Error ? query.error.message : 'Unable to load Timeline.'}
+          onRetry={() => query.refetch()}
+          title="Timeline unavailable"
+        />
+      </View>
     );
   }
 
-  return (
-    <>
-      <JournalTimelineFilters
-        filters={filters}
-        onChange={onFiltersChange}
-        resultCount={visibleItems.length}
+  const empty = (
+    <View className="gap-3">
+      <EmptyState
+        actionLabel={activeFilters ? 'Clear filters' : 'Find titles'}
+        message={
+          activeFilters
+            ? 'No loaded activity matches these filters.'
+            : 'Plans do not appear here. Log a watch, start, finish, or stop to build your Timeline.'
+        }
+        onAction={
+          activeFilters
+            ? () => onFiltersChange(DEFAULT_TIMELINE_FILTERS)
+            : () => router.push('/search')
+        }
+        title={activeFilters ? 'No matches' : 'No activity yet'}
       />
-      {visibleItems.length ? (
-        <JournalTimelineView
-          hasNextPage={Boolean(query.hasNextPage)}
-          isFetchingNextPage={query.isFetchingNextPage}
-          items={visibleItems}
-          onItemPress={(item: JournalTimelineItem) =>
-            openMedia({
-              id: item.media.id,
-              source: item.media.source,
-              sourceId: item.media.sourceId,
-            })
-          }
-          onLoadMore={() => void query.fetchNextPage()}
-        />
-      ) : (
-        <View className="gap-3">
-          <EmptyState
-            actionLabel={activeFilters ? 'Clear filters' : 'Find titles'}
-            message={
-              activeFilters
-                ? 'No loaded activity matches these filters.'
-                : 'Plans do not appear here. Log a watch, start, finish, or stop to build your Timeline.'
-            }
-            onAction={
-              activeFilters
-                ? () => onFiltersChange(DEFAULT_TIMELINE_FILTERS)
-                : () => router.push('/search')
-            }
-            title={activeFilters ? 'No matches' : 'No activity yet'}
-          />
-          {activeFilters && query.hasNextPage ? (
-            <Button
-              loading={query.isFetchingNextPage}
-              onPress={() => void query.fetchNextPage()}
-              title="Search earlier activity"
-              variant="secondary"
-            />
-          ) : null}
-        </View>
-      )}
-      {query.isFetchNextPageError ? (
-        <ErrorState
-          message="Earlier activity could not be loaded. Your current Timeline is unchanged."
-          onRetry={() => query.fetchNextPage()}
-          title="Could not load more"
+      {activeFilters && query.hasNextPage ? (
+        <Button
+          loading={query.isFetchingNextPage}
+          onPress={() => void query.fetchNextPage()}
+          title="Search earlier activity"
+          variant="secondary"
         />
       ) : null}
-    </>
+    </View>
+  );
+
+  return (
+    <JournalTimelineView
+      empty={empty}
+      footer={
+        query.isFetchNextPageError ? (
+          <ErrorState
+            message="Earlier activity could not be loaded. Your current Timeline is unchanged."
+            onRetry={() => query.fetchNextPage()}
+            title="Could not load more"
+          />
+        ) : undefined
+      }
+      hasNextPage={Boolean(query.hasNextPage)}
+      header={
+        <JournalTimelineFilters
+          filters={filters}
+          onChange={onFiltersChange}
+          resultCount={visibleItems.length}
+        />
+      }
+      isFetchingNextPage={query.isFetchingNextPage}
+      items={visibleItems}
+      onItemPress={(item: JournalTimelineItem) =>
+        openMedia({
+          id: item.media.id,
+          source: item.media.source,
+          sourceId: item.media.sourceId,
+        })
+      }
+      onLoadMore={() => void query.fetchNextPage()}
+    />
   );
 }
 
@@ -185,27 +196,37 @@ export function JournalScreen() {
   };
 
   return (
-    <Screen scroll className="gap-5">
-      <View className="flex-row items-center justify-between gap-3">
-        <View className="min-w-0 flex-1">
-          <Text className="text-xl font-bold text-archive-50">Your Journal</Text>
-          <Text className="text-sm text-archive-300">
-            {activeView === 'planner' ? 'Decide what comes next.' : 'Keep your personal viewing record.'}
-          </Text>
+    <Screen padded={false}>
+      <View className="gap-5 px-5 pt-6">
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="min-w-0 flex-1">
+            <Text className="text-xl font-bold text-archive-50">Your Journal</Text>
+            <Text className="text-sm text-archive-300">
+              {activeView === 'planner'
+                ? 'Decide what comes next.'
+                : 'Keep your personal viewing record.'}
+            </Text>
+          </View>
+          <Button
+            className="min-h-10 px-4"
+            onPress={openFastCapture}
+            title={fastCapture.label}
+          />
         </View>
-        <Button
-          className="min-h-10 px-4"
-          onPress={openFastCapture}
-          title={fastCapture.label}
-        />
+        <JournalViewSegment activeView={activeView} onChange={setView} />
       </View>
-      <JournalViewSegment activeView={activeView} onChange={setView} />
-      {loading ? <LoadingState message="Loading Journal" /> : null}
+      {loading ? (
+        <View className="px-5 pt-5">
+          <LoadingState message="Loading Journal" />
+        </View>
+      ) : null}
       {!loading && !user ? (
-        <EmptyState
-          message="Sign in to keep your plans and personal viewing history."
-          title="Sign in to use Journal"
-        />
+        <View className="px-5 pt-5">
+          <EmptyState
+            message="Sign in to keep your plans and personal viewing history."
+            title="Sign in to use Journal"
+          />
+        </View>
       ) : null}
       {!loading && user && activeView === 'timeline' ? (
         <TimelineContent
@@ -215,13 +236,18 @@ export function JournalScreen() {
         />
       ) : null}
       {!loading && user && activeView === 'calendar' ? (
-        <JournalEventCalendarView
-          monthDate={calendarMonth}
-          onMonthChange={setCalendarMonth}
-          onSelectedDateChange={setCalendarDate}
-          selectedDate={calendarDate}
-          userId={user.id}
-        />
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-5 px-5 pb-28 pt-5"
+          showsVerticalScrollIndicator={false}>
+          <JournalEventCalendarView
+            monthDate={calendarMonth}
+            onMonthChange={setCalendarMonth}
+            onSelectedDateChange={setCalendarDate}
+            selectedDate={calendarDate}
+            userId={user.id}
+          />
+        </ScrollView>
       ) : null}
       {!loading && user && activeView === 'planner' ? (
         <JournalPlannerView userId={user.id} />

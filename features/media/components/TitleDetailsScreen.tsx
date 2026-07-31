@@ -145,7 +145,7 @@ export function TitleDetailsScreen({
     const planText = summary.titleState.activePlan ? ' and its active plan' : '';
     Alert.alert(
       'Remove from Journal?',
-      `This permanently removes ${summary.activityCount} dated ${summary.activityCount === 1 ? 'activity' : 'activities'}${planText}. Lists are not affected.`,
+      `This permanently removes ${summary.activityCount} recorded ${summary.activityCount === 1 ? 'activity' : 'activities'}${planText}. Lists are not affected.`,
       [
         { style: 'cancel', text: 'Cancel' },
         {
@@ -235,9 +235,11 @@ export function TitleDetailsScreen({
             canUseJournal={Boolean(
               user?.id && mediaItemId && journalQuery.isSuccess,
             )}
+            isSignedIn={Boolean(user?.id)}
             mediaType={item.mediaType}
             onAddToList={() => setShowAddToListPanel(true)}
             onIntent={openJournalIntent}
+            onSignIn={() => router.push('/welcome')}
             onRemovePlan={confirmRemovePlan}
             onRemoveTitle={confirmRemoveTitle}
             onToggleHistory={() => setShowHistory((current) => !current)}

@@ -1,4 +1,5 @@
-import { Pressable, Text, View } from 'react-native';
+import type { ReactElement } from 'react';
+import { FlatList, Pressable, Text, View } from 'react-native';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
@@ -63,29 +64,54 @@ function TimelineCard({ item, onPress }: { item: JournalTimelineItem; onPress: (
 }
 
 export function JournalTimelineView({
+  empty,
+  footer,
   hasNextPage,
+  header,
   isFetchingNextPage,
   items,
   onItemPress,
   onLoadMore,
 }: {
+  empty?: ReactElement;
+  footer?: ReactElement;
   hasNextPage: boolean;
+  header: ReactElement;
   isFetchingNextPage: boolean;
   items: JournalTimelineItem[];
   onItemPress: (item: JournalTimelineItem) => void;
   onLoadMore: () => void;
 }) {
-  let previousMonth = '';
-
   return (
-    <View className="gap-4">
-      {items.map((item, index) => {
+    <FlatList
+      className="flex-1"
+      contentContainerClassName="gap-4 px-5 pb-28 pt-5"
+      data={items}
+      keyExtractor={(item) => item.event.id}
+      keyboardShouldPersistTaps="handled"
+      ListEmptyComponent={empty}
+      ListFooterComponent={
+        <View className="gap-3">
+          {hasNextPage ? (
+            <Button
+              loading={isFetchingNextPage}
+              onPress={onLoadMore}
+              title="Load earlier activity"
+              variant="secondary"
+            />
+          ) : null}
+          {footer}
+        </View>
+      }
+      ListHeaderComponent={header}
+      renderItem={({ item, index }) => {
         const month = item.event.eventDate.slice(0, 7);
-        const showMonth = month !== previousMonth;
-        previousMonth = month;
+        const showMonth =
+          index === 0 ||
+          items[index - 1]?.event.eventDate.slice(0, 7) !== month;
         const parts = dayParts(item.event.eventDate);
         return (
-          <View className="gap-3" key={item.event.id}>
+          <View className="gap-3">
             {showMonth ? (
               <Text className="mt-2 text-sm font-bold uppercase text-gold-300">
                 {monthTitle(item.event.eventDate)}
@@ -107,16 +133,9 @@ export function JournalTimelineView({
             </View>
           </View>
         );
-      })}
-
-      {hasNextPage ? (
-        <Button
-          loading={isFetchingNextPage}
-          onPress={onLoadMore}
-          title="Load earlier activity"
-          variant="secondary"
-        />
-      ) : null}
-    </View>
+      }}
+      showsVerticalScrollIndicator={false}
+      testID="journal-timeline-list"
+    />
   );
 }

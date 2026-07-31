@@ -5,6 +5,7 @@ import {
   getJournalPlannerSection,
   toJournalEvent,
   toJournalHistoryPage,
+  toJournalTimelineItem,
   toJournalTitleState,
 } from '@/features/journal/model/journalReadModels';
 import type {
@@ -20,6 +21,7 @@ function makeTitleRow(overrides: Partial<JournalEntryRow> = {}): JournalEntryRow
     has_active_plan: false,
     id: 'entry-1',
     last_activity_at: '2026-07-01T10:00:00.000Z',
+    legacy_bridge_statement_at: null,
     media_item_id: 'media-1',
     planned_for: null,
     rating: null,
@@ -28,6 +30,7 @@ function makeTitleRow(overrides: Partial<JournalEntryRow> = {}): JournalEntryRow
     started_on: null,
     status: 'completed',
     updated_at: '2026-07-01T10:00:00.000Z',
+    undated_completed_count: 0,
     user_id: 'user-1',
     ...overrides,
   };
@@ -39,7 +42,9 @@ function makeEventRow(overrides: Partial<JournalEventRow> = {}): JournalEventRow
     event_date: '2026-07-30',
     event_type: 'completed',
     id: 'event-1',
+    is_legacy_mirror: false,
     journal_entry_id: 'entry-1',
+    legacy_bridge_statement_at: null,
     notes: 'Worth another watch.',
     operation_id: null,
     rating: 4.5,
@@ -55,6 +60,7 @@ describe('v1.1 Journal read models', () => {
     expect(toJournalTitleState(makeTitleRow())).toMatchObject({
       activePlan: null,
       status: 'completed',
+      undatedCompletedCount: 0,
     });
 
     expect(
@@ -62,6 +68,37 @@ describe('v1.1 Journal read models', () => {
         makeTitleRow({ has_active_plan: true, planned_for: null }),
       ),
     ).toMatchObject({ activePlan: { plannedFor: null } });
+  });
+
+  it('treats a dated completion as a rewatch after an undated legacy completion', () => {
+    const origins = new Map([
+      [
+        'entry-1',
+        { firstCompletedEventId: 'event-1', hasUndatedCompletion: true },
+      ],
+    ]);
+
+    expect(
+      toJournalTimelineItem(
+        {
+          ...makeEventRow(),
+          journal_entries: {
+            ...makeTitleRow({ undated_completed_count: 1 }),
+            media_items: {
+              id: 'media-1',
+              image_url: null,
+              media_type: 'movie',
+              original_title: null,
+              release_date: '2026-01-01',
+              source: 'tmdb',
+              source_id: 'movie:1',
+              title: 'Legacy watch',
+            },
+          },
+        },
+        origins,
+      ).isRewatch,
+    ).toBe(true);
   });
 
   it('maps a completed event without exposing system timestamps as activity dates', () => {

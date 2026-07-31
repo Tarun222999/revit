@@ -42,6 +42,7 @@ const TITLE_WITH_MEDIA_SELECT = `
   status,
   has_active_plan,
   planned_for,
+  undated_completed_count,
   media_items!journal_entries_media_item_id_fkey (
     ${MEDIA_SUMMARY_SELECT}
   )
@@ -55,6 +56,7 @@ const EVENT_WITH_TITLE_SELECT = `
     status,
     has_active_plan,
     planned_for,
+    undated_completed_count,
     media_items!journal_entries_media_item_id_fkey!inner (
       ${MEDIA_SUMMARY_SELECT}
     )
@@ -102,7 +104,9 @@ export async function getJournalTitleSummary({
 }): Promise<JournalTitleSummary | null> {
   const { data: titleRow, error: titleError } = await supabase
     .from('journal_entries')
-    .select('id, media_item_id, status, has_active_plan, planned_for')
+    .select(
+      'id, media_item_id, status, has_active_plan, planned_for, undated_completed_count',
+    )
     .eq('user_id', userId)
     .eq('media_item_id', mediaItemId)
     .maybeSingle();
@@ -132,8 +136,10 @@ export async function getJournalTitleSummary({
   if (activityResult.error) throw activityResult.error;
 
   return {
-    activityCount: activityResult.count ?? 0,
-    completedWatchCount: completedResult.count ?? 0,
+    activityCount:
+      (activityResult.count ?? 0) + titleRow.undated_completed_count,
+    completedWatchCount:
+      (completedResult.count ?? 0) + titleRow.undated_completed_count,
     latestCompletedEvent: completedResult.data?.[0]
       ? toJournalEvent(completedResult.data[0])
       : null,
@@ -214,41 +220,35 @@ export async function getJournalTimelinePage({
   if (error) throw error;
 
   const rows = (data ?? []) as unknown as JournalEventWithTitleRow[];
+  const visibleRows = rows.slice(0, pageSize);
   const completedEntryIds = [
     ...new Set(
-      rows
+      visibleRows
         .filter((row) => row.event_type === 'completed')
         .map((row) => row.journal_entry_id),
     ),
   ];
-  const firstCompletionIds = new Set<string>();
+  const completionOrigins = new Map<
+    string,
+    { firstCompletedEventId: string | null; hasUndatedCompletion: boolean }
+  >();
 
   if (completedEntryIds.length > 0) {
-    const { data: completionRows, error: completionError } = await supabase
-      .from('journal_events')
-      .select('id, journal_entry_id, event_date, created_at')
-      .eq('user_id', userId)
-      .eq('event_type', 'completed')
-      .in('journal_entry_id', completedEntryIds)
-      .order('event_date', { ascending: true })
-      .order('created_at', { ascending: true })
-      .order('id', { ascending: true });
+    const { data: completionRows, error: completionError } = await supabase.rpc(
+      'journal_get_completion_origins',
+      { p_journal_entry_ids: completedEntryIds },
+    );
 
     if (completionError) throw completionError;
-    const seenEntries = new Set<string>();
     for (const completion of completionRows ?? []) {
-      if (!seenEntries.has(completion.journal_entry_id)) {
-        seenEntries.add(completion.journal_entry_id);
-        firstCompletionIds.add(completion.id);
-      }
+      completionOrigins.set(completion.journal_entry_id, {
+        firstCompletedEventId: completion.first_completed_event_id,
+        hasUndatedCompletion: completion.has_undated_completion,
+      });
     }
   }
 
-  return toJournalTimelinePage(
-    rows,
-    pageSize,
-    firstCompletionIds,
-  );
+  return toJournalTimelinePage(rows, pageSize, completionOrigins);
 }
 
 export async function getJournalPlanner({

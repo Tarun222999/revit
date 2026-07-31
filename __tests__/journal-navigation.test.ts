@@ -13,6 +13,7 @@ const plannedSummary: JournalTitleSummary = {
     id: 'entry-1',
     mediaItemId: 'media-1',
     status: 'planned',
+    undatedCompletedCount: 0,
   },
 };
 

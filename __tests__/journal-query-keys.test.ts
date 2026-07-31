@@ -6,7 +6,7 @@ import {
 } from '@/features/journal/api/journal-query-keys';
 
 describe('v1.1 Journal cache invalidation', () => {
-  it('invalidates only Calendar ranges containing an affected user date', async () => {
+  it('invalidates every Calendar range after a replay can forget an old month', async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { gcTime: Infinity } },
     });
@@ -30,15 +30,17 @@ describe('v1.1 Journal cache invalidation', () => {
     queryClient.setQueryData(september, { events: [], plans: [] });
     queryClient.setQueryData(anotherUser, { events: [], plans: [] });
 
+    // A response-loss retry after moving July -> September can return only the
+    // already-mutated September date. July must still be refreshed.
     await invalidateJournalReadData(queryClient, {
-      affectedDates: ['2026-07-30'],
+      affectedDates: ['2026-09-30'],
       journalEntryId: 'entry-1',
       mediaItemId: 'media-1',
       userId: 'user-1',
     });
 
     expect(queryClient.getQueryState(july)?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState(september)?.isInvalidated).toBe(false);
+    expect(queryClient.getQueryState(september)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(anotherUser)?.isInvalidated).toBe(false);
     queryClient.clear();
   });

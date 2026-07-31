@@ -1,4 +1,4 @@
-import type { QueryClient, QueryKey } from '@tanstack/react-query';
+import type { QueryClient } from '@tanstack/react-query';
 
 import { assertJournalDate } from '@/features/journal/model/journalReadModels';
 
@@ -31,26 +31,19 @@ export type JournalInvalidationContext = {
   eventId?: string | null;
 };
 
-function calendarKeyContainsDate(queryKey: QueryKey, dates: string[]) {
-  const startDate = queryKey[4];
-  const endDate = queryKey[5];
-
-  if (typeof startDate !== 'string' || typeof endDate !== 'string') {
-    return false;
-  }
-
-  return dates.some((date) => date >= startDate && date <= endDate);
-}
-
 /**
- * Refreshes only the v1.1 Journal surfaces that a title-level change can affect.
- * Calendar ranges are narrowed to ranges containing an affected user date.
+ * Refreshes v1.1 Journal surfaces after an atomic lifecycle change.
+ *
+ * Calendar ranges are deliberately invalidated as a group. A committed
+ * mutation whose response is lost can be retried after its previous plan or
+ * event date is no longer recoverable from current database state. Refreshing
+ * every bounded Calendar query prevents stale markers in those ambiguous cases.
  */
 export async function invalidateJournalReadData(
   queryClient: QueryClient,
   context: JournalInvalidationContext,
 ) {
-  const dates = [...new Set(context.affectedDates ?? [])].map((date) =>
+  [...new Set(context.affectedDates ?? [])].map((date) =>
     assertJournalDate(date, 'Affected date'),
   );
 
@@ -86,15 +79,9 @@ export async function invalidateJournalReadData(
   }
 
   invalidations.push(
-    queryClient.invalidateQueries(
-      dates.length === 0
-        ? { queryKey: journalReadKeys.calendarRoot(context.userId) }
-        : {
-            predicate: (query) =>
-              calendarKeyContainsDate(query.queryKey, dates),
-            queryKey: journalReadKeys.calendarRoot(context.userId),
-          },
-    ),
+    queryClient.invalidateQueries({
+      queryKey: journalReadKeys.calendarRoot(context.userId),
+    }),
   );
 
   await Promise.all(invalidations);

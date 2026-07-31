@@ -13,7 +13,7 @@ jest.mock('@/lib/supabase/client', () => ({
   supabase: { rpc: jest.fn() },
 }));
 
-const mockRpc = jest.mocked(supabase.rpc);
+const mockRpc = supabase.rpc as jest.Mock;
 
 function rawResult(overrides: Record<string, unknown> = {}) {
   return {
