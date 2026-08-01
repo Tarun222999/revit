@@ -99,6 +99,7 @@ declare
   v_v11_event_flow boolean;
   v_latest_event public.journal_events%rowtype;
   v_plan_changed boolean;
+  v_projected_event_date date;
   v_requested_status text := new.status;
 begin
   -- Entry writes caused by the event bridge are already normalized.
@@ -127,6 +128,21 @@ begin
   );
   v_v11_event_flow := tg_op = 'UPDATE'
     and old.legacy_bridge_statement_at = statement_timestamp();
+
+  if tg_op = 'UPDATE'
+    and old.has_active_plan
+    and not v_plan_changed
+    and not v_v11_event_flow
+    and v_requested_status in ('in_progress', 'completed', 'dropped') then
+    select event_date
+    into v_projected_event_date
+    from public.journal_events
+    where journal_entry_id = new.id
+      and user_id = new.user_id
+    order by event_date desc, created_at desc, id desc
+    limit 1;
+  end if;
+
   v_legacy_activity_transition := tg_op = 'UPDATE'
     and not v_plan_changed
     and not v_v11_event_flow
@@ -135,12 +151,11 @@ begin
       v_requested_status is distinct from old.effective_status
       or (
         old.has_active_plan
-        and (
-          (v_requested_status = 'completed'
-            and new.completed_on is distinct from old.completed_on)
-          or (v_requested_status in ('in_progress', 'dropped')
-            and new.started_on is distinct from old.started_on)
-        )
+        and case
+          when v_requested_status = 'completed'
+            then new.completed_on is distinct from v_projected_event_date
+          else new.started_on is distinct from v_projected_event_date
+        end
       )
     );
 
@@ -256,7 +271,10 @@ set search_path = ''
 as $$
 declare
   v_legacy_changed boolean;
+  v_old_event_date date;
+  v_old_event_type text;
   v_plan_changed boolean;
+  v_projected_event_id uuid;
   v_event_type text;
   v_event_date date;
 begin
@@ -328,6 +346,61 @@ begin
       and user_id = new.user_id
       and is_legacy_mirror;
     return null;
+  end if;
+
+  -- A same-status v1 edit belongs to the event represented by the OLD
+  -- projection, not necessarily the row that was originally created as the
+  -- legacy mirror. An active plan masks activity fields, so in that case the
+  -- latest effective event is the projected activity.
+  if tg_op = 'UPDATE'
+    and new.legacy_plan_resolution_statement_at is distinct from statement_timestamp()
+    and old.legacy_bridge_statement_at is distinct from statement_timestamp()
+    and new.effective_status = old.effective_status then
+    v_old_event_type := case old.status
+      when 'completed' then 'completed'
+      when 'in_progress' then 'started'
+      when 'dropped' then 'stopped'
+      else null
+    end;
+    v_old_event_date := case
+      when old.status = 'completed' then old.completed_on
+      when old.status in ('in_progress', 'dropped') then old.started_on
+      else null
+    end;
+
+    if v_old_event_type is not null and v_old_event_date is not null then
+      select id
+      into v_projected_event_id
+      from public.journal_events
+      where journal_entry_id = new.id
+        and user_id = new.user_id
+        and event_type = v_old_event_type
+        and event_date = v_old_event_date
+      order by created_at desc, id desc
+      limit 1;
+    elsif old.has_active_plan then
+      select id
+      into v_projected_event_id
+      from public.journal_events
+      where journal_entry_id = new.id
+        and user_id = new.user_id
+      order by event_date desc, created_at desc, id desc
+      limit 1;
+    end if;
+
+    if v_projected_event_id is not null then
+      update public.journal_events
+      set
+        event_type = v_event_type,
+        event_date = v_event_date,
+        rating = case when v_event_type = 'completed' then new.rating else null end,
+        notes = new.review_body,
+        legacy_bridge_statement_at = statement_timestamp()
+      where id = v_projected_event_id
+        and journal_entry_id = new.id
+        and user_id = new.user_id;
+      return null;
+    end if;
   end if;
 
   insert into public.journal_events (

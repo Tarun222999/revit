@@ -45,7 +45,7 @@ select
   'Lifecycle title ' || value,
   '[]'::jsonb,
   '{}'::jsonb
-from generate_series(1, 23) as value;
+from generate_series(1, 28) as value;
 
 set local role authenticated;
 set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
@@ -976,6 +976,192 @@ select pg_temp.assert_true(
    from public.journal_entries
    where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000023'),
   'deleting the last event changed a scheduled plan into Someday for v1'
+);
+
+-- Same-status v1 edits target the event currently projected by the legacy
+-- row, even when an older event remains the designated legacy mirror.
+insert into public.journal_entries (
+  user_id, media_item_id, status, started_on, completed_on, rating, review_body
+)
+values
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000024', 'completed', null, '2026-07-15', 3, 'Original completed'),
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000025', 'completed', null, '2026-07-15', 3, 'Original date'),
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000026', 'in_progress', '2026-07-15', null, null, 'Original started'),
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000027', 'dropped', '2026-07-15', null, null, 'Original stopped'),
+  ('11111111-1111-4111-8111-111111111111',
+   'aaaaaaaa-aaaa-4aaa-8aaa-000000000028', 'completed', null, '2026-07-15', 3, 'Original planned-title watch');
+
+create temporary table expected_mixed_writer_origins
+on commit drop
+as
+select entry.media_item_id, event.id, event.event_type, event.event_date
+from public.journal_events as event
+join public.journal_entries as entry on entry.id = event.journal_entry_id
+where entry.media_item_id between
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000024'
+  and 'aaaaaaaa-aaaa-4aaa-8aaa-000000000028';
+
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000024', 'completed', '2026-07-29',
+  4.5, 'v1.1 completed', false,
+  '10000000-0000-4000-8000-000000000018', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000025', 'completed', '2026-07-29',
+  4, 'v1.1 date', false,
+  '10000000-0000-4000-8000-000000000019', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000026', 'started', '2026-07-29',
+  null, 'v1.1 started', false,
+  '10000000-0000-4000-8000-000000000020', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000027', 'stopped', '2026-07-29',
+  null, 'v1.1 stopped', false,
+  '10000000-0000-4000-8000-000000000021', '2026-07-29'
+);
+select public.journal_log_event(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000028', 'completed', '2026-07-29',
+  4.5, 'v1.1 planned-title rewatch', false,
+  '10000000-0000-4000-8000-000000000022', '2026-07-29'
+);
+select public.journal_save_plan(
+  'aaaaaaaa-aaaa-4aaa-8aaa-000000000028', '2026-09-20', '2026-07-29'
+);
+
+create temporary table expected_mixed_writer_targets
+on commit drop
+as
+select entry.media_item_id, event.id
+from public.journal_events as event
+join public.journal_entries as entry on entry.id = event.journal_entry_id
+where event.operation_id in (
+  '10000000-0000-4000-8000-000000000018',
+  '10000000-0000-4000-8000-000000000019',
+  '10000000-0000-4000-8000-000000000020',
+  '10000000-0000-4000-8000-000000000021',
+  '10000000-0000-4000-8000-000000000022'
+);
+
+update public.journal_entries
+set rating = 5, review_body = 'Edited completed from v1'
+where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000024';
+update public.journal_entries
+set completed_on = '2026-07-20', review_body = 'Corrected date from v1'
+where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000025';
+update public.journal_entries
+set review_body = 'Edited started from v1'
+where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000026';
+update public.journal_entries
+set review_body = 'Edited stopped from v1'
+where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000027';
+update public.journal_entries
+set
+  status = 'completed',
+  started_on = null,
+  completed_on = '2026-07-29',
+  rating = 5,
+  review_body = 'Edited with plan from v1'
+where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000028';
+
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from expected_mixed_writer_origins as expected
+    left join public.journal_events as event
+      on event.id = expected.id
+      and event.event_type = expected.event_type
+      and event.event_date = expected.event_date
+    where event.id is null
+  ),
+  'a same-status v1 edit changed an unrelated older event ID or date'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.journal_entries as entry
+    where entry.media_item_id between
+      'aaaaaaaa-aaaa-4aaa-8aaa-000000000024'
+      and 'aaaaaaaa-aaaa-4aaa-8aaa-000000000028'
+      and (select count(*) from public.journal_events as event
+           where event.journal_entry_id = entry.id) <> 2
+  ),
+  'a same-status v1 edit lost or duplicated mixed-writer history'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.journal_events as event
+    join public.journal_entries as entry on entry.id = event.journal_entry_id
+    where entry.media_item_id between
+      'aaaaaaaa-aaaa-4aaa-8aaa-000000000024'
+      and 'aaaaaaaa-aaaa-4aaa-8aaa-000000000028'
+    group by event.journal_entry_id, event.event_type, event.event_date
+    having count(*) > 1
+  ),
+  'a same-status v1 edit introduced duplicate event dates and types'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from expected_mixed_writer_targets as expected
+    join public.journal_entries as entry on entry.media_item_id = expected.media_item_id
+    left join public.journal_events as event
+      on event.id = expected.id and event.journal_entry_id = entry.id
+    where event.id is null
+      or (entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000024'
+        and (event.event_date <> '2026-07-29' or event.rating <> 5
+          or event.notes <> 'Edited completed from v1'))
+      or (entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000025'
+        and (event.event_date <> '2026-07-20'
+          or event.notes <> 'Corrected date from v1'))
+      or (entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000026'
+        and (event.event_type <> 'started'
+          or event.notes <> 'Edited started from v1'))
+      or (entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000027'
+        and (event.event_type <> 'stopped'
+          or event.notes <> 'Edited stopped from v1'))
+      or (entry.media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000028'
+        and (event.event_date <> '2026-07-29' or event.rating <> 5
+          or event.notes <> 'Edited with plan from v1'))
+  ),
+  'a same-status v1 edit did not update exactly the projected event'
+);
+select pg_temp.assert_true(
+  (select status = 'planned'
+      and started_on = '2026-09-20'
+      and effective_status = 'completed'
+      and has_active_plan
+      and planned_for = '2026-09-20'
+   from public.journal_entries
+   where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000028'),
+  'a projected metadata edit changed the independent active plan'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1
+    from public.journal_entries as entry
+    join (
+      values
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000024'::uuid, 'completed'::text, '2026-07-29'::date),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000025'::uuid, 'completed'::text, '2026-07-20'::date),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000026'::uuid, 'in_progress'::text, '2026-07-29'::date),
+        ('aaaaaaaa-aaaa-4aaa-8aaa-000000000027'::uuid, 'dropped'::text, '2026-07-29'::date)
+    ) as expected(media_item_id, status, activity_date)
+      on expected.media_item_id = entry.media_item_id
+    where entry.status <> expected.status
+      or entry.effective_status <> expected.status
+      or case
+        when expected.status = 'completed' then entry.completed_on
+        else entry.started_on
+      end <> expected.activity_date
+  ),
+  'a same-status v1 edit left incoherent current projections'
 );
 
 -- Another authenticated user cannot mutate this user's title or events.
