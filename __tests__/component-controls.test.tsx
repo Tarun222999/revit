@@ -6,7 +6,9 @@ import { RatingInput } from '../features/journal/components/RatingInput';
 import { SpoilerToggle } from '../features/journal/components/SpoilerToggle';
 import { TitleDetailsJournalActions } from '../features/journal/components/TitleDetailsJournalActions';
 import { ListForm, type ListFormValues } from '../features/lists/components/ListForm';
+import { TitleDetailsHero } from '../features/media/components/TitleDetailsHero';
 import type { JournalEntryFormValues } from '../features/journal/types';
+import type { NormalizedMediaItem } from '../types/media';
 
 function makeJournalFormValues(
   overrides: Partial<JournalEntryFormValues> = {},
@@ -40,9 +42,7 @@ describe('journal controls', () => {
         onRemoveTitle={jest.fn()}
         onSignIn={onSignIn}
         onToggleHistory={jest.fn()}
-        onWatchTrailer={jest.fn()}
         removing={false}
-        showTrailer={false}
         summary={null}
       />,
     );
@@ -137,6 +137,40 @@ describe('journal controls', () => {
     expect(onStatusChange).toHaveBeenCalledWith('in_progress');
     expect(onChange).toHaveBeenCalledWith('reviewHeadline', 'A useful headline');
     expect(onChange).toHaveBeenCalledWith('containsSpoilers', true);
+  });
+});
+
+describe('title details hero', () => {
+  const mediaItem = {
+    genres: ['Drama'],
+    mediaType: 'movie',
+    metadata: {},
+    source: 'tmdb',
+    sourceId: 'movie:278',
+    title: 'The Shawshank Redemption',
+  } satisfies NormalizedMediaItem;
+
+  it('shows an accessible trailer control only when a trailer is available', async () => {
+    const onWatchTrailer = jest.fn();
+    const { rerender } = await render(
+      <TitleDetailsHero item={mediaItem} onWatchTrailer={onWatchTrailer} showTrailer />,
+    );
+
+    await fireEvent.press(
+      screen.getByRole('button', {
+        name: 'Watch trailer for The Shawshank Redemption',
+      }),
+    );
+
+    expect(onWatchTrailer).toHaveBeenCalledTimes(1);
+
+    await rerender(<TitleDetailsHero item={mediaItem} />);
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'Watch trailer for The Shawshank Redemption',
+      }),
+    ).toBeNull();
   });
 });
 
