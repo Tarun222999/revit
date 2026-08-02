@@ -195,6 +195,17 @@ Planner rules:
 - removing a plan must not delete existing watch history
 - only one active plan per title is required for this v1.1 scope
 
+Each Planner card keeps its context-specific `Log watch` or `Start watching`
+action visible. Rescheduling, moving a dated plan to `Someday`, and removing the
+plan live behind one compact More control so they do not compete with the
+primary action. The More control must have an accessible label, an adequate
+touch target, visible expanded state, and a layout that remains usable with
+large text. Expanded management actions remain unmistakable buttons:
+
+- dated Today, Upcoming, and Missed plans: `Reschedule`, `Move to Someday`, and
+  `Remove plan`
+- undated Someday plans: `Schedule` and `Remove plan`
+
 Planner and Lists serve different jobs:
 
 - Planner answers what the user intends to watch and optionally when.
@@ -709,8 +720,9 @@ Show:
 - planned date or Someday
 - current state when relevant
 - `Log watch` or `Start watching`
-- reschedule and move-to-Someday actions
-- remove-plan action that preserves history
+- one accessible More control for plan management
+- expanded `Reschedule` or `Schedule`, `Move to Someday` for dated plans, and
+  `Remove plan` actions
 
 ### History rows
 

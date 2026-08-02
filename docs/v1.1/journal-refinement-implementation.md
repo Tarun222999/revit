@@ -839,7 +839,7 @@ Update this table only when work actually changes state.
 | 8. Planner | Not used | Complete | Today/Upcoming/Missed/Someday sections and plan-only management completed July 29, 2026 |
 | 9. Calendar | Not used | Complete | Range-based event/plan calendar, accessible markers, and retained selection completed July 29, 2026 |
 | 10. Fast capture and restoration | Not used | Complete | Intent-aware Search capture and Journal context restoration completed July 29, 2026 |
-| 11. Quality hardening | TAR-132 | In progress | TAR-132 completed August 2, 2026 as the first isolated UX-hardening ticket; TAR-131 and TAR-133 remain out of scope pending separate approval |
+| 11. Quality hardening | TAR-131 | In progress | TAR-132 passed review; TAR-131 completed August 2, 2026 as the next isolated ticket, while TAR-133 remains out of scope |
 
 ## Decision Log
 
@@ -855,6 +855,7 @@ Update this table only when work actually changes state.
 | July 28, 2026 | Grant authenticated CRUD explicitly on `journal_events` while enforcing owner-only RLS | Implemented |
 | July 28, 2026 | Retain all legacy Journal columns until a later verified cleanup migration | Implemented |
 | August 2, 2026 | Let series and anime outside Journal either `Start watching` or `Log as finished`; direct completion creates one completed event without an inferred start, while `Mark finished` remains for in-progress titles | Approved for TAR-132 |
+| August 2, 2026 | Keep Planner's log/start action visible and place reschedule, Move to Someday, and remove-plan management behind one accessible, large-text-safe More control | Approved for TAR-131 |
 
 ## Step 2 Completion Record
 
@@ -1052,6 +1053,26 @@ Completed August 2, 2026 as the first isolated Step 11 ticket.
   validation. No SQL or generated database type changed.
 - Did not begin TAR-131 or TAR-133.
 
+## TAR-131 Completion Record
+
+Completed August 2, 2026 as the second isolated Step 11 ticket.
+
+- Kept each Planner card's context-specific log/start action visible and
+  replaced always-visible management buttons with one compact More control.
+- Added an accessible label and hint, 48-point minimum target, expanded state,
+  disabled feedback, and a close-state visual for the overflow control.
+- Exposed `Reschedule`, `Move to Someday`, and `Remove plan` for every dated
+  plan; Someday plans expose `Schedule` and `Remove plan` without a redundant
+  move action.
+- Preserved the existing edit form, null-date plan mutation, removal
+  confirmation, history protection, and Planner plan-resolution behavior.
+- Added focused action visibility, expansion, section-label, accessibility,
+  mutation, and virtualization coverage.
+- Passed all 130 repository tests, TypeScript typechecking, lint, and diff
+  validation. No lifecycle RPC, schema, generated database type, or List code
+  changed.
+- Did not begin TAR-133.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -1067,5 +1088,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 11 is authorized only through TAR-132. Complete and review TAR-132 before
-starting TAR-131, TAR-133, or any other Step 11 work.
+Step 11 is authorized only through TAR-131. Complete and review TAR-131 before
+starting TAR-133 or any other Step 11 work.
