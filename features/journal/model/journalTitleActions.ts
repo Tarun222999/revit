@@ -1,0 +1,108 @@
+import type { MediaType } from '@/constants/media';
+import type { JournalFormIntent, JournalTitleSummary } from '@/features/journal/types';
+
+export type JournalTitleAction = {
+  intent: JournalFormIntent;
+  label: string;
+  source: 'planned_title' | 'title';
+};
+
+export type JournalTitleActionModel = {
+  primary: JournalTitleAction;
+  secondary: JournalTitleAction | { label: 'View history'; intent: 'history' };
+  planAction: JournalTitleAction | null;
+  stopAction: JournalTitleAction | null;
+};
+
+function isMovie(mediaType: MediaType) {
+  return mediaType === 'movie';
+}
+
+export function getJournalTitleActions(
+  mediaType: MediaType,
+  summary: JournalTitleSummary | null,
+): JournalTitleActionModel {
+  const movie = isMovie(mediaType);
+  const hasHistory = Boolean(summary?.activityCount);
+
+  if (!summary) {
+    return {
+      planAction: null,
+      primary: {
+        intent: movie ? 'log' : 'start',
+        label: movie ? 'Log a watch' : 'Start watching',
+        source: 'title',
+      },
+      secondary: {
+        intent: 'plan',
+        label: 'Plan to watch',
+        source: 'title',
+      },
+      stopAction: null,
+    };
+  }
+
+  if (summary.titleState.activePlan) {
+    return {
+      planAction: null,
+      primary: {
+        intent: movie ? 'log' : 'start',
+        label: movie ? 'Log as watched' : 'Start watching',
+        source: 'planned_title',
+      },
+      secondary: {
+        intent: 'edit_plan',
+        label: 'Edit plan',
+        source: 'title',
+      },
+      stopAction: null,
+    };
+  }
+
+  if (summary.titleState.status === 'completed') {
+    return {
+      planAction: {
+        intent: 'plan',
+        label: 'Plan a rewatch',
+        source: 'title',
+      },
+      primary: {
+        intent: movie ? 'rewatch' : 'start',
+        label: movie ? 'Log a rewatch' : 'Start a rewatch',
+        source: 'title',
+      },
+      secondary: { intent: 'history', label: 'View history' },
+      stopAction: null,
+    };
+  }
+
+  if (summary.titleState.status === 'dropped') {
+    return {
+      planAction: {
+        intent: 'plan',
+        label: 'Plan again',
+        source: 'title',
+      },
+      primary: { intent: 'resume', label: 'Resume watching', source: 'title' },
+      secondary: hasHistory
+        ? { intent: 'history', label: 'View history' }
+        : { intent: 'plan', label: 'Plan again', source: 'title' },
+      stopAction: null,
+    };
+  }
+
+  return {
+    planAction: null,
+    primary: {
+      intent: 'finish',
+      label: movie ? 'Mark watched' : 'Mark finished',
+      source: 'title',
+    },
+    secondary: hasHistory
+      ? { intent: 'history', label: 'View history' }
+      : { intent: 'stop', label: 'Stop watching', source: 'title' },
+    stopAction: hasHistory
+      ? { intent: 'stop', label: 'Stop watching', source: 'title' }
+      : null,
+  };
+}

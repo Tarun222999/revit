@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       journal_entries: {
@@ -19,45 +14,63 @@ export type Database = {
           completed_on: string | null
           contains_spoilers: boolean
           created_at: string
+          effective_status: string
+          has_active_plan: boolean
           id: string
           last_activity_at: string
+          legacy_bridge_statement_at: string | null
+          legacy_plan_resolution_statement_at: string | null
           media_item_id: string
+          planned_for: string | null
           rating: number | null
           review_body: string | null
           review_headline: string | null
           started_on: string | null
           status: string
           updated_at: string
+          undated_completed_count: number
           user_id: string
         }
         Insert: {
           completed_on?: string | null
           contains_spoilers?: boolean
           created_at?: string
+          effective_status?: string
+          has_active_plan?: boolean
           id?: string
           last_activity_at?: string
+          legacy_bridge_statement_at?: string | null
+          legacy_plan_resolution_statement_at?: string | null
           media_item_id: string
+          planned_for?: string | null
           rating?: number | null
           review_body?: string | null
           review_headline?: string | null
           started_on?: string | null
           status: string
           updated_at?: string
+          undated_completed_count?: number
           user_id: string
         }
         Update: {
           completed_on?: string | null
           contains_spoilers?: boolean
           created_at?: string
+          effective_status?: string
+          has_active_plan?: boolean
           id?: string
           last_activity_at?: string
+          legacy_bridge_statement_at?: string | null
+          legacy_plan_resolution_statement_at?: string | null
           media_item_id?: string
+          planned_for?: string | null
           rating?: number | null
           review_body?: string | null
           review_headline?: string | null
           started_on?: string | null
           status?: string
           updated_at?: string
+          undated_completed_count?: number
           user_id?: string
         }
         Relationships: [
@@ -74,6 +87,62 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      journal_events: {
+        Row: {
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          is_legacy_mirror: boolean
+          journal_entry_id: string
+          legacy_bridge_statement_at: string | null
+          notes: string | null
+          operation_id: string | null
+          rating: number | null
+          resolved_active_plan: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_date: string
+          event_type: string
+          id?: string
+          is_legacy_mirror?: boolean
+          journal_entry_id: string
+          legacy_bridge_statement_at?: string | null
+          notes?: string | null
+          operation_id?: string | null
+          rating?: number | null
+          resolved_active_plan?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          is_legacy_mirror?: boolean
+          journal_entry_id?: string
+          legacy_bridge_statement_at?: string | null
+          notes?: string | null
+          operation_id?: string | null
+          rating?: number | null
+          resolved_active_plan?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_events_entry_owner_fkey"
+            columns: ["journal_entry_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id", "user_id"]
           },
         ]
       }
@@ -270,7 +339,60 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      journal_get_completion_origins: {
+        Args: { p_journal_entry_ids: string[] }
+        Returns: {
+          first_completed_event_id: string | null
+          has_undated_completion: boolean
+          journal_entry_id: string
+        }[]
+      }
+      journal_delete_event: {
+        Args: {
+          p_empty_title_action?: string | null
+          p_event_id: string
+        }
+        Returns: Json
+      }
+      journal_log_event: {
+        Args: {
+          p_event_date: string
+          p_event_type: string
+          p_media_item_id: string
+          p_notes: string | null
+          p_rating: number | null
+          p_request_id: string
+          p_resolve_active_plan: boolean
+          p_today: string
+        }
+        Returns: Json
+      }
+      journal_remove_plan: {
+        Args: { p_journal_entry_id: string }
+        Returns: Json
+      }
+      journal_remove_title: {
+        Args: { p_journal_entry_id: string }
+        Returns: Json
+      }
+      journal_save_plan: {
+        Args: {
+          p_media_item_id: string
+          p_planned_for: string | null
+          p_today: string
+        }
+        Returns: Json
+      }
+      journal_update_event: {
+        Args: {
+          p_event_date: string
+          p_event_id: string
+          p_notes: string | null
+          p_rating: number | null
+          p_today: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

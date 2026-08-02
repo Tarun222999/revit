@@ -10,10 +10,224 @@ import type { MediaSource } from '@/types/media';
 export type JournalEntryRow = Tables<'journal_entries'>;
 export type JournalEntryInsert = TablesInsert<'journal_entries'>;
 export type JournalEntryUpdate = TablesUpdate<'journal_entries'>;
+export type JournalEventRow = Tables<'journal_events'>;
+export type JournalEventInsert = TablesInsert<'journal_events'>;
+export type JournalEventUpdate = TablesUpdate<'journal_events'>;
 export type MediaItemRow = Tables<'media_items'>;
 
 export type JournalEntry = Omit<JournalEntryRow, 'status'> & {
   status: JournalStatus;
+};
+
+export const JOURNAL_EVENT_TYPES = ['started', 'completed', 'stopped'] as const;
+
+export type JournalEventType = (typeof JOURNAL_EVENT_TYPES)[number];
+
+export type JournalPlan = {
+  plannedFor: string | null;
+};
+
+export type JournalTitleState = {
+  id: string;
+  mediaItemId: string;
+  status: JournalStatus;
+  activePlan: JournalPlan | null;
+  undatedCompletedCount: number;
+};
+
+export type JournalEvent = {
+  id: string;
+  journalEntryId: string;
+  type: JournalEventType;
+  eventDate: string;
+  rating: number | null;
+  notes: string | null;
+};
+
+export type JournalMediaSummary = {
+  id: string;
+  source: MediaSource;
+  sourceId: string;
+  mediaType: MediaType;
+  title: string;
+  originalTitle: string | null;
+  releaseDate: string | null;
+  year: string | null;
+  imageUrl: string | null;
+};
+
+export type JournalTitleSummary = {
+  titleState: JournalTitleState;
+  latestCompletedEvent: JournalEvent | null;
+  completedWatchCount: number;
+  activityCount: number;
+};
+
+export type JournalEventCursor = {
+  eventDate: string;
+  createdAt: string;
+  id: string;
+};
+
+export type JournalHistoryPage = {
+  events: JournalEvent[];
+  nextCursor: JournalEventCursor | null;
+};
+
+export type JournalTimelineItem = {
+  event: JournalEvent;
+  media: JournalMediaSummary;
+  currentStatus: JournalStatus;
+  isRewatch: boolean;
+};
+
+export type JournalTimelineFilters = {
+  date: 'all' | 'this_month' | 'last_30_days' | 'this_year';
+  eventTypes: JournalEventType[];
+  mediaType: 'all' | MediaType;
+  query: string;
+  rating: JournalRatingFilter;
+};
+
+export type JournalTimelinePage = {
+  items: JournalTimelineItem[];
+  nextCursor: JournalEventCursor | null;
+};
+
+export type JournalPlannerSection = 'today' | 'upcoming' | 'missed' | 'someday';
+
+export type JournalPlannerItem = {
+  titleState: JournalTitleState;
+  media: JournalMediaSummary;
+  section: JournalPlannerSection;
+};
+
+export type JournalCalendarEventItem = {
+  event: JournalEvent;
+  media: JournalMediaSummary;
+};
+
+export type JournalCalendarPlanItem = {
+  journalEntryId: string;
+  plannedFor: string;
+  media: JournalMediaSummary;
+};
+
+export type JournalCalendarRange = {
+  startDate: string;
+  endDate: string;
+};
+
+export type JournalCalendarData = JournalCalendarRange & {
+  events: JournalCalendarEventItem[];
+  plans: JournalCalendarPlanItem[];
+};
+
+export type JournalEventCalendarDay = {
+  date: string;
+  events: JournalCalendarEventItem[];
+  isCurrentMonth: boolean;
+  plans: JournalCalendarPlanItem[];
+};
+
+export type JournalEventCalendarMonth = JournalCalendarRange & {
+  completedCount: number;
+  days: JournalEventCalendarDay[];
+  eventCount: number;
+  monthDate: string;
+  planCount: number;
+};
+
+export type JournalMutationResult = {
+  userId: string;
+  mediaItemId: string;
+  journalEntryId: string;
+  eventId: string | null;
+  affectedDates: string[];
+  titleDeleted: boolean;
+  idempotentReplay: boolean;
+  eventCount?: number;
+  completedCount?: number;
+  hadActivePlan?: boolean;
+};
+
+export type SaveJournalPlanInput = {
+  mediaItemId: string;
+  plannedFor: string | null;
+  today: string;
+};
+
+export type RemoveJournalPlanInput = {
+  journalEntryId: string;
+};
+
+export type JournalLifecycleIntent =
+  | 'start'
+  | 'resume'
+  | 'complete'
+  | 'rewatch'
+  | 'previous_watch'
+  | 'stop';
+
+export type JournalLifecycleSource =
+  | 'title'
+  | 'planned_title'
+  | 'planner'
+  | 'history';
+
+export const JOURNAL_FORM_INTENTS = [
+  'plan',
+  'edit_plan',
+  'log',
+  'rewatch',
+  'previous_watch',
+  'start',
+  'resume',
+  'finish',
+  'stop',
+  'edit_event',
+] as const;
+
+export type JournalFormIntent = (typeof JOURNAL_FORM_INTENTS)[number];
+
+export type JournalIntentFormValues = {
+  date: string | null;
+  rating: number | null;
+  notes: string;
+};
+
+export type JournalIntentFormErrors = Partial<
+  Record<keyof JournalIntentFormValues, string>
+>;
+
+export type LogJournalEventInput = {
+  mediaItemId: string;
+  intent: JournalLifecycleIntent;
+  source: JournalLifecycleSource;
+  eventDate: string;
+  rating: number | null;
+  notes: string;
+  requestId: string;
+  today: string;
+};
+
+export type UpdateJournalEventInput = {
+  eventId: string;
+  eventDate: string;
+  rating: number | null;
+  notes: string;
+  today: string;
+};
+
+export type EmptyJournalTitleAction = 'keep_someday' | 'remove';
+
+export type DeleteJournalEventInput = {
+  eventId: string;
+  emptyTitleAction?: EmptyJournalTitleAction;
+};
+
+export type RemoveJournalTitleInput = {
+  journalEntryId: string;
 };
 
 export type JournalEntryFormValues = {

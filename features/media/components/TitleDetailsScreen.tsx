@@ -1,23 +1,35 @@
+import * as Linking from 'expo-linking';
 import { router, Stack } from 'expo-router';
-import { useState } from 'react';
+import { Alert } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { YourEntrySummary } from '@/features/journal/components/YourEntrySummary';
-import { useJournalEntryForMedia } from '@/features/journal/hooks/useJournalEntryForMedia';
+import { JournalHistoryPanel } from '@/features/journal/components/JournalHistoryPanel';
+import { TitleDetailsJournalActions } from '@/features/journal/components/TitleDetailsJournalActions';
+import { YourJournalSummary } from '@/features/journal/components/YourJournalSummary';
+import {
+  useRemoveJournalPlan,
+  useRemoveJournalTitle,
+} from '@/features/journal/hooks/useJournalLifecycleMutations';
+import { useJournalTitleSummary } from '@/features/journal/hooks/useJournalReads';
+import type { JournalTitleAction } from '@/features/journal/model/journalTitleActions';
+import { resolveJournalCaptureAction } from '@/features/journal/model/journalNavigation';
 import { AddToListPanel } from '@/features/lists/components/AddToListPanel';
 import { useMediaListMemberships } from '@/features/lists/hooks/useMediaListMemberships';
-import { TitleDetailsActions } from '@/features/media/components/TitleDetailsActions';
 import { TitleDetailsHero } from '@/features/media/components/TitleDetailsHero';
 import { TitleDetailsMetadataCard } from '@/features/media/components/TitleDetailsMetadataCard';
 import { TitleDetailsSummaryCard } from '@/features/media/components/TitleDetailsSummaryCard';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
+import { useMediaTrailer } from '@/features/media/hooks/useMediaTrailer';
 import { getTitleDetailMetrics } from '@/features/media/model/titleDetails';
 
 type TitleDetailsScreenProps = {
+  journalCapture?: string;
+  journalReturn?: boolean;
   titleId?: string;
 };
 
@@ -25,17 +37,31 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
-export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
+export function TitleDetailsScreen({
+  journalCapture,
+  journalReturn = false,
+  titleId,
+}: TitleDetailsScreenProps) {
   const { user } = useAuth();
   const detailsQuery = useMediaDetails(titleId);
   const item = detailsQuery.data?.item;
+  const trailerQuery = useMediaTrailer(
+    item?.source === 'tmdb' ? item.sourceId : undefined,
+  );
   const mediaItemId = item?.id;
-  const entryQuery = useJournalEntryForMedia(user?.id, mediaItemId);
+  const journalQuery = useJournalTitleSummary(user?.id, mediaItemId);
+  const removePlan = useRemoveJournalPlan();
+  const removeTitle = useRemoveJournalTitle();
   const membershipsQuery = useMediaListMemberships(user?.id, mediaItemId);
-  const entry = entryQuery.data ?? null;
+  const summary = journalQuery.data ?? null;
   const [showAddToListPanel, setShowAddToListPanel] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const openedCaptureRef = useRef(false);
 
-  const openJournalEntry = () => {
+  const openJournalIntent = useCallback((
+    action: JournalTitleAction,
+    returnToJournal = false,
+  ) => {
     if (!mediaItemId) {
       return;
     }
@@ -43,10 +69,118 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
     router.push({
       pathname: '/modals/journal-entry',
       params: {
+        intent: action.intent,
         mediaItemId,
-        ...(entry?.id ? { entryId: entry.id } : {}),
+        ...(returnToJournal ? { returnToJournal: 'true' } : {}),
+        source: action.source,
       },
     });
+  }, [mediaItemId]);
+
+  useEffect(() => {
+    if (
+      openedCaptureRef.current ||
+      !journalReturn ||
+      (journalCapture !== 'log' && journalCapture !== 'plan') ||
+      !item ||
+      !mediaItemId ||
+      !journalQuery.isSuccess
+    ) {
+      return;
+    }
+
+    const action = resolveJournalCaptureAction(
+      journalCapture,
+      item.mediaType,
+      summary,
+    );
+
+    openedCaptureRef.current = true;
+    openJournalIntent(action, true);
+  }, [
+    item,
+    journalCapture,
+    journalQuery.isSuccess,
+    journalReturn,
+    mediaItemId,
+    openJournalIntent,
+    summary,
+  ]);
+
+  const openEventEdit = (eventId: string) => {
+    if (!mediaItemId) return;
+    router.push({
+      pathname: '/modals/journal-entry',
+      params: { eventId, intent: 'edit_event', mediaItemId, source: 'history' },
+    });
+  };
+
+  const confirmRemovePlan = () => {
+    if (!summary?.titleState.activePlan) return;
+    Alert.alert(
+      'Remove plan?',
+      'This removes only the active plan. Your activity history will stay intact.',
+      [
+        { style: 'cancel', text: 'Cancel' },
+        {
+          style: 'destructive',
+          text: 'Remove plan',
+          onPress: () => {
+            void removePlan
+              .mutateAsync({ journalEntryId: summary.titleState.id })
+              .catch((error) =>
+                Alert.alert(
+                  'Could not remove plan',
+                  errorMessage(error, 'Try again in a moment.'),
+                ),
+              );
+          },
+        },
+      ],
+    );
+  };
+
+  const confirmRemoveTitle = () => {
+    if (!summary) return;
+    const planText = summary.titleState.activePlan ? ' and its active plan' : '';
+    Alert.alert(
+      'Remove from Journal?',
+      `This permanently removes ${summary.activityCount} recorded ${summary.activityCount === 1 ? 'activity' : 'activities'}${planText}. Lists are not affected.`,
+      [
+        { style: 'cancel', text: 'Cancel' },
+        {
+          style: 'destructive',
+          text: 'Remove from Journal',
+          onPress: () => {
+            void removeTitle
+              .mutateAsync({ journalEntryId: summary.titleState.id })
+              .then(() => setShowHistory(false))
+              .catch((error) =>
+                Alert.alert(
+                  'Could not remove title',
+                  errorMessage(error, 'Try again in a moment.'),
+                ),
+              );
+          },
+        },
+      ],
+    );
+  };
+
+  const openTrailer = async () => {
+    const trailer = trailerQuery.data?.trailer;
+
+    if (!trailer) {
+      return;
+    }
+
+    const url = `https://www.youtube.com/watch?v=${encodeURIComponent(trailer.key)}`;
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Trailer unavailable', 'Unable to open this trailer right now.');
+    }
   };
 
   return (
@@ -80,28 +214,48 @@ export function TitleDetailsScreen({ titleId }: TitleDetailsScreenProps) {
           <TitleDetailsHero item={item} />
           <TitleDetailsSummaryCard description={item.description} />
 
-          {entryQuery.isError ? (
+          {journalQuery.isLoading ? (
+            <LoadingState message="Loading your Journal" />
+          ) : journalQuery.isError ? (
             <ErrorState
-              title="Journal entry unavailable"
+              title="Journal unavailable"
               message={errorMessage(
-                entryQuery.error,
-                'Unable to load your journal entry for this title.',
+                journalQuery.error,
+                'Unable to load your Journal information for this title.',
               )}
-              onRetry={() => entryQuery.refetch()}
+              onRetry={() => journalQuery.refetch()}
             />
           ) : (
-            <YourEntrySummary entry={entry} />
+            <YourJournalSummary summary={summary} />
           )}
 
-          <TitleDetailsActions
+          <TitleDetailsJournalActions
             addToListLoading={membershipsQuery.isLoading}
-            canOpenJournalEntry={Boolean(mediaItemId)}
-            canOpenLists={Boolean(user?.id && mediaItemId)}
-            entry={entry}
-            journalEntryLoading={entryQuery.isLoading}
-            onOpenAddToList={() => setShowAddToListPanel(true)}
-            onOpenJournalEntry={openJournalEntry}
+            canAddToList={Boolean(user?.id && mediaItemId)}
+            canUseJournal={Boolean(
+              user?.id && mediaItemId && journalQuery.isSuccess,
+            )}
+            isSignedIn={Boolean(user?.id)}
+            mediaType={item.mediaType}
+            onAddToList={() => setShowAddToListPanel(true)}
+            onIntent={openJournalIntent}
+            onSignIn={() => router.push('/welcome')}
+            onRemovePlan={confirmRemovePlan}
+            onRemoveTitle={confirmRemoveTitle}
+            onToggleHistory={() => setShowHistory((current) => !current)}
+            onWatchTrailer={openTrailer}
+            removing={removePlan.isPending || removeTitle.isPending}
+            showTrailer={Boolean(trailerQuery.data?.trailer)}
+            summary={summary}
           />
+
+          {showHistory && summary && user?.id ? (
+            <JournalHistoryPanel
+              onEdit={(event) => openEventEdit(event.id)}
+              summary={summary}
+              userId={user.id}
+            />
+          ) : null}
 
           {showAddToListPanel && user?.id && mediaItemId ? (
             <AddToListPanel

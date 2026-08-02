@@ -1,482 +1,257 @@
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { JournalCalendarView } from '@/features/journal/components/JournalCalendarView';
-import { JournalFilterBoard } from '@/features/journal/components/JournalFilterBoard';
+import { JournalEventCalendarView } from '@/features/journal/components/JournalEventCalendarView';
+import { JournalPlannerView } from '@/features/journal/components/JournalPlannerView';
+import { JournalTimelineFilters } from '@/features/journal/components/JournalTimelineFilters';
 import { JournalTimelineView } from '@/features/journal/components/JournalTimelineView';
-import { useJournalEntries } from '@/features/journal/hooks/useJournalEntries';
+import { useJournalTimeline } from '@/features/journal/hooks/useJournalReads';
+import { getJournalCalendarMonthDate } from '@/features/journal/model/journalCalendar';
+import { localToday } from '@/features/journal/model/journalIntentForm';
 import {
-  addJournalCalendarMonths,
-  getJournalCalendarMonth,
-  getJournalCalendarMonthDate,
-} from '@/features/journal/model/journalCalendar';
+  getJournalFastCapture,
+  type JournalNavigationView,
+} from '@/features/journal/model/journalNavigation';
 import {
-  getVisibleJournalEntries,
-  hasActiveJournalFilters,
-  JOURNAL_DEFAULT_FILTERS,
-  JOURNAL_DEFAULT_SORT,
-} from '@/features/journal/model/journalList';
+  DEFAULT_TIMELINE_FILTERS,
+  filterJournalTimeline,
+  hasActiveTimelineFilters,
+} from '@/features/journal/model/journalTimeline';
 import type {
-  JournalListEntry,
-  JournalListFilters,
-  JournalSort,
+  JournalTimelineFilters as TimelineFilters,
+  JournalTimelineItem,
 } from '@/features/journal/types';
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import { cn } from '@/lib/utils/cn';
 
-type JournalView = 'timeline' | 'calendar';
+type JournalView = JournalNavigationView;
 
-type JournalEntriesQuery = ReturnType<typeof useJournalEntries>;
-
-const JOURNAL_LOADING_PLACEHOLDER_COUNT = 2;
-
-const JOURNAL_VIEW_OPTIONS: Array<{
-  label: string;
-  value: JournalView;
-}> = [
-  { label: 'Timeline', value: 'timeline' },
-  { label: 'Calendar', value: 'calendar' },
-];
-
-function getJournalErrorMessage(error: unknown) {
-  return error instanceof Error
-    ? error.message
-    : 'Unable to load your journal right now.';
-}
-
-function JournalLoadingState() {
-  return (
-    <View className="gap-4">
-      <LoadingState message="Loading journal entries" />
-
-      {Array.from({ length: JOURNAL_LOADING_PLACEHOLDER_COUNT }).map(
-        (_, placeholderIndex) => (
-          <Card className="gap-3" key={placeholderIndex}>
-            <View className="flex-row gap-3">
-              <View className="h-24 w-16 rounded-app bg-shelf-700" />
-              <View className="min-w-0 flex-1 gap-3">
-                <View className="h-4 w-3/4 rounded-full bg-archive-700" />
-                <View className="h-3 w-1/2 rounded-full bg-archive-700" />
-                <View className="flex-row gap-2">
-                  <View className="h-6 w-16 rounded-full bg-archive-700" />
-                  <View className="h-6 w-20 rounded-full bg-archive-700" />
-                </View>
-                <View className="h-3 w-full rounded-full bg-archive-700" />
-                <View className="h-3 w-2/3 rounded-full bg-archive-700" />
-              </View>
-            </View>
-          </Card>
-        ),
-      )}
-    </View>
-  );
-}
-
-function JournalStartEmptyState() {
-  return (
-    <Card className="gap-5 p-5">
-      <View className="flex-row items-start gap-3">
-        <View className="h-12 w-12 items-center justify-center rounded-full bg-shelf-700">
-          <Ionicons color="#f4c95d" name="journal" size={22} />
-        </View>
-        <View className="min-w-0 flex-1 gap-1">
-          <Text className="text-xl font-bold text-archive-50">
-            Start your first journal entry
-          </Text>
-          <Text className="text-sm leading-5 text-archive-300">
-            Pick a movie, series, or anime and turn it into a personal log with
-            status, rating, completion date, and a short review.
-          </Text>
-        </View>
-      </View>
-
-      <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-4">
-        <Text className="text-xs font-bold uppercase text-archive-300">
-          Your journal will collect
-        </Text>
-        <View className="gap-3">
-          <View className="flex-row items-center gap-3">
-            <Ionicons color="#aa9473" name="checkmark-circle" size={18} />
-            <Text className="min-w-0 flex-1 text-sm leading-5 text-archive-200">
-              Planned, in-progress, completed, and dropped titles.
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-3">
-            <Ionicons color="#aa9473" name="star" size={18} />
-            <Text className="min-w-0 flex-1 text-sm leading-5 text-archive-200">
-              Ratings and short notes you can revisit later.
-            </Text>
-          </View>
-          <View className="flex-row items-center gap-3">
-            <Ionicons color="#aa9473" name="calendar" size={18} />
-            <Text className="min-w-0 flex-1 text-sm leading-5 text-archive-200">
-              Timeline and calendar views once entries exist.
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <Button title="Find titles" onPress={() => router.push('/search')} />
-    </Card>
-  );
+function openMedia(media: {
+  id: string;
+  source: 'tmdb' | 'igdb';
+  sourceId: string;
+}) {
+  const routeId = createMediaRouteId(media);
+  router.push(`/title/${encodeURIComponent(routeId)}`);
 }
 
 function JournalViewSegment({
   activeView,
-  onViewChange,
+  onChange,
 }: {
   activeView: JournalView;
-  onViewChange: (view: JournalView) => void;
+  onChange: (view: JournalView) => void;
 }) {
   return (
     <View className="flex-row rounded-app border border-archive-700 bg-archive-800 p-1">
-      {JOURNAL_VIEW_OPTIONS.map((view) => {
-        const selected = view.value === activeView;
-
-        return (
-          <Pressable
-            accessibilityRole="button"
-            key={view.value}
-            onPress={() => onViewChange(view.value)}
+      {(['timeline', 'planner', 'calendar'] as const).map((view) => (
+        <Pressable
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeView === view }}
+          className={cn(
+            'min-h-10 flex-1 items-center justify-center rounded-md px-3',
+            activeView === view && 'bg-gold-400',
+          )}
+          key={view}
+          onPress={() => onChange(view)}>
+          <Text
             className={cn(
-              'min-h-10 flex-1 items-center justify-center rounded-md px-3',
-              selected && 'bg-gold-400',
+              'text-sm font-semibold capitalize',
+              activeView === view ? 'text-archive-900' : 'text-archive-200',
             )}>
-            <Text
-              className={cn(
-                'text-sm font-semibold',
-                selected ? 'text-archive-900' : 'text-archive-200',
-              )}>
-              {view.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+            {view}
+          </Text>
+        </Pressable>
+      ))}
     </View>
   );
 }
 
-function TimelineShell({
-  entries,
-  onEntryPress,
-  sort,
+function TimelineContent({
+  filters,
+  onFiltersChange,
+  userId,
 }: {
-  entries: JournalListEntry[];
-  onEntryPress: (entry: JournalListEntry) => void;
-  sort: JournalSort;
+  filters: TimelineFilters;
+  onFiltersChange: (filters: TimelineFilters) => void;
+  userId: string;
 }) {
+  const query = useJournalTimeline(userId);
+  const items = query.data?.pages.flatMap((page) => page.items) ?? [];
+  const visibleItems = useMemo(
+    () => filterJournalTimeline(items, filters),
+    [filters, items],
+  );
+  const activeFilters = hasActiveTimelineFilters(filters);
+
+  if (query.isLoading) {
+    return (
+      <View className="px-5 pt-5">
+        <LoadingState message="Loading Timeline" />
+      </View>
+    );
+  }
+  if (query.isError && !query.data) {
+    return (
+      <View className="px-5 pt-5">
+        <ErrorState
+          message={query.error instanceof Error ? query.error.message : 'Unable to load Timeline.'}
+          onRetry={() => query.refetch()}
+          title="Timeline unavailable"
+        />
+      </View>
+    );
+  }
+
+  const empty = (
+    <View className="gap-3">
+      <EmptyState
+        actionLabel={activeFilters ? 'Clear filters' : 'Find titles'}
+        message={
+          activeFilters
+            ? 'No loaded activity matches these filters.'
+            : 'Plans do not appear here. Log a watch, start, finish, or stop to build your Timeline.'
+        }
+        onAction={
+          activeFilters
+            ? () => onFiltersChange(DEFAULT_TIMELINE_FILTERS)
+            : () => router.push('/search')
+        }
+        title={activeFilters ? 'No matches' : 'No activity yet'}
+      />
+      {activeFilters && query.hasNextPage ? (
+        <Button
+          loading={query.isFetchingNextPage}
+          onPress={() => void query.fetchNextPage()}
+          title="Search earlier activity"
+          variant="secondary"
+        />
+      ) : null}
+    </View>
+  );
+
   return (
     <JournalTimelineView
-      entries={entries}
-      sort={sort}
-      onEntryPress={onEntryPress}
-    />
-  );
-}
-
-function getDefaultCalendarMonthDate(entries: JournalListEntry[]) {
-  const currentMonthDate = getJournalCalendarMonthDate(new Date().toISOString());
-
-  if (
-    entries.some(
-      (entry) => getJournalCalendarMonthDate(entry.createdAt) === currentMonthDate,
-    )
-  ) {
-    return currentMonthDate;
-  }
-
-  const mostRecentEntry = entries.reduce<JournalListEntry | null>(
-    (mostRecent, entry) =>
-      !mostRecent || entry.createdAt > mostRecent.createdAt ? entry : mostRecent,
-    null,
-  );
-
-  return mostRecentEntry
-    ? getJournalCalendarMonthDate(mostRecentEntry.createdAt)
-    : currentMonthDate;
-}
-
-function CalendarShell({
-  entries,
-  onEntryPress,
-}: {
-  entries: JournalListEntry[];
-  onEntryPress: (entry: JournalListEntry) => void;
-}) {
-  const currentMonthDate = getJournalCalendarMonthDate(new Date().toISOString());
-  const defaultMonthDate = useMemo(
-    () => getDefaultCalendarMonthDate(entries),
-    [entries],
-  );
-  const [monthDate, setMonthDate] = useState(defaultMonthDate);
-  const month = useMemo(
-    () => getJournalCalendarMonth(entries, monthDate),
-    [entries, monthDate],
-  );
-
-  useEffect(() => {
-    setMonthDate(defaultMonthDate);
-  }, [defaultMonthDate]);
-
-  const showPreviousMonth = useCallback(() => {
-    setMonthDate((currentMonthDate) =>
-      addJournalCalendarMonths(currentMonthDate, -1),
-    );
-  }, []);
-
-  const showNextMonth = useCallback(() => {
-    setMonthDate((currentMonthDate) =>
-      addJournalCalendarMonths(currentMonthDate, 1),
-    );
-  }, []);
-  const disableNextMonth = month.monthDate >= currentMonthDate;
-
-  return (
-    <JournalCalendarView
-      disableNextMonth={disableNextMonth}
-      month={month}
-      onEntryPress={onEntryPress}
-      onNextMonth={showNextMonth}
-      onPreviousMonth={showPreviousMonth}
-    />
-  );
-}
-
-function JournalLoadedContent({
-  activeView,
-  activeFilters,
-  entries,
-  filtersExpanded,
-  filters,
-  sort,
-  visibleEntries,
-  onClearFilters,
-  onEntryPress,
-  onFiltersChange,
-  onSortChange,
-  onToggleFilters,
-}: {
-  activeView: JournalView;
-  activeFilters: boolean;
-  entries: JournalListEntry[];
-  filtersExpanded: boolean;
-  filters: JournalListFilters;
-  sort: JournalSort;
-  visibleEntries: JournalListEntry[];
-  onClearFilters: () => void;
-  onEntryPress: (entry: JournalListEntry) => void;
-  onFiltersChange: (filters: JournalListFilters) => void;
-  onSortChange: (sort: JournalSort) => void;
-  onToggleFilters: () => void;
-}) {
-  if (activeView === 'calendar') {
-    return (
-      <CalendarShell
-        entries={entries}
-        onEntryPress={onEntryPress}
-      />
-    );
-  }
-
-  return (
-    <>
-      <JournalFilterBoard
-        expanded={filtersExpanded}
-        filters={filters}
-        hasActiveFilters={activeFilters}
-        sort={sort}
-        visibleCount={visibleEntries.length}
-        onClearFilters={onClearFilters}
-        onFiltersChange={onFiltersChange}
-        onSortChange={onSortChange}
-        onToggleExpanded={onToggleFilters}
-      />
-
-      {visibleEntries.length > 0 ? (
-        <TimelineShell
-          entries={visibleEntries}
-          sort={sort}
-          onEntryPress={onEntryPress}
+      empty={empty}
+      footer={
+        query.isFetchNextPageError ? (
+          <ErrorState
+            message="Earlier activity could not be loaded. Your current Timeline is unchanged."
+            onRetry={() => query.fetchNextPage()}
+            title="Could not load more"
+          />
+        ) : undefined
+      }
+      hasNextPage={Boolean(query.hasNextPage)}
+      header={
+        <JournalTimelineFilters
+          filters={filters}
+          onChange={onFiltersChange}
+          resultCount={visibleItems.length}
         />
-      ) : (
-        <EmptyState
-          title="No matches"
-          message="Nothing matches the current journal lens. Clear filters to see every logged title."
-          actionLabel={activeFilters ? 'Clear filters' : undefined}
-          onAction={activeFilters ? onClearFilters : undefined}
-        />
-      )}
-    </>
-  );
-}
-
-function JournalContent({
-  activeView,
-  activeFilters,
-  authLoading,
-  entries,
-  filtersExpanded,
-  filters,
-  isSignedIn,
-  journalQuery,
-  sort,
-  visibleEntries,
-  onClearFilters,
-  onEntryPress,
-  onFiltersChange,
-  onSortChange,
-  onToggleFilters,
-}: {
-  activeView: JournalView;
-  activeFilters: boolean;
-  authLoading: boolean;
-  entries: JournalListEntry[];
-  filtersExpanded: boolean;
-  filters: JournalListFilters;
-  isSignedIn: boolean;
-  journalQuery: JournalEntriesQuery;
-  sort: JournalSort;
-  visibleEntries: JournalListEntry[];
-  onClearFilters: () => void;
-  onEntryPress: (entry: JournalListEntry) => void;
-  onFiltersChange: (filters: JournalListFilters) => void;
-  onSortChange: (sort: JournalSort) => void;
-  onToggleFilters: () => void;
-}) {
-  if (authLoading) {
-    return <LoadingState message="Loading journal" />;
-  }
-
-  if (!isSignedIn) {
-    return (
-      <EmptyState
-        title="Sign in to view your journal"
-        message="Your logged titles, ratings, and short reviews will appear here after you sign in."
-      />
-    );
-  }
-
-  if (journalQuery.isLoading) {
-    return <JournalLoadingState />;
-  }
-
-  if (journalQuery.isError) {
-    return (
-      <ErrorState
-        title="Journal unavailable"
-        message={getJournalErrorMessage(journalQuery.error)}
-        retryLabel="Reload journal"
-        onRetry={() => journalQuery.refetch()}
-      />
-    );
-  }
-
-  if (journalQuery.isSuccess && entries.length === 0) {
-    return <JournalStartEmptyState />;
-  }
-
-  if (!journalQuery.isSuccess) {
-    return null;
-  }
-
-  return (
-    <JournalLoadedContent
-      activeView={activeView}
-      activeFilters={activeFilters}
-      entries={entries}
-      filtersExpanded={filtersExpanded}
-      filters={filters}
-      sort={sort}
-      visibleEntries={visibleEntries}
-      onClearFilters={onClearFilters}
-      onEntryPress={onEntryPress}
-      onFiltersChange={onFiltersChange}
-      onSortChange={onSortChange}
-      onToggleFilters={onToggleFilters}
+      }
+      isFetchingNextPage={query.isFetchingNextPage}
+      items={visibleItems}
+      onItemPress={(item: JournalTimelineItem) =>
+        openMedia({
+          id: item.media.id,
+          source: item.media.source,
+          sourceId: item.media.sourceId,
+        })
+      }
+      onLoadMore={() => void query.fetchNextPage()}
     />
   );
 }
 
-function openEntryTitleDetails(entry: JournalListEntry) {
-  const routeId = createMediaRouteId({
-    id: entry.mediaItemId,
-    source: entry.source,
-    sourceId: entry.sourceId,
-  });
-
-  router.push(`/title/${encodeURIComponent(routeId)}`);
-}
-
-/**
- * Renders the journal management screen with auth, loading, empty, error,
- * filter, and timeline states.
- *
- * @returns The user's journal timeline screen.
- */
 export function JournalScreen() {
-  const { loading: authLoading, user } = useAuth();
+  const { loading, user } = useAuth();
   const [activeView, setActiveView] = useState<JournalView>('timeline');
-  const [filters, setFilters] = useState<JournalListFilters>(
-    JOURNAL_DEFAULT_FILTERS,
+  const [timelineFilters, setTimelineFilters] = useState(DEFAULT_TIMELINE_FILTERS);
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    getJournalCalendarMonthDate(localToday()),
   );
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const [sort, setSort] = useState<JournalSort>(JOURNAL_DEFAULT_SORT);
-  const journalQuery = useJournalEntries(user?.id);
-  const entries = journalQuery.data ?? [];
-  const visibleEntries = useMemo(
-    () =>
-      getVisibleJournalEntries({
-        entries,
-        filters,
-        sort,
-      }),
-    [entries, filters, sort],
-  );
-  const activeFilters = hasActiveJournalFilters(filters);
-  const clearFilters = useCallback(() => setFilters(JOURNAL_DEFAULT_FILTERS), []);
-  const toggleFilters = useCallback(() => {
-    setFiltersExpanded((currentValue) => !currentValue);
-  }, []);
+  const [calendarDate, setCalendarDate] = useState(localToday);
+  const setView = useCallback((view: JournalView) => setActiveView(view), []);
+  const fastCapture = getJournalFastCapture(activeView);
+  const openFastCapture = () => {
+    if (!user) {
+      router.push('/welcome');
+      return;
+    }
+    router.push({
+      pathname: '/search',
+      params: {
+        journalCapture: fastCapture.capture,
+        journalReturn: 'true',
+      },
+    });
+  };
 
   return (
-    <Screen scroll className="gap-5">
-      <SectionHeader
-        title="My Journal"
-        subtitle="Browse and manage the titles you have logged."
-      />
-
-      <JournalViewSegment
-        activeView={activeView}
-        onViewChange={setActiveView}
-      />
-
-      <JournalContent
-        activeView={activeView}
-        activeFilters={activeFilters}
-        authLoading={authLoading}
-        entries={entries}
-        filtersExpanded={filtersExpanded}
-        filters={filters}
-        isSignedIn={Boolean(user)}
-        journalQuery={journalQuery}
-        sort={sort}
-        visibleEntries={visibleEntries}
-        onClearFilters={clearFilters}
-        onEntryPress={openEntryTitleDetails}
-        onFiltersChange={setFilters}
-        onSortChange={setSort}
-        onToggleFilters={toggleFilters}
-      />
+    <Screen padded={false}>
+      <View className="gap-5 px-5 pt-6">
+        <View className="flex-row items-center justify-between gap-3">
+          <View className="min-w-0 flex-1">
+            <Text className="text-xl font-bold text-archive-50">Your Journal</Text>
+            <Text className="text-sm text-archive-300">
+              {activeView === 'planner'
+                ? 'Decide what comes next.'
+                : 'Keep your personal viewing record.'}
+            </Text>
+          </View>
+          <Button
+            className="min-h-10 px-4"
+            onPress={openFastCapture}
+            title={fastCapture.label}
+          />
+        </View>
+        <JournalViewSegment activeView={activeView} onChange={setView} />
+      </View>
+      {loading ? (
+        <View className="px-5 pt-5">
+          <LoadingState message="Loading Journal" />
+        </View>
+      ) : null}
+      {!loading && !user ? (
+        <View className="px-5 pt-5">
+          <EmptyState
+            message="Sign in to keep your plans and personal viewing history."
+            title="Sign in to use Journal"
+          />
+        </View>
+      ) : null}
+      {!loading && user && activeView === 'timeline' ? (
+        <TimelineContent
+          filters={timelineFilters}
+          onFiltersChange={setTimelineFilters}
+          userId={user.id}
+        />
+      ) : null}
+      {!loading && user && activeView === 'calendar' ? (
+        <ScrollView
+          className="flex-1"
+          contentContainerClassName="gap-5 px-5 pb-28 pt-5"
+          showsVerticalScrollIndicator={false}>
+          <JournalEventCalendarView
+            monthDate={calendarMonth}
+            onMonthChange={setCalendarMonth}
+            onSelectedDateChange={setCalendarDate}
+            selectedDate={calendarDate}
+            userId={user.id}
+          />
+        </ScrollView>
+      ) : null}
+      {!loading && user && activeView === 'planner' ? (
+        <JournalPlannerView userId={user.id} />
+      ) : null}
     </Screen>
   );
 }

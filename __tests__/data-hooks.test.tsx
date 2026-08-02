@@ -8,8 +8,9 @@ import {
 import { searchTitles } from '@/features/discovery/api/search-api';
 import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
 import { useSearchTitles } from '@/features/discovery/hooks/useSearchTitles';
-import { getMediaDetails } from '@/features/media/api/media-api';
+import { getMediaDetails, getMediaTrailer } from '@/features/media/api/media-api';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
+import { useMediaTrailer } from '@/features/media/hooks/useMediaTrailer';
 import {
   createJournalEntry,
   deleteJournalEntry,
@@ -47,6 +48,7 @@ jest.mock('@/features/discovery/api/search-api', () => ({
 
 jest.mock('@/features/media/api/media-api', () => ({
   getMediaDetails: jest.fn(),
+  getMediaTrailer: jest.fn(),
   parseMediaRouteId: jest.fn((routeId: string) => ({ mediaItemId: routeId })),
 }));
 
@@ -76,6 +78,7 @@ jest.mock('@/lib/supabase/client', () => ({
 const mockGetDiscoverRail = jest.mocked(getDiscoverRail);
 const mockSearchTitles = jest.mocked(searchTitles);
 const mockGetMediaDetails = jest.mocked(getMediaDetails);
+const mockGetMediaTrailer = jest.mocked(getMediaTrailer);
 const mockCreateJournalEntry = jest.mocked(createJournalEntry);
 const mockDeleteJournalEntry = jest.mocked(deleteJournalEntry);
 const mockCreateList = jest.mocked(createList);
@@ -94,18 +97,24 @@ const mediaItem = {
 } satisfies NormalizedMediaItem;
 
 const journalEntry = {
+  effective_status: 'completed',
   completed_on: '2026-07-13',
   contains_spoilers: false,
   created_at: '2026-07-13T10:00:00.000Z',
+  has_active_plan: false,
   id: 'entry-1',
   last_activity_at: '2026-07-13T10:00:00.000Z',
+  legacy_bridge_statement_at: null,
+  legacy_plan_resolution_statement_at: null,
   media_item_id: 'media-1',
+  planned_for: null,
   rating: 4.5,
   review_body: null,
   review_headline: null,
   started_on: null,
   status: 'completed',
   updated_at: '2026-07-13T10:00:00.000Z',
+  undated_completed_count: 0,
   user_id: 'user-1',
 } satisfies JournalEntry;
 
@@ -274,6 +283,37 @@ describe('data query hooks', () => {
 
     expect(result.current.data?.item).toEqual(mediaItem);
     expect(mockGetMediaDetails).toHaveBeenCalledWith({ mediaItemId: 'media-1' });
+  });
+
+  it('loads and caches a TMDB trailer only when a source id is present', async () => {
+    mockGetMediaTrailer.mockResolvedValue({
+      trailer: {
+        key: 'trailer123',
+        name: 'Official Trailer',
+        site: 'YouTube',
+      },
+    });
+    const queryClient = createTestQueryClient();
+
+    const { result, rerender } = await renderHook(
+      ({ sourceId }: { sourceId?: string }) => useMediaTrailer(sourceId),
+      {
+        initialProps: { sourceId: undefined },
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(mockGetMediaTrailer).not.toHaveBeenCalled();
+
+    await rerender({ sourceId: 'movie:123' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.trailer?.key).toBe('trailer123');
+    expect(mockGetMediaTrailer).toHaveBeenCalledWith({
+      source: 'tmdb',
+      sourceId: 'movie:123',
+    });
   });
 });
 

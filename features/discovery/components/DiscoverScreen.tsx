@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { DiscoverModeBar } from '@/features/discovery/components/DiscoverModeBar';
 import { DiscoverRail } from '@/features/discovery/components/DiscoverRail';
 import type { DiscoveryMediaType, DiscoveryMode } from '@/types/discovery';
@@ -24,13 +23,6 @@ export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
 
   return (
     <View className="gap-7">
-      <View className="gap-2">
-        <SectionHeader
-          title="Browse"
-          subtitle="Movies, series, and anime worth browsing now."
-        />
-      </View>
-
       <DiscoverModeBar value={mode} onChange={setMode} />
 
       {railConfig.map((rail) => (

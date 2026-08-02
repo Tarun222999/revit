@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { FlatList, Pressable, Text, View } from 'react-native';
@@ -9,7 +9,6 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
 import { Chip } from '@/components/ui/Chip';
 import { Screen } from '@/components/ui/Screen';
-import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TextField } from '@/components/ui/TextField';
 import type { SearchMediaType } from '@/features/discovery/api/search-api';
 import { SearchResultCard } from '@/features/discovery/components/SearchResultCard';
@@ -44,8 +43,20 @@ function getResultCountLabel(resultCount: number) {
   return resultCount === 1 ? '1 result' : `${resultCount} results`;
 }
 
-function openSearchResult(item: NormalizedMediaItem) {
-  router.push(`/title/${encodeURIComponent(createMediaRouteId(item))}`);
+function openSearchResult(
+  item: NormalizedMediaItem,
+  journalCapture?: 'log' | 'plan',
+) {
+  const routeId = createMediaRouteId(item);
+  if (journalCapture) {
+    router.setParams({ journalCapture: undefined, journalReturn: undefined });
+    router.push({
+      pathname: '/title/[id]',
+      params: { id: routeId, journalCapture, journalReturn: 'true' },
+    });
+    return;
+  }
+  router.push(`/title/${encodeURIComponent(routeId)}`);
 }
 
 function SearchItemSeparator() {
@@ -71,11 +82,6 @@ function SearchHeader({
 }) {
   return (
     <View className="gap-5">
-      <SectionHeader
-        title="Search"
-        subtitle="Find movies, series, and anime by title."
-      />
-
       <View className="gap-4">
         <TextField
           label="Title"
@@ -224,6 +230,14 @@ function SearchEmptyContent({
  * @returns Search input, media filters, and a virtualized result list.
  */
 export function SearchScreen() {
+  const params = useLocalSearchParams<{
+    journalCapture?: string;
+    journalReturn?: string;
+  }>();
+  const journalCapture =
+    params.journalCapture === 'log' || params.journalCapture === 'plan'
+      ? params.journalCapture
+      : undefined;
   const [query, setQuery] = useState('');
   const [mediaType, setMediaType] = useState<SearchMediaType>('all');
   const searchQuery = useSearchTitles(query, mediaType);
@@ -238,9 +252,12 @@ export function SearchScreen() {
   );
   const renderItem = useCallback(
     ({ item }: { item: NormalizedMediaItem }) => (
-      <SearchResultCard item={item} onPress={() => openSearchResult(item)} />
+      <SearchResultCard
+        item={item}
+        onPress={() => openSearchResult(item, journalCapture)}
+      />
     ),
-    [],
+    [journalCapture],
   );
   const clearSearch = useCallback(() => {
     setQuery('');
@@ -262,15 +279,37 @@ export function SearchScreen() {
         windowSize={SEARCH_WINDOW_SIZE}
         contentContainerClassName="gap-5 px-5 py-6"
         ListHeaderComponent={
-          <SearchHeader
-            isSearchSuccess={searchQuery.isSuccess}
-            mediaType={mediaType}
-            query={query}
-            resultCount={results.length}
-            onClearSearch={clearSearch}
-            onMediaTypeChange={setMediaType}
-            onQueryChange={setQuery}
-          />
+          <View className="gap-4">
+            {journalCapture ? (
+              <View className="gap-3 rounded-app border border-gold-700 bg-archive-800 p-4">
+                <View>
+                  <Text className="font-bold text-gold-300">
+                    {journalCapture === 'plan' ? 'Choose a title to plan' : 'Choose a title to log'}
+                  </Text>
+                  <Text className="mt-1 text-sm text-archive-300">
+                    Selecting a result continues the focused Journal flow and returns you to Journal.
+                  </Text>
+                </View>
+                <Button
+                  title="Cancel and return to Journal"
+                  variant="ghost"
+                  onPress={() => {
+                    router.setParams({ journalCapture: undefined, journalReturn: undefined });
+                    router.dismissTo('/journal');
+                  }}
+                />
+              </View>
+            ) : null}
+            <SearchHeader
+              isSearchSuccess={searchQuery.isSuccess}
+              mediaType={mediaType}
+              query={query}
+              resultCount={results.length}
+              onClearSearch={clearSearch}
+              onMediaTypeChange={setMediaType}
+              onQueryChange={setQuery}
+            />
+          </View>
         }
         ListEmptyComponent={
           <SearchEmptyContent

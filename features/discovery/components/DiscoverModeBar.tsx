@@ -26,14 +26,9 @@ type DiscoverModeBarProps = {
 export function DiscoverModeBar({ value, onChange }: DiscoverModeBarProps) {
   return (
     <View className="gap-3">
-      <View className="gap-1">
-        <Text className="text-sm font-semibold uppercase text-gold-300">
-          Continue exploring
-        </Text>
-        <Text className="text-sm leading-5 text-archive-300">
-          {modeDescriptions[value]}
-        </Text>
-      </View>
+      <Text className="text-sm leading-5 text-archive-300">
+        {modeDescriptions[value]}
+      </Text>
 
       <View className="flex-row flex-wrap gap-2">
         {DISCOVERY_MODES.map((mode) => (
