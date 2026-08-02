@@ -839,7 +839,7 @@ Update this table only when work actually changes state.
 | 8. Planner | Not used | Complete | Today/Upcoming/Missed/Someday sections and plan-only management completed July 29, 2026 |
 | 9. Calendar | Not used | Complete | Range-based event/plan calendar, accessible markers, and retained selection completed July 29, 2026 |
 | 10. Fast capture and restoration | Not used | Complete | Intent-aware Search capture and Journal context restoration completed July 29, 2026 |
-| 11. Quality hardening | TAR-131 | In progress | TAR-132 passed review; TAR-131 completed August 2, 2026 as the next isolated ticket, while TAR-133 remains out of scope |
+| 11. Quality hardening | TAR-133 | In progress | TAR-132 and TAR-131 passed review; TAR-133 completed August 2, 2026 and awaits independent review and final Step 11 approval |
 
 ## Decision Log
 
@@ -856,6 +856,7 @@ Update this table only when work actually changes state.
 | July 28, 2026 | Retain all legacy Journal columns until a later verified cleanup migration | Implemented |
 | August 2, 2026 | Let series and anime outside Journal either `Start watching` or `Log as finished`; direct completion creates one completed event without an inferred start, while `Mark finished` remains for in-progress titles | Approved for TAR-132 |
 | August 2, 2026 | Keep Planner's log/start action visible and place reschedule, Move to Someday, and remove-plan management behind one accessible, large-text-safe More control | Approved for TAR-131 |
+| August 2, 2026 | Replace the dirty Journal form's stock alert with a focused Revit-themed confirmation that preserves values on `Keep editing` and shares protection across close and back paths | Approved for TAR-133 |
 
 ## Step 2 Completion Record
 
@@ -1073,6 +1074,30 @@ Completed August 2, 2026 as the second isolated Step 11 ticket.
   changed.
 - Did not begin TAR-133.
 
+## TAR-133 Completion Record
+
+Completed August 2, 2026 as the final isolated Step 11 ticket.
+
+- Replaced the dirty Journal form's stock Android alert with a focused
+  Revit-themed dark/gold confirmation using the exact approved copy.
+- Kept `Keep editing` safe and value-preserving, while `Discard` closes the
+  form without submitting any Journal mutation.
+- Unified header close and React Navigation/back interception, with Android
+  confirmation-back treated as `Keep editing` and synchronous duplicate
+  confirmation protection.
+- Extended pending-submit protection to navigation and hardware back even when
+  the form has not otherwise become dirty.
+- Added alert/modal semantics, an accessibility announcement and heading-focus
+  path, comfortable vertical action targets, and a large-text-safe layout.
+- Added focused coverage for clean dismissal, dirty close/back, retained input,
+  duplicate interception, discard-without-save, pending protection,
+  accessibility, Android confirmation-back, and return-to-Journal behavior.
+- Passed all 136 repository tests, TypeScript typechecking, lint, and diff
+  validation. No unrelated alert, Planner, TAR-132, lifecycle, or database code
+  changed.
+- Step 11 remains `In progress` until independent review and final user
+  approval.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -1088,5 +1113,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 11 is authorized only through TAR-131. Complete and review TAR-131 before
-starting TAR-133 or any other Step 11 work.
+TAR-133 is the final authorized isolated Step 11 ticket. Complete it and wait
+for independent review and final user approval before marking Step 11 complete.

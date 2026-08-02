@@ -415,6 +415,12 @@ the logging form.
 - show field errors near their controls and a calm summary near Save
 - warn before dismissing a dirty form through close, back, or gesture dismissal
 - do not show the discard warning when nothing changed
+- use an app-owned dark/gold confirmation surface for dirty Journal forms with
+  `Keep editing` as the safe action and `Discard` as the destructive action
+- keep all form values when the user chooses `Keep editing`; only `Discard`
+  closes the form without saving
+- give close, navigation/back, and Android hardware back the same dirty-form
+  protection while blocking dismissal during a pending save
 - announce a specific success result such as `Plan saved`, `Watch logged`, or
   `Changes saved`
 - refresh Title Details, Timeline, Planner, and the affected Calendar month
