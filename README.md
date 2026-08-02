@@ -1,85 +1,79 @@
 # Revit
 
-Revit is a journal-first entertainment tracking app for movies, series, and anime. It is built as a production-ready Expo  app where users can discover titles, save them to a personal journal, rate them, write short reviews, and organize mixed-media lists.
+Revit is a personal entertainment journal for movies, series, and anime.
 
-The app is intentionally personal and management-focused: Discover is the browsing surface, Journal is where entries live, Lists are for collections, and Profile/Account owns identity and account settings.
+I built it to keep everything I watch in one place—from titles I plan to start to the ones I have completed, rated, and reviewed.
+
+[Get Revit on Google Play](https://play.google.com/store/apps/details?id=com.tarun.revit)
 
 ## Screenshots
 
 <p>
-  <img src="./publish-screenshots/auth-screen.jpeg" alt="Revit auth screen" width="180" />
-  <img src="./publish-screenshots/discover.jpeg" alt="Revit discover screen" width="180" />
-  <img src="./publish-screenshots/search.jpeg" alt="Revit search screen" width="180" />
-  <img src="./publish-screenshots/journal.jpeg" alt="Revit journal screen" width="180" />
-  <img src="./publish-screenshots/lists.jpeg" alt="Revit lists screen" width="180" />
-  <img src="./publish-screenshots/rating.jpeg" alt="Revit rating modal" width="180" />
+  <img src="./publish-screenshots/auth-screen.jpeg" alt="Revit sign-in screen" width="180" />
+  <img src="./publish-screenshots/discover.jpeg" alt="Revit Discover screen" width="180" />
+  <img src="./publish-screenshots/search.jpeg" alt="Revit Search screen" width="180" />
+  <img src="./publish-screenshots/journal.jpeg" alt="Revit Journal screen" width="180" />
+  <img src="./publish-screenshots/lists.jpeg" alt="Revit Lists screen" width="180" />
+  <img src="./publish-screenshots/rating.jpeg" alt="Revit rating screen" width="180" />
 </p>
-
-
 
 ## Features
 
-- Production-ready auth shell with Google, Apple on iOS, and email OTP / magic link support.
-- Onboarding flow for display name, username, and optional avatar.
-- Discover and Search surfaces backed by normalized TMDB data through Supabase Edge Functions.
-- Title details with poster art, summaries, metadata, journal state, and list actions.
-- Add/Edit Journal Entry modal with status, 0.5-5.0 rating, short review, spoiler flag, and delete support.
-- Journal Timeline and Calendar views with filters and sorting.
-- Mixed-media custom lists with list details and item management.
-- Profile/Account surface with profile editing, avatar updates, legal/support links, sign out, and account deletion.
+- Browse and search for movies, series, and anime
+- View posters, summaries, genres, and other title information
+- Sign in with Google
+- Add titles to a personal journal
+- Mark titles as Planned, In Progress, Completed, or Dropped
+- Rate titles from 0.5 to 5
+- Write short reviews and mark spoilers
+- Browse journal entries using Timeline and Calendar views
+- Filter and sort journal entries
+- Create lists containing different types of media
+- Update profile details and avatar
+- Access privacy, terms, and support pages
+- Sign out or delete an account from within the app
 
-## Stack
+## Built with
 
-- Expo, React Native, TypeScript
+- Expo
+- React Native
+- TypeScript
 - Expo Router
 - NativeWind
 - TanStack Query
-- Supabase Auth, Postgres, Storage, and Edge Functions
-- TMDB for movies, series, and anime metadata
-- SQL migrations and generated Supabase database types
+- Supabase
+- TMDB
 
-Games are planned for a later IGDB-backed expansion, but the media model is designed to stay extensible.
+TMDB requests are handled through Supabase Edge Functions so the TMDB credentials are not included in the mobile app.
 
-## Project Structure
+## Running locally
 
-```text
-app/          Expo Router routes, layouts, tabs, modals, and pushed screens
-components/   Shared UI, media, and feedback primitives
-features/     Feature-owned screens, hooks, models, and API wrappers
-lib/          Supabase, query, media, and shared infrastructure
-supabase/     SQL migrations, Edge Functions, and seed docs
-docs/         Product, architecture, phase, and release documentation
-assets/       App icons, splash assets, and bundled image assets
-```
-
-## Getting Started
-
-Install dependencies:
+Install the dependencies:
 
 ```bash
 npm install
 ```
 
-Create a local environment file:
+Create a `.env` file from the example:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in:
+Add your Supabase project values:
 
 ```text
 EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-Start the app:
+Start the development server:
 
 ```bash
 npm run start
 ```
 
-Useful local commands:
+Other available commands:
 
 ```bash
 npm run android
@@ -90,52 +84,10 @@ npm run lint
 npm run check
 ```
 
-## Supabase Notes
+## Links
 
-The mobile client only uses the public Supabase URL and anon key. Third-party content access stays behind Supabase Edge Functions so private TMDB credentials are not shipped in the app.
-
-Edge Function secrets should include:
-
-```text
-TMDB_ACCESS_TOKEN
-SUPABASE_URL
-SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-```
-
-After applying database migrations, regenerate the app database types:
-
-```bash
-npx supabase gen types typescript --project-id <project-ref> --schema public > lib/supabase/types.ts
-```
-
-Then run:
-
-```bash
-npm run typecheck
-```
-
-## Release Assets
-
-Release and publishing assets are organized under:
-
-```text
-publish-screenshots/
-publish-store-assets/
-aab/
-```
-
-The Expo/EAS configuration is in `app.json` and `eas.json`, with Android production builds configured as app bundles.
-
-## Product Direction
-
-Revit is scoped around a v1 journal loop:
-
-1. Find a title.
-2. Add it to the journal.
-3. Track status.
-4. Rate it.
-5. Write a short review.
-6. Revisit it through Timeline, Calendar, or Lists.
-
-The project docs in `docs/` are the source of truth for stack decisions, feature scope, folder structure, database design, and phase planning.
+- [Google Play](https://play.google.com/store/apps/details?id=com.tarun.revit)
+- [Website](https://revit.tarunapps.com/revit/)
+- [Privacy Policy](https://revit.tarunapps.com/revit/privacy/)
+- [Terms of Use](https://revit.tarunapps.com/revit/terms/)
+- [Support](https://revit.tarunapps.com/revit/support/)
