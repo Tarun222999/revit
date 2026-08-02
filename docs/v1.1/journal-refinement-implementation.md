@@ -839,7 +839,7 @@ Update this table only when work actually changes state.
 | 8. Planner | Not used | Complete | Today/Upcoming/Missed/Someday sections and plan-only management completed July 29, 2026 |
 | 9. Calendar | Not used | Complete | Range-based event/plan calendar, accessible markers, and retained selection completed July 29, 2026 |
 | 10. Fast capture and restoration | Not used | Complete | Intent-aware Search capture and Journal context restoration completed July 29, 2026 |
-| 11. Quality hardening | Not used | Not started | Awaiting explicit instruction after the requested Step 10 stop |
+| 11. Quality hardening | TAR-132 | In progress | TAR-132 completed August 2, 2026 as the first isolated UX-hardening ticket; TAR-131 and TAR-133 remain out of scope pending separate approval |
 
 ## Decision Log
 
@@ -854,6 +854,7 @@ Update this table only when work actually changes state.
 | July 28, 2026 | Confirm v1 `started_on` means `Dropped on` for dropped rows and backfill it as a `stopped` event | Implemented |
 | July 28, 2026 | Grant authenticated CRUD explicitly on `journal_events` while enforcing owner-only RLS | Implemented |
 | July 28, 2026 | Retain all legacy Journal columns until a later verified cleanup migration | Implemented |
+| August 2, 2026 | Let series and anime outside Journal either `Start watching` or `Log as finished`; direct completion creates one completed event without an inferred start, while `Mark finished` remains for in-progress titles | Approved for TAR-132 |
 
 ## Step 2 Completion Record
 
@@ -1035,6 +1036,22 @@ Completed July 29, 2026.
 - Passed all 113 repository tests, TypeScript typechecking, and lint. Manual
   device gesture verification remains part of the separately authorized Step 11.
 
+## TAR-132 Completion Record
+
+Completed August 2, 2026 as the first isolated Step 11 ticket.
+
+- Added `Log as finished` beside `Start watching` for series and anime outside
+  Journal, while keeping `Plan to watch` available under additional actions.
+- Added focused completion copy and mapped the new form intent to one existing
+  completed-event mutation without creating an inferred started event.
+- Kept `Mark finished` for series and anime already in progress and preserved
+  the existing one-started-event behavior of `Start watching`.
+- Added focused action-matrix, form-intent, completion-mutation, and start-flow
+  regression coverage.
+- Passed all 123 repository tests, TypeScript typechecking, lint, and diff
+  validation. No SQL or generated database type changed.
+- Did not begin TAR-131 or TAR-133.
+
 ## Approval Checklist For Step 1
 
 Before marking this document Approved, confirm:
@@ -1050,5 +1067,5 @@ Before marking this document Approved, confirm:
 
 ## Next Review Action
 
-Step 10 is complete. Stop here as requested. Step 11 quality hardening must not
-begin without a new explicit user instruction.
+Step 11 is authorized only through TAR-132. Complete and review TAR-132 before
+starting TAR-131, TAR-133, or any other Step 11 work.

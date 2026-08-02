@@ -240,6 +240,7 @@ export function JournalEntryModalScreen({
           rating:
             intent === 'finish' ||
             intent === 'log' ||
+            intent === 'log_finished' ||
             intent === 'previous_watch' ||
             intent === 'rewatch'
               ? values.rating

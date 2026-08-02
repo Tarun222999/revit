@@ -27,17 +27,21 @@ export function getJournalTitleActions(
 
   if (!summary) {
     return {
-      planAction: null,
+      planAction: movie
+        ? null
+        : { intent: 'plan', label: 'Plan to watch', source: 'title' },
       primary: {
         intent: movie ? 'log' : 'start',
         label: movie ? 'Log a watch' : 'Start watching',
         source: 'title',
       },
-      secondary: {
-        intent: 'plan',
-        label: 'Plan to watch',
-        source: 'title',
-      },
+      secondary: movie
+        ? { intent: 'plan', label: 'Plan to watch', source: 'title' }
+        : {
+            intent: 'log_finished',
+            label: 'Log as finished',
+            source: 'title',
+          },
       stopAction: null,
     };
   }

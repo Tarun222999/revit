@@ -24,8 +24,37 @@ function summary(
 
 describe('Title Details Journal action matrix', () => {
   it('starts with media-specific actions outside the Journal', () => {
-    expect(getJournalTitleActions('movie', null).primary.label).toBe('Log a watch');
-    expect(getJournalTitleActions('series', null).primary.label).toBe('Start watching');
+    const movieActions = getJournalTitleActions('movie', null);
+    const seriesActions = getJournalTitleActions('series', null);
+    const animeActions = getJournalTitleActions('anime', null);
+
+    expect(movieActions.primary.label).toBe('Log a watch');
+    expect(movieActions.secondary).toMatchObject({
+      intent: 'plan',
+      label: 'Plan to watch',
+    });
+    expect(seriesActions.primary).toMatchObject({
+      intent: 'start',
+      label: 'Start watching',
+      source: 'title',
+    });
+    expect(seriesActions.secondary).toMatchObject({
+      intent: 'log_finished',
+      label: 'Log as finished',
+      source: 'title',
+    });
+    expect(seriesActions.planAction).toMatchObject({
+      intent: 'plan',
+      label: 'Plan to watch',
+    });
+    expect(animeActions.secondary).toMatchObject({ intent: 'log_finished' });
+  });
+
+  it('keeps Mark finished for a series already in progress', () => {
+    expect(getJournalTitleActions('series', summary('in_progress')).primary).toMatchObject({
+      intent: 'finish',
+      label: 'Mark finished',
+    });
   });
 
   it('resolves an active plan from the planned-title source', () => {

@@ -6,6 +6,7 @@ import {
   isJournalFormIntent,
   lifecycleIntentForForm,
   localToday,
+  JOURNAL_INTENT_COPY,
   validateJournalIntentForm,
 } from '../features/journal/model/journalIntentForm';
 import type { JournalEvent } from '../features/journal/types';
@@ -27,6 +28,19 @@ describe('intent-based Journal form', () => {
   it('starts plans in Someday and activity on the local day', () => {
     expect(createJournalIntentFormValues('plan').date).toBeNull();
     expect(createJournalIntentFormValues('log').date).toBe(localToday());
+    expect(createJournalIntentFormValues('log_finished').date).toBe(localToday());
+  });
+
+  it('uses focused direct-completion copy for an untracked series or anime', () => {
+    expect(JOURNAL_INTENT_COPY.log_finished).toEqual({
+      dateLabel: 'Finished on',
+      description: 'Record when you finished it.',
+      submitLabel: 'Log as finished',
+      title: 'Log as finished',
+    });
+    expect(allowsRating('log_finished')).toBe(true);
+    expect(isJournalFormIntent('log_finished')).toBe(true);
+    expect(lifecycleIntentForForm('log_finished')).toBe('complete');
   });
 
   it('hydrates one selected event without merging another watch', () => {

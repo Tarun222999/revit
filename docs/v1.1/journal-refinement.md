@@ -5,7 +5,7 @@
 - Status: Approved product direction
 - Scope: Journal core-flow and end-to-end UX changes
 - Implementation: Approved through `docs/v1.1/journal-refinement-implementation.md`
-- Last updated: July 28, 2026
+- Last updated: August 2, 2026
 - Review pass: Title Details, entry actions, history, Planner, Timeline,
   Calendar, form resilience, deletion, accessibility, and data ownership
 
@@ -247,7 +247,7 @@ Recommended actions:
 | Title state | Primary action | Secondary action | Additional actions |
 | --- | --- | --- | --- |
 | Not in Journal, movie | Log a watch | Plan to watch | Add to List |
-| Not in Journal, series or anime | Start watching | Plan to watch | Add to List |
+| Not in Journal, series or anime | Start watching | Log as finished | Plan to watch, Add to List |
 | Planned movie | Log as watched | Edit plan | Remove plan, Add to List |
 | Planned series or anime | Start watching | Edit plan | Remove plan, Add to List |
 | In-progress movie | Mark watched | Update status | Stop watching, View history |
@@ -259,6 +259,11 @@ Recommended actions:
 When signed out, Journal actions should lead to a clear sign-in prompt rather
 than opening a form that cannot be saved. If the user's Journal state failed to
 load, disable actions that could create duplicates and show Retry.
+
+For a series or anime that is not yet in Journal, `Log as finished` is a direct
+completion path alongside `Start watching`. It creates one completed event and
+must not invent a started event. `Mark finished` remains reserved for a title
+that is already in progress.
 
 ## Title Details: `Your Journal`
 
@@ -334,6 +339,10 @@ Show:
 - watched or finished date, defaulting to today
 - optional rating
 - optional personal note
+
+For a series or anime outside Journal, `Log as finished` opens this focused
+completion form. Saving records only the completed event selected by the user;
+it does not add an inferred start date or started event.
 
 ### Logging a rewatch
 
