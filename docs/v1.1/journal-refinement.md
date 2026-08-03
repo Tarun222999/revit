@@ -5,7 +5,7 @@
 - Status: Approved product direction
 - Scope: Journal core-flow and end-to-end UX changes
 - Implementation: Approved through `docs/v1.1/journal-refinement-implementation.md`
-- Last updated: July 28, 2026
+- Last updated: August 2, 2026
 - Review pass: Title Details, entry actions, history, Planner, Timeline,
   Calendar, form resilience, deletion, accessibility, and data ownership
 
@@ -195,6 +195,17 @@ Planner rules:
 - removing a plan must not delete existing watch history
 - only one active plan per title is required for this v1.1 scope
 
+Each Planner card keeps its context-specific `Log watch` or `Start watching`
+action visible. Rescheduling, moving a dated plan to `Someday`, and removing the
+plan live behind one compact More control so they do not compete with the
+primary action. The More control must have an accessible label, an adequate
+touch target, visible expanded state, and a layout that remains usable with
+large text. Expanded management actions remain unmistakable buttons:
+
+- dated Today, Upcoming, and Missed plans: `Reschedule`, `Move to Someday`, and
+  `Remove plan`
+- undated Someday plans: `Schedule` and `Remove plan`
+
 Planner and Lists serve different jobs:
 
 - Planner answers what the user intends to watch and optionally when.
@@ -247,7 +258,7 @@ Recommended actions:
 | Title state | Primary action | Secondary action | Additional actions |
 | --- | --- | --- | --- |
 | Not in Journal, movie | Log a watch | Plan to watch | Add to List |
-| Not in Journal, series or anime | Start watching | Plan to watch | Add to List |
+| Not in Journal, series or anime | Start watching | Log as finished | Plan to watch, Add to List |
 | Planned movie | Log as watched | Edit plan | Remove plan, Add to List |
 | Planned series or anime | Start watching | Edit plan | Remove plan, Add to List |
 | In-progress movie | Mark watched | Update status | Stop watching, View history |
@@ -259,6 +270,11 @@ Recommended actions:
 When signed out, Journal actions should lead to a clear sign-in prompt rather
 than opening a form that cannot be saved. If the user's Journal state failed to
 load, disable actions that could create duplicates and show Retry.
+
+For a series or anime that is not yet in Journal, `Log as finished` is a direct
+completion path alongside `Start watching`. It creates one completed event and
+must not invent a started event. `Mark finished` remains reserved for a title
+that is already in progress.
 
 ## Title Details: `Your Journal`
 
@@ -335,6 +351,10 @@ Show:
 - optional rating
 - optional personal note
 
+For a series or anime outside Journal, `Log as finished` opens this focused
+completion form. Saving records only the completed event selected by the user;
+it does not add an inferred start date or started event.
+
 ### Logging a rewatch
 
 Logging a rewatch opens a form for the new watch date, rating, and note. Saving
@@ -395,6 +415,12 @@ the logging form.
 - show field errors near their controls and a calm summary near Save
 - warn before dismissing a dirty form through close, back, or gesture dismissal
 - do not show the discard warning when nothing changed
+- use an app-owned dark/gold confirmation surface for dirty Journal forms with
+  `Keep editing` as the safe action and `Discard` as the destructive action
+- keep all form values when the user chooses `Keep editing`; only `Discard`
+  closes the form without saving
+- give close, navigation/back, and Android hardware back the same dirty-form
+  protection while blocking dismissal during a pending save
 - announce a specific success result such as `Plan saved`, `Watch logged`, or
   `Changes saved`
 - refresh Title Details, Timeline, Planner, and the affected Calendar month
@@ -700,8 +726,9 @@ Show:
 - planned date or Someday
 - current state when relevant
 - `Log watch` or `Start watching`
-- reschedule and move-to-Someday actions
-- remove-plan action that preserves history
+- one accessible More control for plan management
+- expanded `Reschedule` or `Schedule`, `Move to Someday` for dated plans, and
+  `Remove plan` actions
 
 ### History rows
 

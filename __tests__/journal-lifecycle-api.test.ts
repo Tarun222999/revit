@@ -97,6 +97,54 @@ describe('Journal lifecycle API', () => {
     await expect(first).resolves.toMatchObject({ eventId: 'event-1' });
   });
 
+  it('logs a direct series finish as one completed event without a started event', async () => {
+    mockRpc.mockResolvedValueOnce({ data: rawResult(), error: null });
+
+    await logJournalEvent({
+      eventDate: '2026-08-02',
+      intent: 'complete',
+      mediaItemId: 'series-1',
+      notes: 'Finished before adding it to Journal',
+      rating: 4.5,
+      requestId: '30000000-0000-4000-8000-000000000020',
+      source: 'title',
+      today: '2026-08-02',
+    });
+
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledWith(
+      'journal_log_event',
+      expect.objectContaining({
+        p_event_type: 'completed',
+        p_resolve_active_plan: false,
+      }),
+    );
+  });
+
+  it('keeps Start watching as one started event', async () => {
+    mockRpc.mockResolvedValueOnce({ data: rawResult(), error: null });
+
+    await logJournalEvent({
+      eventDate: '2026-08-02',
+      intent: 'start',
+      mediaItemId: 'series-1',
+      notes: '',
+      rating: null,
+      requestId: '30000000-0000-4000-8000-000000000021',
+      source: 'title',
+      today: '2026-08-02',
+    });
+
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+    expect(mockRpc).toHaveBeenCalledWith(
+      'journal_log_event',
+      expect.objectContaining({
+        p_event_type: 'started',
+        p_resolve_active_plan: false,
+      }),
+    );
+  });
+
   it('rejects invalid dates before calling the database', async () => {
     await expect(
       saveJournalPlan({

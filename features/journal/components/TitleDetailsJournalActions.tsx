@@ -21,9 +21,7 @@ type Props = {
   onRemovePlan: () => void;
   onRemoveTitle: () => void;
   onToggleHistory: () => void;
-  onWatchTrailer: () => void;
   removing: boolean;
-  showTrailer: boolean;
   summary: JournalTitleSummary | null;
 };
 
@@ -39,9 +37,7 @@ export function TitleDetailsJournalActions({
   onRemovePlan,
   onRemoveTitle,
   onToggleHistory,
-  onWatchTrailer,
   removing,
-  showTrailer,
   summary,
 }: Props) {
   const [showMore, setShowMore] = useState(false);
@@ -102,9 +98,6 @@ export function TitleDetailsJournalActions({
             variant="ghost"
             onPress={onAddToList}
           />
-          {showTrailer ? (
-            <Button title="Watch trailer" variant="ghost" onPress={onWatchTrailer} />
-          ) : null}
           {summary ? (
             <Button
               loading={removing}

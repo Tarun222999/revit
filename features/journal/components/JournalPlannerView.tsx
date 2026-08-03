@@ -1,4 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Alert, Pressable, SectionList, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -14,7 +16,11 @@ import {
 } from '@/features/journal/hooks/useJournalLifecycleMutations';
 import { useJournalPlanner } from '@/features/journal/hooks/useJournalReads';
 import { localToday } from '@/features/journal/model/journalIntentForm';
-import { getPlannerWatchAction } from '@/features/journal/model/journalPlanner';
+import {
+  getPlannerManagementActions,
+  getPlannerWatchAction,
+  type PlannerManagementAction,
+} from '@/features/journal/model/journalPlanner';
 import type {
   JournalFormIntent,
   JournalPlannerItem,
@@ -60,11 +66,12 @@ function openTitle(item: JournalPlannerItem) {
 }
 
 function PlannerCard({ item }: { item: JournalPlannerItem }) {
+  const [showManagement, setShowManagement] = useState(false);
   const removePlan = useRemoveJournalPlan();
   const savePlan = useSaveJournalPlan();
   const action = getPlannerWatchAction(item);
+  const managementActions = getPlannerManagementActions(item.section);
   const pending = removePlan.isPending || savePlan.isPending;
-  const editLabel = item.section === 'someday' ? 'Schedule' : 'Reschedule';
 
   const confirmRemove = () => {
     Alert.alert(
@@ -101,6 +108,19 @@ function PlannerCard({ item }: { item: JournalPlannerItem }) {
       );
   };
 
+  const runManagementAction = (managementAction: PlannerManagementAction) => {
+    switch (managementAction.id) {
+      case 'edit_plan':
+        openIntent(item, 'edit_plan');
+        return;
+      case 'move_to_someday':
+        moveToSomeday();
+        return;
+      case 'remove_plan':
+        confirmRemove();
+    }
+  };
+
   return (
     <Card className="gap-3">
       <Pressable accessibilityRole="button" className="flex-row gap-3" onPress={() => openTitle(item)}>
@@ -120,37 +140,50 @@ function PlannerCard({ item }: { item: JournalPlannerItem }) {
         </View>
       </Pressable>
 
-      <View className="flex-row flex-wrap gap-2">
+      <View className="flex-row items-stretch gap-2">
         <Button
           className="min-w-[140px] flex-1"
           disabled={pending}
           onPress={() => openIntent(item, action.intent)}
           title={action.label}
         />
-        <Button
-          className="min-w-[120px] flex-1"
+        <Pressable
+          accessibilityHint="Shows plan management actions"
+          accessibilityLabel={`${showManagement ? 'Hide' : 'Show'} plan actions for ${item.media.title}`}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: pending, expanded: showManagement }}
+          className={`min-h-12 min-w-12 items-center justify-center rounded-app border ${
+            showManagement
+              ? 'border-gold-400 bg-gold-500/20'
+              : 'border-archive-500 bg-archive-800'
+          } ${pending ? 'opacity-50' : ''}`}
           disabled={pending}
-          onPress={() => openIntent(item, 'edit_plan')}
-          title={editLabel}
-          variant="secondary"
-        />
+          hitSlop={4}
+          onPress={() => setShowManagement((current) => !current)}>
+          <Ionicons
+            color={showManagement ? '#f4c95d' : '#fbf6ec'}
+            name={showManagement ? 'close' : 'ellipsis-horizontal'}
+            size={22}
+          />
+        </Pressable>
       </View>
-      {item.section === 'missed' ? (
-        <Button
-          disabled={pending}
-          loading={savePlan.isPending}
-          onPress={moveToSomeday}
-          title="Move to Someday"
-          variant="ghost"
-        />
+      {showManagement ? (
+        <View className="gap-2 rounded-app border border-archive-700 bg-archive-900 p-3">
+          {managementActions.map((managementAction) => (
+            <Button
+              key={managementAction.id}
+              disabled={pending}
+              loading={
+                (managementAction.id === 'move_to_someday' && savePlan.isPending) ||
+                (managementAction.id === 'remove_plan' && removePlan.isPending)
+              }
+              onPress={() => runManagementAction(managementAction)}
+              title={managementAction.label}
+              variant={managementAction.id === 'remove_plan' ? 'danger' : 'secondary'}
+            />
+          ))}
+        </View>
       ) : null}
-      <Button
-        disabled={pending}
-        loading={removePlan.isPending}
-        onPress={confirmRemove}
-        title="Remove plan"
-        variant="ghost"
-      />
     </Card>
   );
 }

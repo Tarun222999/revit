@@ -1,12 +1,13 @@
 import { usePreventRemove } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Alert } from 'react-native';
+import { AccessibilityInfo } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { JournalDiscardConfirmation } from '@/features/journal/components/JournalDiscardConfirmation';
 import { JournalEntryModalFrame } from '@/features/journal/components/JournalEntryModalFrame';
 import { JournalIntentForm } from '@/features/journal/components/JournalIntentForm';
 import {
@@ -110,6 +111,9 @@ export function JournalEntryModalScreen({
     savePlan.isPending || logEvent.isPending || updateEvent.isPending;
   const requestIdRef = useRef(createJournalRequestId());
   const [allowDismiss, setAllowDismiss] = useState(false);
+  const [discardConfirmationVisible, setDiscardConfirmationVisible] =
+    useState(false);
+  const discardConfirmationVisibleRef = useRef(false);
   const initializedEditRef = useRef(false);
   const initialValuesRef = useRef(createJournalIntentFormValues(intent));
   const [values, setValues] = useState(initialValuesRef.current);
@@ -124,6 +128,35 @@ export function JournalEntryModalScreen({
   const closeModal = () => {
     if (returnToJournal) router.dismissTo('/journal');
     else router.back();
+  };
+
+  const completeDismiss = () => {
+    discardConfirmationVisibleRef.current = false;
+    setDiscardConfirmationVisible(false);
+    setAllowDismiss(true);
+    setTimeout(closeModal, 0);
+  };
+
+  const keepEditing = () => {
+    discardConfirmationVisibleRef.current = false;
+    setDiscardConfirmationVisible(false);
+  };
+
+  const showDiscardConfirmation = () => {
+    if (mutationPending || discardConfirmationVisibleRef.current) return;
+    discardConfirmationVisibleRef.current = true;
+    setDiscardConfirmationVisible(true);
+  };
+
+  const requestDismiss = (fromNavigation = false) => {
+    if (mutationPending) return;
+    if (isDirty) {
+      showDiscardConfirmation();
+      return;
+    }
+
+    if (fromNavigation || returnToJournal) completeDismiss();
+    else closeModal();
   };
 
   useEffect(() => {
@@ -148,52 +181,10 @@ export function JournalEntryModalScreen({
     }
   }, [eventQuery.data, intent, summaryQuery.data, summaryQuery.isSuccess]);
 
-  usePreventRemove((returnToJournal || isDirty) && !allowDismiss, () => {
-    if (!isDirty) {
-      setAllowDismiss(true);
-      setTimeout(closeModal, 0);
-      return;
-    }
-    Alert.alert(
-      'Discard changes?',
-      'Your unsaved Journal changes will be lost.',
-      [
-        { style: 'cancel', text: 'Keep editing' },
-        {
-          style: 'destructive',
-          text: 'Discard',
-          onPress: () => {
-            setAllowDismiss(true);
-            setTimeout(closeModal, 0);
-          },
-        },
-      ],
-    );
-  });
-
-  const requestDismiss = () => {
-    if (mutationPending) return;
-    if (!isDirty) {
-      closeModal();
-      return;
-    }
-
-    Alert.alert(
-      'Discard changes?',
-      'Your unsaved Journal changes will be lost.',
-      [
-        { style: 'cancel', text: 'Keep editing' },
-        {
-          style: 'destructive',
-          text: 'Discard',
-          onPress: () => {
-            setAllowDismiss(true);
-            setTimeout(closeModal, 0);
-          },
-        },
-      ],
-    );
-  };
+  usePreventRemove(
+    (returnToJournal || isDirty || mutationPending) && !allowDismiss,
+    () => requestDismiss(true),
+  );
 
   const updateValue = <Key extends keyof JournalIntentFormValues>(
     key: Key,
@@ -208,6 +199,17 @@ export function JournalEntryModalScreen({
     AccessibilityInfo.announceForAccessibility(`${copy.submitLabel} saved`);
     setTimeout(closeModal, 0);
   };
+
+  const renderWithDiscardConfirmation = (content: React.ReactNode) => (
+    <>
+      {content}
+      <JournalDiscardConfirmation
+        onDiscard={completeDismiss}
+        onKeepEditing={keepEditing}
+        visible={discardConfirmationVisible}
+      />
+    </>
+  );
 
   const submit = async () => {
     if (mutationPending || hasJournalIntentFormErrors(errors)) return;
@@ -240,6 +242,7 @@ export function JournalEntryModalScreen({
           rating:
             intent === 'finish' ||
             intent === 'log' ||
+            intent === 'log_finished' ||
             intent === 'previous_watch' ||
             intent === 'rewatch'
               ? values.rating
@@ -257,22 +260,22 @@ export function JournalEntryModalScreen({
   };
 
   if (!user?.id) {
-    return (
+    return renderWithDiscardConfirmation(
       <ModalMessage
         message="Sign in before adding plans or activity to your Journal."
         onClose={closeModal}
         title="Sign in required"
-      />
+      />,
     );
   }
 
   if (!mediaItemId) {
-    return (
+    return renderWithDiscardConfirmation(
       <ModalMessage
         message="Open this from a title."
         onClose={closeModal}
         title="Missing title"
-      />
+      />,
     );
   }
 
@@ -280,18 +283,22 @@ export function JournalEntryModalScreen({
     (intent === 'edit_plan' && summaryQuery.isLoading) ||
     (intent === 'edit_event' && eventQuery.isLoading);
   if (detailsQuery.isLoading || loadingEdit) {
-    return (
-      <JournalEntryModalFrame title={copy.title} onClose={requestDismiss}>
+    return renderWithDiscardConfirmation(
+      <JournalEntryModalFrame
+        title={copy.title}
+        onClose={() => requestDismiss()}>
         <LoadingState message={`Loading ${copy.title.toLowerCase()}`} />
-      </JournalEntryModalFrame>
+      </JournalEntryModalFrame>,
     );
   }
 
   const loadError = detailsQuery.error ??
     (intent === 'edit_plan' ? summaryQuery.error : eventQuery.error);
   if (loadError) {
-    return (
-      <JournalEntryModalFrame title={copy.title} onClose={requestDismiss}>
+    return renderWithDiscardConfirmation(
+      <JournalEntryModalFrame
+        title={copy.title}
+        onClose={() => requestDismiss()}>
         <ErrorState
           message={errorMessage(loadError, 'Unable to load this Journal form.')}
           onRetry={() => {
@@ -301,32 +308,35 @@ export function JournalEntryModalScreen({
           }}
           title="Journal form unavailable"
         />
-      </JournalEntryModalFrame>
+      </JournalEntryModalFrame>,
     );
   }
 
   if (intent === 'edit_plan' && !summaryQuery.data?.titleState.activePlan) {
-    return (
+    return renderWithDiscardConfirmation(
       <ModalMessage
         message="This title has no active plan."
         onClose={closeModal}
         title="Plan not found"
-      />
+      />,
     );
   }
 
   if (intent === 'edit_event' && !eventQuery.data) {
-    return (
+    return renderWithDiscardConfirmation(
       <ModalMessage
         message="This activity is no longer available."
         onClose={closeModal}
         title="Activity not found"
-      />
+      />,
     );
   }
 
-  return (
-    <JournalEntryModalFrame scroll title={copy.title} onClose={requestDismiss}>
+  return renderWithDiscardConfirmation(
+    <JournalEntryModalFrame
+      scroll
+      title={copy.title}
+      onClose={() => requestDismiss()}>
       <JournalIntentForm
         errors={errors}
         event={eventQuery.data}
@@ -338,6 +348,6 @@ export function JournalEntryModalScreen({
         submitError={submitError}
         values={values}
       />
-    </JournalEntryModalFrame>
+    </JournalEntryModalFrame>,
   );
 }

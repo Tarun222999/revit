@@ -1,5 +1,8 @@
 import { getJournalPlannerSection } from '../features/journal/model/journalReadModels';
-import { getPlannerWatchAction } from '../features/journal/model/journalPlanner';
+import {
+  getPlannerManagementActions,
+  getPlannerWatchAction,
+} from '../features/journal/model/journalPlanner';
 import type { JournalPlannerItem } from '../features/journal/types';
 
 function item(status: JournalPlannerItem['titleState']['status'], mediaType: 'movie' | 'series'): JournalPlannerItem {
@@ -46,5 +49,23 @@ describe('Planner actions and sections', () => {
       intent: 'start',
       label: 'Start watching',
     });
+  });
+
+  it.each(['today', 'upcoming', 'missed'] as const)(
+    'offers complete dated-plan management in %s',
+    (section) => {
+      expect(getPlannerManagementActions(section)).toEqual([
+        { id: 'edit_plan', label: 'Reschedule' },
+        { id: 'move_to_someday', label: 'Move to Someday' },
+        { id: 'remove_plan', label: 'Remove plan' },
+      ]);
+    },
+  );
+
+  it('offers scheduling without a redundant Someday action for an undated plan', () => {
+    expect(getPlannerManagementActions('someday')).toEqual([
+      { id: 'edit_plan', label: 'Schedule' },
+      { id: 'remove_plan', label: 'Remove plan' },
+    ]);
   });
 });

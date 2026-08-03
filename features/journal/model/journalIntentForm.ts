@@ -42,6 +42,12 @@ export const JOURNAL_INTENT_COPY: Record<
     submitLabel: 'Log watch',
     title: 'Log a watch',
   },
+  log_finished: {
+    dateLabel: 'Finished on',
+    description: 'Record when you finished it.',
+    submitLabel: 'Log as finished',
+    title: 'Log as finished',
+  },
   plan: {
     dateLabel: 'Planned for',
     description: 'Choose a date or leave it open for Someday.',
@@ -101,6 +107,7 @@ export function isCompletedIntent(intent: JournalFormIntent) {
   return (
     intent === 'finish' ||
     intent === 'log' ||
+    intent === 'log_finished' ||
     intent === 'previous_watch' ||
     intent === 'rewatch'
   );
@@ -193,6 +200,7 @@ export function lifecycleIntentForForm(
   switch (intent) {
     case 'finish':
     case 'log':
+    case 'log_finished':
       return 'complete';
     case 'previous_watch':
     case 'resume':

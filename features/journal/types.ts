@@ -179,6 +179,7 @@ export const JOURNAL_FORM_INTENTS = [
   'plan',
   'edit_plan',
   'log',
+  'log_finished',
   'rewatch',
   'previous_watch',
   'start',

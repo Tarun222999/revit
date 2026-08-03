@@ -211,7 +211,11 @@ export function TitleDetailsScreen({
 
       {item ? (
         <>
-          <TitleDetailsHero item={item} />
+          <TitleDetailsHero
+            item={item}
+            onWatchTrailer={openTrailer}
+            showTrailer={Boolean(trailerQuery.data?.trailer)}
+          />
           <TitleDetailsSummaryCard description={item.description} />
 
           {journalQuery.isLoading ? (
@@ -243,9 +247,7 @@ export function TitleDetailsScreen({
             onRemovePlan={confirmRemovePlan}
             onRemoveTitle={confirmRemoveTitle}
             onToggleHistory={() => setShowHistory((current) => !current)}
-            onWatchTrailer={openTrailer}
             removing={removePlan.isPending || removeTitle.isPending}
-            showTrailer={Boolean(trailerQuery.data?.trailer)}
             summary={summary}
           />
 

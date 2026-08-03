@@ -1,4 +1,5 @@
-import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, View } from 'react-native';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { MEDIA_TYPE_LABELS } from '@/constants/media';
@@ -7,9 +8,15 @@ import type { NormalizedMediaItem } from '@/types/media';
 
 type TitleDetailsHeroProps = {
   item: NormalizedMediaItem;
+  onWatchTrailer?: () => void;
+  showTrailer?: boolean;
 };
 
-export function TitleDetailsHero({ item }: TitleDetailsHeroProps) {
+export function TitleDetailsHero({
+  item,
+  onWatchTrailer,
+  showTrailer = false,
+}: TitleDetailsHeroProps) {
   return (
     <View className="flex-row gap-4">
       <MediaPoster imageUrl={item.imageUrl} size="lg" />
@@ -33,6 +40,17 @@ export function TitleDetailsHero({ item }: TitleDetailsHeroProps) {
           <Text className="text-sm leading-5 text-archive-300">
             {formatTitleMetadataLine(item)}
           </Text>
+          {showTrailer ? (
+            <Pressable
+              accessibilityHint="Opens the trailer in YouTube."
+              accessibilityLabel={`Watch trailer for ${item.title}`}
+              accessibilityRole="button"
+              className="min-h-11 self-start flex-row items-center justify-center gap-1.5 rounded-full border border-archive-500 bg-archive-800 px-3 py-2"
+              onPress={onWatchTrailer}>
+              <Ionicons color="#f0c15a" name="play" size={14} />
+              <Text className="text-sm font-semibold text-gold-300">Trailer</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </View>
