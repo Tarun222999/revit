@@ -18,11 +18,16 @@ jest.mock('@/features/journal/hooks/useJournalReads', () => ({
   }),
 }));
 jest.mock('@/features/journal/hooks/useJournalLifecycleMutations', () => ({
-  useRemoveJournalPlan: () => ({ isPending: false, mutateAsync: mockRemovePlan }),
+  useRemoveJournalPlan: () => ({
+    isPending: false,
+    mutateAsync: mockRemovePlan,
+  }),
   useSaveJournalPlan: () => ({ isPending: false, mutateAsync: mockSavePlan }),
 }));
 
-function plannerItem(section: JournalPlannerItem['section']): JournalPlannerItem {
+function plannerItem(
+  section: JournalPlannerItem['section'],
+): JournalPlannerItem {
   return {
     media: {
       id: `media-${section}`,
@@ -74,7 +79,9 @@ describe('Planner card management actions', () => {
     const close = screen.getByLabelText('Hide plan actions for upcoming movie');
     expect(close.props.accessibilityState.expanded).toBe(true);
     expect(screen.getByRole('button', { name: 'Reschedule' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Move to Someday' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Move to Someday' }),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove plan' })).toBeTruthy();
 
     await fireEvent.press(close);
@@ -90,7 +97,9 @@ describe('Planner card management actions', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Schedule' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Move to Someday' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Move to Someday' }),
+    ).toBeNull();
     expect(screen.getByRole('button', { name: 'Remove plan' })).toBeTruthy();
   });
 
@@ -100,12 +109,71 @@ describe('Planner card management actions', () => {
     await fireEvent.press(
       screen.getByLabelText('Show plan actions for upcoming movie'),
     );
-    await fireEvent.press(screen.getByRole('button', { name: 'Move to Someday' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Move to Someday' }),
+    );
 
     expect(mockSavePlan).toHaveBeenCalledWith({
       mediaItemId: 'media-upcoming',
       plannedFor: null,
       today: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
+  });
+
+  it('uses the Revit confirmation surface before removing a plan', async () => {
+    await render(<JournalPlannerView userId="user-1" />);
+
+    await fireEvent.press(
+      screen.getByLabelText('Show plan actions for upcoming movie'),
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove plan' }));
+
+    const confirmation = screen.getByTestId('journal-action-confirmation');
+    expect(confirmation).toBeTruthy();
+    expect(confirmation.props.accessibilityViewIsModal).toBe(true);
+    expect(
+      screen.getByText(
+        'This removes the plan only. Existing Journal history remains.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Keep plan' })).toBeTruthy();
+
+    const removeButtons = screen.getAllByRole('button', {
+      name: 'Remove plan',
+    });
+    await fireEvent.press(removeButtons[removeButtons.length - 1]);
+
+    expect(mockRemovePlan).toHaveBeenCalledWith({
+      journalEntryId: 'entry-upcoming',
+    });
+    expect(screen.queryByTestId('journal-action-confirmation')).toBeNull();
+  });
+
+  it('shows custom failure feedback and supports retrying plan removal', async () => {
+    mockRemovePlan
+      .mockRejectedValueOnce(new Error('Network unavailable'))
+      .mockResolvedValueOnce(undefined);
+
+    await render(<JournalPlannerView userId="user-1" />);
+
+    await fireEvent.press(
+      screen.getByLabelText('Show plan actions for upcoming movie'),
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove plan' }));
+    const removeButtons = screen.getAllByRole('button', {
+      name: 'Remove plan',
+    });
+    await fireEvent.press(removeButtons[removeButtons.length - 1]);
+
+    const feedback = screen.getByTestId('journal-action-feedback');
+    expect(feedback).toBeTruthy();
+    expect(feedback.props.accessibilityViewIsModal).toBe(true);
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Network unavailable')).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(mockRemovePlan).toHaveBeenCalledTimes(2);
+    expect(screen.queryByTestId('journal-action-feedback')).toBeNull();
   });
 });
