@@ -20,7 +20,7 @@ type Props = {
   onSignIn: () => void;
   onRemovePlan: () => void;
   onRemoveTitle: () => void;
-  onToggleHistory: () => void;
+  onOpenHistory: () => void;
   removing: boolean;
   summary: JournalTitleSummary | null;
 };
@@ -36,14 +36,14 @@ export function TitleDetailsJournalActions({
   onSignIn,
   onRemovePlan,
   onRemoveTitle,
-  onToggleHistory,
+  onOpenHistory,
   removing,
   summary,
 }: Props) {
   const [showMore, setShowMore] = useState(false);
   const actions = getJournalTitleActions(mediaType, summary);
   const runSecondary = () => {
-    if (actions.secondary.intent === 'history') onToggleHistory();
+    if (actions.secondary.intent === 'history') onOpenHistory();
     else onIntent(actions.secondary);
   };
 
@@ -72,7 +72,7 @@ export function TitleDetailsJournalActions({
       {showMore ? (
         <View className="gap-2 rounded-app border border-archive-700 bg-archive-800 p-3">
           {isSignedIn && summary?.activityCount ? (
-            <Button title="View history" variant="ghost" onPress={onToggleHistory} />
+            <Button title="View history" variant="ghost" onPress={onOpenHistory} />
           ) : null}
           {isSignedIn && actions.planAction ? (
             <Button

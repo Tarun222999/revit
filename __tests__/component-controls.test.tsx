@@ -41,7 +41,7 @@ describe('journal controls', () => {
         onRemovePlan={jest.fn()}
         onRemoveTitle={jest.fn()}
         onSignIn={onSignIn}
-        onToggleHistory={jest.fn()}
+        onOpenHistory={jest.fn()}
         removing={false}
         summary={null}
       />,

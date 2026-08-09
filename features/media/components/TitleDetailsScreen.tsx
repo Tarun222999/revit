@@ -8,7 +8,6 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { JournalHistoryPanel } from '@/features/journal/components/JournalHistoryPanel';
 import { TitleDetailsJournalActions } from '@/features/journal/components/TitleDetailsJournalActions';
 import { YourJournalSummary } from '@/features/journal/components/YourJournalSummary';
 import {
@@ -55,7 +54,6 @@ export function TitleDetailsScreen({
   const membershipsQuery = useMediaListMemberships(user?.id, mediaItemId);
   const summary = journalQuery.data ?? null;
   const [showAddToListPanel, setShowAddToListPanel] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const openedCaptureRef = useRef(false);
 
   const openJournalIntent = useCallback((
@@ -107,12 +105,9 @@ export function TitleDetailsScreen({
     summary,
   ]);
 
-  const openEventEdit = (eventId: string) => {
-    if (!mediaItemId) return;
-    router.push({
-      pathname: '/modals/journal-entry',
-      params: { eventId, intent: 'edit_event', mediaItemId, source: 'history' },
-    });
+  const openHistory = () => {
+    if (!titleId || !summary?.activityCount) return;
+    router.push(`/title/${encodeURIComponent(titleId)}/history`);
   };
 
   const confirmRemovePlan = () => {
@@ -154,7 +149,6 @@ export function TitleDetailsScreen({
           onPress: () => {
             void removeTitle
               .mutateAsync({ journalEntryId: summary.titleState.id })
-              .then(() => setShowHistory(false))
               .catch((error) =>
                 Alert.alert(
                   'Could not remove title',
@@ -246,18 +240,10 @@ export function TitleDetailsScreen({
             onSignIn={() => router.push('/welcome')}
             onRemovePlan={confirmRemovePlan}
             onRemoveTitle={confirmRemoveTitle}
-            onToggleHistory={() => setShowHistory((current) => !current)}
+            onOpenHistory={openHistory}
             removing={removePlan.isPending || removeTitle.isPending}
             summary={summary}
           />
-
-          {showHistory && summary && user?.id ? (
-            <JournalHistoryPanel
-              onEdit={(event) => openEventEdit(event.id)}
-              summary={summary}
-              userId={user.id}
-            />
-          ) : null}
 
           {showAddToListPanel && user?.id && mediaItemId ? (
             <AddToListPanel
