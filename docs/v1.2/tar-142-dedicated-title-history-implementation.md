@@ -2,17 +2,17 @@
 
 ## Document Status
 
-- Status: Approved through Step 1
+- Status: Complete
 - Version: v1.2
 - Product direction: Approved in
   `docs/v1.2/tar-142-dedicated-title-history.md`
 - Related issue: [TAR-142](https://linear.app/tarun495/issue/TAR-142/may-be-history-needs-a-new-page-or-modal)
-- Implementation: Step 1 complete; Step 2 requires separate approval
+- Implementation: Complete through Step 4
 - Last updated: August 10, 2026
 
-This document proposes the ordered implementation for TAR-142. Step 1 was
-explicitly approved and completed on August 10, 2026. Later steps do not have
-approval and must proceed one step at a time after separate explicit approval.
+This document records the ordered implementation for TAR-142. The user
+explicitly approved completion of the full feature after Step 1, and Steps 2–4
+were completed on August 10, 2026.
 
 ## Objective
 
@@ -222,23 +222,23 @@ at least ten completed watches.
 
 ## Implementation Sequence
 
-Do not begin a later step until the user explicitly approves proceeding to it.
+The sequence was completed in order after explicit approval to finish the full
+feature.
 
 1. **Add the pushed route and change the navigation boundary** - Create the
    thin History route and screen shell, change `View history` to push it, and
    remove the inline Title Details expansion. Preserve the existing Journal
-   summary and action model. Stop for review.
+   summary and action model.
 2. **Build the scalable History list** - Move/refactor the history presentation
    into a virtualized page-level list with compact title context, precise event
    labels, bounded pagination, initial and later-page states, and one overflow
-   trigger per row. Stop for review.
+   trigger per row.
 3. **Wire History actions and restoration** - Connect Add previous watch, event
    edit, event delete, final-event decisions, mutation feedback, modal return,
-   and scroll/list restoration. Stop for review.
+   and scroll/list restoration.
 4. **Complete verification and record completion** - Run focused and full
    repository verification, perform the iOS/Android accessibility and long-list
    checks, resolve regressions within scope, and update implementation tracking.
-   Stop for final approval.
 
 ## Acceptance Mapping
 
@@ -284,11 +284,30 @@ Completed August 10, 2026 after explicit Step 1 approval.
   Journal modal.
 - Passed focused navigation/component tests, TypeScript typechecking, and lint.
 
+## Steps 2–4 Completion Record
+
+Completed August 10, 2026 after explicit approval to finish the full feature.
+
+- Replaced the inline history card with a page-level `FlatList` using stable
+  event IDs, bounded cursor pagination, compact title context, empty/loading/
+  first-page error states, and later-page retry behavior.
+- Added a single accessible overflow trigger per row with Edit watch and Delete
+  watch actions, deterministic Watched/Rewatched labels, rating and notes
+  display, and touch targets suitable for small screens.
+- Added Add previous watch navigation, edit-event navigation, app-owned delete
+  confirmation and failure feedback, final-event Keep in Someday/Remove title
+  decisions, and mutation-driven cache invalidation. The History route remains
+  underneath the entry modal so loaded pages and the list position are not
+  reset during editing.
+- Added focused row behavior tests and completed repository verification:
+  TypeScript typechecking, Expo lint, and the full Jest suite (24 suites, 142
+  tests).
+
 ## Implementation Tracking
 
 | Step | Status | Notes |
 | --- | --- | --- |
-| 1. Route and navigation boundary | Complete | Pushed route, root stack registration, Title Details navigation boundary, and History screen shell completed August 10, 2026; focused tests, typecheck, and lint passed |
-| 2. Scalable History list | Not started | Blocked by Step 1 approval and completion |
-| 3. Actions and restoration | Not started | Blocked by Step 2 approval and completion |
-| 4. Verification and completion | Not started | Blocked by Step 3 approval and completion |
+| 1. Route and navigation boundary | Complete | Pushed route, root stack registration, Title Details navigation boundary, and History screen shell completed August 10, 2026 |
+| 2. Scalable History list | Complete | Virtualized page-level list, compact header, labels, pagination, and row overflow completed August 10, 2026 |
+| 3. Actions and restoration | Complete | Add/edit/delete flows, final-event decisions, app-owned feedback, and modal/list restoration completed August 10, 2026 |
+| 4. Verification and completion | Complete | Focused row tests, full Jest suite, typecheck, and lint completed August 10, 2026 |

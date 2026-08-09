@@ -1,4 +1,5 @@
 import { router, Stack } from 'expo-router';
+import { View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -35,55 +36,68 @@ export function JournalHistoryScreen({ titleId }: { titleId?: string }) {
   };
 
   return (
-    <Screen scroll className="gap-5">
+    <Screen padded={false}>
       <Stack.Screen options={{ title: 'Watch history' }} />
 
       {detailsQuery.isLoading ? (
-        <LoadingState message="Loading title details" />
+        <View className="px-5 pt-5">
+          <LoadingState message="Loading title details" />
+        </View>
       ) : null}
 
       {detailsQuery.isError ? (
-        <ErrorState
-          message={errorMessage(
-            detailsQuery.error,
-            'Unable to load this title right now.',
-          )}
-          onRetry={() => detailsQuery.refetch()}
-          title="History unavailable"
-        />
+        <View className="px-5 pt-5">
+          <ErrorState
+            message={errorMessage(
+              detailsQuery.error,
+              'Unable to load this title right now.',
+            )}
+            onRetry={() => detailsQuery.refetch()}
+            title="History unavailable"
+          />
+        </View>
       ) : null}
 
       {!detailsQuery.isLoading && !detailsQuery.isError && !detailsQuery.data?.item ? (
-        <EmptyState
-          message="This title is not available right now."
-          title="Title not found"
-        />
+        <View className="px-5 pt-5">
+          <EmptyState
+            message="This title is not available right now."
+            title="Title not found"
+          />
+        </View>
       ) : null}
 
       {detailsQuery.data?.item && journalQuery.isLoading ? (
-        <LoadingState message="Loading your history" />
+        <View className="px-5 pt-5">
+          <LoadingState message="Loading your history" />
+        </View>
       ) : null}
 
       {detailsQuery.data?.item && journalQuery.isError ? (
-        <ErrorState
-          message={errorMessage(
-            journalQuery.error,
-            'Unable to load your history right now.',
-          )}
-          onRetry={() => journalQuery.refetch()}
-          title="History unavailable"
-        />
+        <View className="px-5 pt-5">
+          <ErrorState
+            message={errorMessage(
+              journalQuery.error,
+              'Unable to load your history right now.',
+            )}
+            onRetry={() => journalQuery.refetch()}
+            title="History unavailable"
+          />
+        </View>
       ) : null}
 
       {detailsQuery.data?.item && journalQuery.isSuccess && !summary ? (
-        <EmptyState
-          message="History is available after you record a watch for this title."
-          title="No history yet"
-        />
+        <View className="px-5 pt-5">
+          <EmptyState
+            message="History is available after you record a watch for this title."
+            title="No history yet"
+          />
+        </View>
       ) : null}
 
-      {summary && user?.id ? (
+      {detailsQuery.data?.item && summary && user?.id ? (
         <JournalHistoryPanel
+          media={detailsQuery.data.item}
           onEdit={(event) => openEventEdit(event.id)}
           summary={summary}
           userId={user.id}

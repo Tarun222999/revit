@@ -16,7 +16,9 @@ type JournalActionConfirmationProps = {
   confirmLabel: string;
   onCancel: () => void;
   onConfirm: () => void;
+  onSecondary?: () => void;
   pending?: boolean;
+  secondaryLabel?: string;
   title: string;
   visible: boolean;
 };
@@ -27,7 +29,9 @@ export function JournalActionConfirmation({
   confirmLabel,
   onCancel,
   onConfirm,
+  onSecondary,
   pending = false,
+  secondaryLabel,
   title,
   visible,
 }: JournalActionConfirmationProps) {
@@ -85,6 +89,15 @@ export function JournalActionConfirmation({
               title={cancelLabel}
               variant="secondary"
             />
+            {secondaryLabel && onSecondary ? (
+              <Button
+                className="min-h-12"
+                disabled={pending}
+                onPress={onSecondary}
+                title={secondaryLabel}
+                variant="secondary"
+              />
+            ) : null}
             <Button
               className="min-h-12"
               disabled={pending}

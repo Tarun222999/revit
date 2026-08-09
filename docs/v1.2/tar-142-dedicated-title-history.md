@@ -5,14 +5,14 @@
 - Status: Approved product direction
 - Version: v1.2
 - Related issue: [TAR-142](https://linear.app/tarun495/issue/TAR-142/may-be-history-needs-a-new-page-or-modal)
-- Implementation: Not approved
+- Implementation: Complete
 - Last updated: August 10, 2026
 
 This document defines the approved product direction for moving a title's full
-Journal history out of Title Details and into a dedicated pushed page. It does
-not authorize code, schema, migration, or tracker changes. Implementation
-requires separate explicit approval and must follow the ordered plan in
-`docs/v1.2/tar-142-dedicated-title-history-implementation.md`.
+Journal history out of Title Details and into a dedicated pushed page. The
+implementation is complete and follows the ordered plan in
+`docs/v1.2/tar-142-dedicated-title-history-implementation.md`. No schema,
+migration, or tracker changes were required.
 
 ## Goal
 
