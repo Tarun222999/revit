@@ -1,11 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, Text, View, type ViewStyle } from 'react-native';
 
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { Card } from '@/components/ui/Card';
+import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
+import { JournalActionDrawer } from '@/features/journal/components/JournalActionDrawer';
+import { JournalActionFeedback } from '@/features/journal/components/JournalActionFeedback';
+import {
+  useRemoveJournalPlan,
+  useSaveJournalPlan,
+} from '@/features/journal/hooks/useJournalLifecycleMutations';
 import { useJournalCalendarRange } from '@/features/journal/hooks/useJournalReads';
 import {
   addJournalCalendarMonths,
@@ -19,6 +27,7 @@ import type {
   JournalCalendarEventItem,
   JournalCalendarPlanItem,
   JournalEventCalendarDay,
+  JournalFormIntent,
 } from '@/features/journal/types';
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import { cn } from '@/lib/utils/cn';
@@ -115,9 +124,9 @@ function eventLabel(item: JournalCalendarEventItem) {
   return item.media.mediaType === 'movie' ? 'Watched' : 'Finished';
 }
 
-function LoggedCard({ item }: { item: JournalCalendarEventItem }) {
+function LoggedCard({ item, onPress }: { item: JournalCalendarEventItem; onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={() => openMedia(item.media)}>
+    <Pressable accessibilityHint="Opens activity actions" accessibilityRole="button" onPress={onPress}>
       <Card className="flex-row gap-3">
         <MediaPoster imageUrl={item.media.imageUrl} size="sm" />
         <View className="min-w-0 flex-1 gap-1">
@@ -131,9 +140,9 @@ function LoggedCard({ item }: { item: JournalCalendarEventItem }) {
   );
 }
 
-function PlanCard({ item }: { item: JournalCalendarPlanItem }) {
+function PlanCard({ item, onPress }: { item: JournalCalendarPlanItem; onPress: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={() => openMedia(item.media)}>
+    <Pressable accessibilityHint="Opens plan actions" accessibilityRole="button" onPress={onPress}>
       <Card className="flex-row gap-3 border-gold-700">
         <MediaPoster imageUrl={item.media.imageUrl} size="sm" />
         <View className="min-w-0 flex-1 gap-1">
@@ -143,6 +152,115 @@ function PlanCard({ item }: { item: JournalCalendarPlanItem }) {
         </View>
       </Card>
     </Pressable>
+  );
+}
+
+function openPlanIntent(item: JournalCalendarPlanItem, intent: JournalFormIntent) {
+  router.push({
+    pathname: '/modals/journal-entry',
+    params: { intent, mediaItemId: item.media.id, source: 'planner' },
+  });
+}
+
+function CalendarPlanActions({
+  item,
+  onClose,
+}: {
+  item: JournalCalendarPlanItem | null;
+  onClose: () => void;
+}) {
+  const [removeConfirmationVisible, setRemoveConfirmationVisible] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
+  const removePlan = useRemoveJournalPlan();
+  const savePlan = useSaveJournalPlan();
+  const pending = removePlan.isPending || savePlan.isPending;
+  const missed = Boolean(item && item.plannedFor < localToday());
+  const watchIntent: JournalFormIntent = item?.media.mediaType === 'movie' ? 'log' : 'start';
+  const watchLabel = missed ? 'I watched it' : item?.media.mediaType === 'movie' ? 'Log watch' : 'Start watching';
+
+  const executeRemovePlan = async () => {
+    if (!item) return;
+    try {
+      await removePlan.mutateAsync({ journalEntryId: item.journalEntryId });
+      setRemoveConfirmationVisible(false);
+      setRemoveError(null);
+      onClose();
+    } catch (error) {
+      setRemoveConfirmationVisible(false);
+      setRemoveError(error instanceof Error ? error.message : 'Try again in a moment.');
+    }
+  };
+
+  const moveToSomeday = async () => {
+    if (!item) return;
+    onClose();
+    try {
+      await savePlan.mutateAsync({ mediaItemId: item.media.id, plannedFor: null, today: localToday() });
+      setMoveError(null);
+    } catch (error) {
+      setMoveError(error instanceof Error ? error.message : 'Try again in a moment.');
+    }
+  };
+
+  return (
+    <>
+      <JournalActionDrawer
+        actions={
+          item
+            ? [
+                {
+                  label: watchLabel,
+                  onPress: () => {
+                    onClose();
+                    openPlanIntent(item, watchIntent);
+                  },
+                  tone: 'primary',
+                },
+                { label: 'Reschedule', onPress: () => { onClose(); openPlanIntent(item, 'edit_plan'); } },
+                { label: 'Move to Someday', disabled: pending, onPress: () => void moveToSomeday() },
+                { label: 'View title details', onPress: () => { onClose(); openMedia(item.media); } },
+                {
+                  label: 'Remove plan',
+                  disabled: pending,
+                  onPress: () => { onClose(); setRemoveConfirmationVisible(true); },
+                  tone: 'danger',
+                },
+              ]
+            : []
+        }
+        description={item ? displayDate(item.plannedFor, { day: 'numeric', month: 'long', year: 'numeric' }) : undefined}
+        onClose={onClose}
+        prompt={missed ? 'What happened with this plan?' : undefined}
+        title={item?.media.title ?? ''}
+        visible={item !== null}
+      />
+      <JournalActionConfirmation
+        body="This removes the plan only. Existing Journal history remains."
+        confirmLabel="Remove plan"
+        onCancel={() => setRemoveConfirmationVisible(false)}
+        onConfirm={() => void executeRemovePlan()}
+        pending={removePlan.isPending}
+        title="Remove plan?"
+        visible={removeConfirmationVisible}
+      />
+      <JournalActionFeedback
+        body={removeError ?? 'Try again in a moment.'}
+        onClose={() => setRemoveError(null)}
+        onRetry={() => void executeRemovePlan()}
+        pending={removePlan.isPending}
+        title="Could not remove plan"
+        visible={removeError !== null}
+      />
+      <JournalActionFeedback
+        body={moveError ?? 'Try again in a moment.'}
+        onClose={() => setMoveError(null)}
+        onRetry={() => void moveToSomeday()}
+        pending={savePlan.isPending}
+        title="Could not move plan"
+        visible={moveError !== null}
+      />
+    </>
   );
 }
 
@@ -159,6 +277,8 @@ export function JournalEventCalendarView({
   selectedDate: string;
   userId: string;
 }) {
+  const [selectedEvent, setSelectedEvent] = useState<JournalCalendarEventItem | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<JournalCalendarPlanItem | null>(null);
   const range = getJournalEventCalendarRange(monthDate);
   const query = useJournalCalendarRange(userId, range.startDate, range.endDate);
 
@@ -228,13 +348,61 @@ export function JournalEventCalendarView({
         </Text>
         <View className="gap-3">
           <Text className="text-sm font-bold uppercase text-teal-300">Logged</Text>
-          {selectedDay.events.length ? selectedDay.events.map((item) => <LoggedCard item={item} key={item.event.id} />) : <Text className="text-sm text-archive-300">Nothing logged on this date.</Text>}
+          {selectedDay.events.length ? selectedDay.events.map((item) => <LoggedCard item={item} key={item.event.id} onPress={() => setSelectedEvent(item)} />) : <Text className="text-sm text-archive-300">Nothing logged on this date.</Text>}
         </View>
         <View className="gap-3">
           <Text className="text-sm font-bold uppercase text-gold-300">Planned</Text>
-          {selectedDay.plans.length ? selectedDay.plans.map((item) => <PlanCard item={item} key={item.journalEntryId} />) : <Text className="text-sm text-archive-300">No plans on this date.</Text>}
+          {selectedDay.plans.length ? selectedDay.plans.map((item) => <PlanCard item={item} key={item.journalEntryId} onPress={() => setSelectedPlan(item)} />) : <Text className="text-sm text-archive-300">No plans on this date.</Text>}
         </View>
       </View>
+      <JournalActionDrawer
+        actions={
+          selectedEvent
+            ? [
+                {
+                  label: 'View title details',
+                  onPress: () => {
+                    const item = selectedEvent;
+                    setSelectedEvent(null);
+                    openMedia(item.media);
+                  },
+                  tone: 'primary',
+                },
+                {
+                  label: 'Edit activity',
+                  onPress: () => {
+                    const item = selectedEvent;
+                    setSelectedEvent(null);
+                    router.push({
+                      pathname: '/modals/journal-entry',
+                      params: { eventId: item.event.id, intent: 'edit_event', mediaItemId: item.media.id, source: 'history' },
+                    });
+                  },
+                },
+                ...(selectedEvent.event.type === 'completed'
+                  ? [
+                      {
+                        label: 'Log a rewatch',
+                        onPress: () => {
+                          const item = selectedEvent;
+                          setSelectedEvent(null);
+                          router.push({
+                            pathname: '/modals/journal-entry',
+                            params: { intent: 'rewatch', mediaItemId: item.media.id, source: 'title' },
+                          });
+                        },
+                      },
+                    ]
+                  : []),
+              ]
+            : []
+        }
+        description={selectedEvent ? `${eventLabel(selectedEvent)} · ${selectedEvent.event.eventDate}` : undefined}
+        onClose={() => setSelectedEvent(null)}
+        title={selectedEvent?.media.title ?? ''}
+        visible={selectedEvent !== null}
+      />
+      <CalendarPlanActions item={selectedPlan} onClose={() => setSelectedPlan(null)} />
     </View>
   );
 }

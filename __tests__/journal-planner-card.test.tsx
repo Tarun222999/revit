@@ -51,7 +51,7 @@ function plannerItem(
   };
 }
 
-describe('Planner card management actions', () => {
+describe('Planner row action drawers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockPlannerItems = [plannerItem('upcoming')];
@@ -59,33 +59,27 @@ describe('Planner card management actions', () => {
     mockSavePlan.mockResolvedValue(undefined);
   });
 
-  it('keeps the primary action visible and expands plan management on demand', async () => {
+  it('uses one accessible row and reveals actions in a contextual drawer', async () => {
     await render(<JournalPlannerView userId="user-1" />);
 
-    expect(screen.getByRole('button', { name: 'Log watch' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Log watch' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Reschedule' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove plan' })).toBeNull();
 
-    const more = screen.getByLabelText('Show plan actions for upcoming movie');
-    expect(more.props.accessibilityRole).toBe('button');
-    expect(more.props.accessibilityState).toEqual({
-      disabled: false,
-      expanded: false,
-    });
-    expect(more.props.hitSlop).toBe(4);
+    const row = screen.getByLabelText('upcoming movie, 10 Aug 2026. Open plan actions.');
+    expect(row.props.accessibilityRole).toBe('button');
+    expect(row.props.accessibilityHint).toBe('Opens plan actions');
 
-    await fireEvent.press(more);
+    await fireEvent.press(row);
 
-    const close = screen.getByLabelText('Hide plan actions for upcoming movie');
-    expect(close.props.accessibilityState.expanded).toBe(true);
+    expect(screen.getByTestId('journal-action-drawer')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Log watch' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Reschedule' })).toBeTruthy();
     expect(
       screen.getByRole('button', { name: 'Move to Someday' }),
     ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove plan' })).toBeTruthy();
-
-    await fireEvent.press(close);
-    expect(screen.queryByRole('button', { name: 'Reschedule' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'View title details' })).toBeTruthy();
   });
 
   it('shows section-specific actions for Someday without Move to Someday', async () => {
@@ -93,7 +87,7 @@ describe('Planner card management actions', () => {
     await render(<JournalPlannerView userId="user-1" />);
 
     await fireEvent.press(
-      screen.getByLabelText('Show plan actions for someday movie'),
+      screen.getByLabelText('someday movie, Someday. Open plan actions.'),
     );
 
     expect(screen.getByRole('button', { name: 'Schedule' })).toBeTruthy();
@@ -103,11 +97,24 @@ describe('Planner card management actions', () => {
     expect(screen.getByRole('button', { name: 'Remove plan' })).toBeTruthy();
   });
 
+  it('uses decision language for missed plans', async () => {
+    mockPlannerItems = [plannerItem('missed')];
+    await render(<JournalPlannerView userId="user-1" />);
+
+    await fireEvent.press(
+      screen.getByLabelText('missed movie, 10 Aug 2026. Open plan actions.'),
+    );
+
+    expect(screen.getByText('What happened with this plan?')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'I watched it' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Reschedule' })).toBeTruthy();
+  });
+
   it('moves any dated plan to Someday through the existing plan mutation', async () => {
     await render(<JournalPlannerView userId="user-1" />);
 
     await fireEvent.press(
-      screen.getByLabelText('Show plan actions for upcoming movie'),
+      screen.getByLabelText('upcoming movie, 10 Aug 2026. Open plan actions.'),
     );
     await fireEvent.press(
       screen.getByRole('button', { name: 'Move to Someday' }),
@@ -124,7 +131,7 @@ describe('Planner card management actions', () => {
     await render(<JournalPlannerView userId="user-1" />);
 
     await fireEvent.press(
-      screen.getByLabelText('Show plan actions for upcoming movie'),
+      screen.getByLabelText('upcoming movie, 10 Aug 2026. Open plan actions.'),
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Remove plan' }));
 
@@ -157,7 +164,7 @@ describe('Planner card management actions', () => {
     await render(<JournalPlannerView userId="user-1" />);
 
     await fireEvent.press(
-      screen.getByLabelText('Show plan actions for upcoming movie'),
+      screen.getByLabelText('upcoming movie, 10 Aug 2026. Open plan actions.'),
     );
     await fireEvent.press(screen.getByRole('button', { name: 'Remove plan' }));
     const removeButtons = screen.getAllByRole('button', {
