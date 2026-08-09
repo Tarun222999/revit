@@ -8,7 +8,10 @@ import {
   saveJournalPlan,
   updateJournalEvent,
 } from '@/features/journal/api/journal-mutation-api';
-import { invalidateJournalReadData } from '@/features/journal/api/journal-query-keys';
+import {
+  invalidateJournalReadData,
+  reconcileJournalPlannerCache,
+} from '@/features/journal/api/journal-query-keys';
 import { journalEntriesQueryKey } from '@/features/journal/hooks/useJournalEntryForMedia';
 import type {
   DeleteJournalEventInput,
@@ -22,12 +25,24 @@ import type {
 
 function useJournalLifecycleMutation<TInput>(
   mutationFn: (input: TInput) => Promise<JournalMutationResult>,
+  shouldRemoveFromPlanner: (
+    input: TInput,
+    result: JournalMutationResult,
+  ) => boolean = () => false,
 ) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn,
-    onSuccess: async (result) => {
+    onSuccess: async (result, input) => {
+      if (shouldRemoveFromPlanner(input, result)) {
+        reconcileJournalPlannerCache(queryClient, {
+          journalEntryId: result.journalEntryId,
+          mediaItemId: result.mediaItemId,
+          userId: result.userId,
+        });
+      }
+
       await Promise.all([
         invalidateJournalReadData(queryClient, {
           affectedDates: result.affectedDates,
@@ -50,21 +65,35 @@ export function useSaveJournalPlan() {
 }
 
 export function useRemoveJournalPlan() {
-  return useJournalLifecycleMutation<RemoveJournalPlanInput>(removeJournalPlan);
+  return useJournalLifecycleMutation<RemoveJournalPlanInput>(
+    removeJournalPlan,
+    () => true,
+  );
 }
 
 export function useLogJournalEvent() {
-  return useJournalLifecycleMutation<LogJournalEventInput>(logJournalEvent);
+  return useJournalLifecycleMutation<LogJournalEventInput>(
+    logJournalEvent,
+    (input) => input.source === 'planner' || input.source === 'planned_title',
+  );
 }
 
 export function useUpdateJournalEvent() {
-  return useJournalLifecycleMutation<UpdateJournalEventInput>(updateJournalEvent);
+  return useJournalLifecycleMutation<UpdateJournalEventInput>(
+    updateJournalEvent,
+  );
 }
 
 export function useDeleteJournalEvent() {
-  return useJournalLifecycleMutation<DeleteJournalEventInput>(deleteJournalEvent);
+  return useJournalLifecycleMutation<DeleteJournalEventInput>(
+    deleteJournalEvent,
+    (_input, result) => result.titleDeleted,
+  );
 }
 
 export function useRemoveJournalTitle() {
-  return useJournalLifecycleMutation<RemoveJournalTitleInput>(removeJournalTitle);
+  return useJournalLifecycleMutation<RemoveJournalTitleInput>(
+    removeJournalTitle,
+    (_input, result) => result.titleDeleted,
+  );
 }

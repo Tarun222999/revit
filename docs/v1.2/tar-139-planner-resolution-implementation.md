@@ -5,7 +5,7 @@
 - Status: Approved implementation proposal
 - Version: v1.2
 - Related issue: [TAR-139](https://linear.app/tarun495/issue/TAR-139/planner-is-brokendelete-is-not-working-native-delete-model)
-- Implementation: Steps 1–2 complete; Step 3 requires separate approval
+- Implementation: Steps 1–3 complete; Step 4 requires separate approval
 - Last updated: August 9, 2026
 
 This document records the proposed implementation for TAR-139. It does not
@@ -76,6 +76,27 @@ reconciliation path in addition to the existing invalidation.
 
 Conclusion: proceed to the scoped confirmation and confirmed-cache work in
 Step 2. No schema, migration, or RPC redesign is indicated by Step 1.
+
+## Step 3 Root Cause And Fix
+
+The stale Planner card was caused by the query-key shape, not by the removal
+RPC. `journalReadKeys.planner(userId)` produced a partial key ending in
+`['planner', undefined]`, while the mounted Planner query used
+`['planner', today]`. TanStack Query therefore did not match the invalidation
+request to the active Planner query. Reopening the app performed a fresh read,
+which is why the plan appeared removed after the process was restarted.
+
+The fix has two layers:
+
+- omit the undefined `today` segment from the partial Planner key so existing
+  invalidation reaches every cached Planner day; and
+- after a server-confirmed plan removal or Planner-originated log/start,
+  synchronously remove the matching title from every user-scoped cached
+  Planner day before the normal targeted invalidation completes.
+
+The cache reconciliation matches both the Journal title ID and media ID, so it
+handles the result shape from plan removal and activity logging without
+changing the database or lifecycle RPC contract.
 
 ## Proposed UX
 
@@ -222,5 +243,5 @@ Do not begin a later step until the user explicitly approves proceeding to it.
 | --- | --- | --- |
 | 1. Reproduce and characterize | Complete | Confirmed server persistence and stale in-session Planner state; focused tests passed August 9, 2026 |
 | 2. Confirmation and feedback | Complete | Added app-owned Remove plan and Could not remove plan surfaces with accessibility coverage; focused tests, typecheck, and lint passed August 9, 2026 |
-| 3. Confirmed cache reconciliation | Not started | Awaiting Step 2 completion and approval |
-| 4. End-to-end verification | Not started | Awaiting Step 3 completion and approval |
+| 3. Confirmed cache reconciliation | Complete | Fixed the undefined Planner-key segment, added server-confirmed cache reconciliation, and passed focused tests, typecheck, and lint August 9, 2026 |
+| 4. End-to-end verification | Not started | Awaiting explicit Step 4 approval |
