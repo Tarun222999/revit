@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useEffect, useState } from 'react';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
@@ -31,12 +31,13 @@ export function TitleDetailsHero({ item }: TitleDetailsHeroProps) {
           contentFit="cover"
           onError={() => setBackdropFailed(true)}
           source={{ uri: item.backdropUrl }}
-          style={{ height: '100%', width: '100%', position: 'absolute' }}
+          style={StyleSheet.absoluteFillObject}
           testID="title-backdrop-image"
         />
       ) : (
         <View
-          className="absolute inset-0 bg-shelf-700"
+          className="bg-shelf-700"
+          style={StyleSheet.absoluteFillObject}
           testID="title-backdrop-fallback"
         />
       )}

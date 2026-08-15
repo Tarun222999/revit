@@ -225,14 +225,30 @@ describe('cinematic title-detail controls', () => {
           { label: 'Released', value: '14 October 1994' },
           { label: 'Runtime', value: '142m' },
           { label: 'Studio', value: 'Castle Rock' },
+          { label: 'Language', value: 'English' },
         ]}
       />,
     );
 
     expect(screen.queryByText('Castle Rock')).toBeNull();
-    await fireEvent.press(screen.getByRole('button', { name: 'Show 1 more title details' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Show 2 more title details' }));
 
     expect(screen.getByText('Castle Rock')).toBeTruthy();
+  });
+
+  it('shows one remaining detail without an unnecessary disclosure control', async () => {
+    await render(
+      <TitleDetailsMetadataCard
+        details={[
+          { label: 'Released', value: '14 October 1994' },
+          { label: 'Runtime', value: '142m' },
+          { label: 'Studio', value: 'Castle Rock' },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Castle Rock')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /more title details/ })).toBeNull();
   });
 
   it('opens history through the compact Your Journal strip when activity exists', async () => {
