@@ -1,6 +1,6 @@
 import * as Linking from 'expo-linking';
 import { router, Stack } from 'expo-router';
-import { Alert } from 'react-native';
+import { Alert, View } from 'react-native';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -15,7 +15,10 @@ import {
   useRemoveJournalTitle,
 } from '@/features/journal/hooks/useJournalLifecycleMutations';
 import { useJournalTitleSummary } from '@/features/journal/hooks/useJournalReads';
-import type { JournalTitleAction } from '@/features/journal/model/journalTitleActions';
+import {
+  getJournalTitleActions,
+  type JournalTitleAction,
+} from '@/features/journal/model/journalTitleActions';
 import { resolveJournalCaptureAction } from '@/features/journal/model/journalNavigation';
 import { AddToListPanel } from '@/features/lists/components/AddToListPanel';
 import { useMediaListMemberships } from '@/features/lists/hooks/useMediaListMemberships';
@@ -110,6 +113,20 @@ export function TitleDetailsScreen({
     router.push(`/title/${encodeURIComponent(titleId)}/history`);
   };
 
+  const openRelevantJournalAction = () => {
+    if (!item) return;
+    openJournalIntent(getJournalTitleActions(item.mediaType, summary).primary);
+  };
+
+  const openJournalSummary = () => {
+    if (!user?.id) {
+      router.push('/welcome');
+      return;
+    }
+
+    openRelevantJournalAction();
+  };
+
   const confirmRemovePlan = () => {
     if (!summary?.titleState.activePlan) return;
     Alert.alert(
@@ -178,82 +195,94 @@ export function TitleDetailsScreen({
   };
 
   return (
-    <Screen scroll className="gap-5">
-      <Stack.Screen options={{ title: item?.title ?? 'Details' }} />
+    <Screen scroll padded={false} className="bg-archive-900">
+      <Stack.Screen
+        options={{
+          headerShadowVisible: false,
+          headerTintColor: '#fbf6ec',
+          headerTitle: '',
+          headerTransparent: true,
+        }}
+      />
 
-      {detailsQuery.isLoading ? (
-        <LoadingState message="Loading title details" />
-      ) : null}
+      <View className="px-5 pt-6">
+        {detailsQuery.isLoading ? (
+          <LoadingState message="Loading title details" />
+        ) : null}
 
-      {detailsQuery.isError ? (
-        <ErrorState
-          title="Details failed"
-          message={errorMessage(
-            detailsQuery.error,
-            'Unable to load this title right now.',
-          )}
-          onRetry={() => detailsQuery.refetch()}
-        />
-      ) : null}
+        {detailsQuery.isError ? (
+          <ErrorState
+            title="Details failed"
+            message={errorMessage(
+              detailsQuery.error,
+              'Unable to load this title right now.',
+            )}
+            onRetry={() => detailsQuery.refetch()}
+          />
+        ) : null}
 
-      {!detailsQuery.isLoading && !detailsQuery.isError && !item ? (
-        <EmptyState
-          title="Title not found"
-          message="This title is not available right now."
-        />
-      ) : null}
+        {!detailsQuery.isLoading && !detailsQuery.isError && !item ? (
+          <EmptyState
+            title="Title not found"
+            message="This title is not available right now."
+          />
+        ) : null}
+      </View>
 
       {item ? (
         <>
-          <TitleDetailsHero
-            item={item}
-            onWatchTrailer={openTrailer}
-            showTrailer={Boolean(trailerQuery.data?.trailer)}
-          />
-          <TitleDetailsSummaryCard description={item.description} />
-
-          {journalQuery.isLoading ? (
-            <LoadingState message="Loading your Journal" />
-          ) : journalQuery.isError ? (
-            <ErrorState
-              title="Journal unavailable"
-              message={errorMessage(
-                journalQuery.error,
-                'Unable to load your Journal information for this title.',
+          <TitleDetailsHero item={item} />
+          <View className="gap-7 px-5 pb-28 pt-5">
+            <TitleDetailsJournalActions
+              addToListLoading={membershipsQuery.isLoading}
+              canAddToList={Boolean(user?.id && mediaItemId)}
+              canUseJournal={Boolean(
+                user?.id && mediaItemId && journalQuery.isSuccess,
               )}
-              onRetry={() => journalQuery.refetch()}
+              isSignedIn={Boolean(user?.id)}
+              mediaType={item.mediaType}
+              onAddToList={() => setShowAddToListPanel(true)}
+              onIntent={openJournalIntent}
+              onOpenHistory={openHistory}
+              onRemovePlan={confirmRemovePlan}
+              onRemoveTitle={confirmRemoveTitle}
+              onSignIn={() => router.push('/welcome')}
+              onWatchTrailer={openTrailer}
+              removing={removePlan.isPending || removeTitle.isPending}
+              showTrailer={Boolean(trailerQuery.data?.trailer)}
+              summary={summary}
             />
-          ) : (
-            <YourJournalSummary summary={summary} />
-          )}
 
-          <TitleDetailsJournalActions
-            addToListLoading={membershipsQuery.isLoading}
-            canAddToList={Boolean(user?.id && mediaItemId)}
-            canUseJournal={Boolean(
-              user?.id && mediaItemId && journalQuery.isSuccess,
+            {showAddToListPanel && user?.id && mediaItemId ? (
+              <AddToListPanel
+                mediaItemId={mediaItemId}
+                userId={user.id}
+                onClose={() => setShowAddToListPanel(false)}
+              />
+            ) : null}
+
+            {user?.id && journalQuery.isLoading ? (
+              <LoadingState message="Loading your Journal" />
+            ) : user?.id && journalQuery.isError ? (
+              <ErrorState
+                title="Journal unavailable"
+                message={errorMessage(
+                  journalQuery.error,
+                  'Unable to load your Journal information for this title.',
+                )}
+                onRetry={() => journalQuery.refetch()}
+              />
+            ) : (
+              <YourJournalSummary
+                disabled={Boolean(user?.id && !journalQuery.isSuccess)}
+                onPress={summary?.activityCount ? openHistory : openJournalSummary}
+                summary={summary}
+              />
             )}
-            isSignedIn={Boolean(user?.id)}
-            mediaType={item.mediaType}
-            onAddToList={() => setShowAddToListPanel(true)}
-            onIntent={openJournalIntent}
-            onSignIn={() => router.push('/welcome')}
-            onRemovePlan={confirmRemovePlan}
-            onRemoveTitle={confirmRemoveTitle}
-            onOpenHistory={openHistory}
-            removing={removePlan.isPending || removeTitle.isPending}
-            summary={summary}
-          />
 
-          {showAddToListPanel && user?.id && mediaItemId ? (
-            <AddToListPanel
-              mediaItemId={mediaItemId}
-              userId={user.id}
-              onClose={() => setShowAddToListPanel(false)}
-            />
-          ) : null}
-
-          <TitleDetailsMetadataCard details={getTitleDetailMetrics(item)} />
+            <TitleDetailsSummaryCard description={item.description} />
+            <TitleDetailsMetadataCard details={getTitleDetailMetrics(item)} />
+          </View>
         </>
       ) : null}
     </Screen>

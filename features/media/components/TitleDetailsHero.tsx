@@ -1,55 +1,75 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { MEDIA_TYPE_LABELS } from '@/constants/media';
-import { formatTitleMetadataLine } from '@/features/media/model/titleDetails';
+import {
+  formatTitleHeroMetadata,
+  formatTmdbRating,
+} from '@/features/media/model/titleDetails';
 import type { NormalizedMediaItem } from '@/types/media';
 
 type TitleDetailsHeroProps = {
   item: NormalizedMediaItem;
-  onWatchTrailer?: () => void;
-  showTrailer?: boolean;
 };
 
-export function TitleDetailsHero({
-  item,
-  onWatchTrailer,
-  showTrailer = false,
-}: TitleDetailsHeroProps) {
-  return (
-    <View className="flex-row gap-4">
-      <MediaPoster imageUrl={item.imageUrl} size="lg" />
+export function TitleDetailsHero({ item }: TitleDetailsHeroProps) {
+  const [backdropFailed, setBackdropFailed] = useState(false);
+  const metadata = formatTitleHeroMetadata(item);
+  const rating = formatTmdbRating(item);
 
-      <View className="min-w-0 flex-1 justify-end gap-3">
-        <View className="self-start rounded-full bg-gold-400 px-3 py-1">
-          <Text className="text-xs font-bold uppercase text-archive-900">
+  useEffect(() => {
+    setBackdropFailed(false);
+  }, [item.backdropUrl]);
+
+  return (
+    <View className="relative min-h-[448px] overflow-hidden bg-archive-800 px-5 pb-8 pt-28">
+      {item.backdropUrl && !backdropFailed ? (
+        <Image
+          contentFit="cover"
+          onError={() => setBackdropFailed(true)}
+          source={{ uri: item.backdropUrl }}
+          style={{ height: '100%', width: '100%', position: 'absolute' }}
+          testID="title-backdrop-image"
+        />
+      ) : (
+        <View
+          className="absolute inset-0 bg-shelf-700"
+          testID="title-backdrop-fallback"
+        />
+      )}
+      <View className="absolute inset-0 bg-archive-900/30" />
+      <View className="absolute inset-x-0 bottom-0 h-80 bg-archive-900/95" />
+      <View className="absolute inset-x-0 bottom-0 h-52 bg-archive-900" />
+
+      <View className="relative mt-auto flex-row items-end gap-4">
+        <MediaPoster
+          className="h-48 w-32 rounded-lg border-archive-300 shadow-2xl"
+          imageUrl={item.imageUrl}
+        />
+
+        <View className="min-w-0 flex-1 gap-1 pb-1">
+          <Text className="text-xs font-bold uppercase tracking-widest text-gold-300">
             {MEDIA_TYPE_LABELS[item.mediaType]}
           </Text>
-        </View>
-
-        <View className="gap-2">
-          <Text className="text-3xl font-bold leading-9 text-archive-50">
+          <Text className="font-serif text-3xl font-semibold leading-9 text-archive-50">
             {item.title}
           </Text>
           {item.originalTitle && item.originalTitle !== item.title ? (
-            <Text className="text-sm leading-5 text-archive-300">
+            <Text className="text-sm leading-5 text-archive-200">
               {item.originalTitle}
             </Text>
           ) : null}
-          <Text className="text-sm leading-5 text-archive-300">
-            {formatTitleMetadataLine(item)}
-          </Text>
-          {showTrailer ? (
-            <Pressable
-              accessibilityHint="Opens the trailer in YouTube."
-              accessibilityLabel={`Watch trailer for ${item.title}`}
-              accessibilityRole="button"
-              className="min-h-11 self-start flex-row items-center justify-center gap-1.5 rounded-full border border-archive-500 bg-archive-800 px-3 py-2"
-              onPress={onWatchTrailer}>
-              <Ionicons color="#f0c15a" name="play" size={14} />
-              <Text className="text-sm font-semibold text-gold-300">Trailer</Text>
-            </Pressable>
+          {metadata ? (
+            <Text className="text-sm leading-5 text-archive-100">{metadata}</Text>
+          ) : null}
+          {rating ? (
+            <View className="flex-row items-center gap-1">
+              <Ionicons color="#e8c77d" name="star" size={13} />
+              <Text className="text-xs font-bold text-gold-300">{rating}</Text>
+            </View>
           ) : null}
         </View>
       </View>

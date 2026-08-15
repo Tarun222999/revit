@@ -1,5 +1,6 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import type { MediaType } from '@/constants/media';
@@ -8,6 +9,7 @@ import {
   type JournalTitleAction,
 } from '@/features/journal/model/journalTitleActions';
 import type { JournalTitleSummary } from '@/features/journal/types';
+import { cn } from '@/lib/utils/cn';
 
 type Props = {
   addToListLoading: boolean;
@@ -17,13 +19,42 @@ type Props = {
   mediaType: MediaType;
   onAddToList: () => void;
   onIntent: (action: JournalTitleAction) => void;
-  onSignIn: () => void;
+  onOpenHistory: () => void;
   onRemovePlan: () => void;
   onRemoveTitle: () => void;
-  onOpenHistory: () => void;
+  onSignIn: () => void;
+  onWatchTrailer: () => void;
   removing: boolean;
+  showTrailer: boolean;
   summary: JournalTitleSummary | null;
 };
+
+function CompactAction({
+  accessibilityLabel,
+  disabled = false,
+  icon,
+  onPress,
+}: {
+  accessibilityLabel: string;
+  disabled?: boolean;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      className={cn(
+        'h-12 w-12 items-center justify-center rounded-app border border-archive-600 bg-archive-800',
+        disabled && 'opacity-50',
+      )}
+      disabled={disabled}
+      onPress={onPress}>
+      <Ionicons color="#e8c77d" name={icon} size={19} />
+    </Pressable>
+  );
+}
 
 export function TitleDetailsJournalActions({
   addToListLoading,
@@ -33,15 +64,18 @@ export function TitleDetailsJournalActions({
   mediaType,
   onAddToList,
   onIntent,
-  onSignIn,
+  onOpenHistory,
   onRemovePlan,
   onRemoveTitle,
-  onOpenHistory,
+  onSignIn,
+  onWatchTrailer,
   removing,
+  showTrailer,
   summary,
 }: Props) {
   const [showMore, setShowMore] = useState(false);
   const actions = getJournalTitleActions(mediaType, summary);
+  const secondaryDisabled = !canUseJournal || removing;
   const runSecondary = () => {
     if (actions.secondary.intent === 'history') onOpenHistory();
     else onIntent(actions.secondary);
@@ -50,24 +84,48 @@ export function TitleDetailsJournalActions({
   return (
     <View className="gap-3">
       <Button
+        className="min-h-14"
         disabled={(isSignedIn && !canUseJournal) || removing}
         onPress={isSignedIn ? () => onIntent(actions.primary) : onSignIn}
         title={isSignedIn ? actions.primary.label : 'Sign in to use Journal'}
       />
-      {isSignedIn ? (
-        <Button
-          disabled={!canUseJournal || removing}
-          onPress={runSecondary}
-          title={actions.secondary.label}
-          variant="secondary"
+
+      <View className="flex-row items-center gap-2">
+        {isSignedIn ? (
+          <Pressable
+            accessibilityLabel={actions.secondary.label}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: secondaryDisabled }}
+            className="min-h-12 min-w-0 flex-1 justify-center px-1"
+            disabled={secondaryDisabled}
+            onPress={runSecondary}>
+            <Text className="text-sm font-semibold text-gold-300" numberOfLines={1}>
+              {actions.secondary.label}
+            </Text>
+          </Pressable>
+        ) : (
+          <View className="min-w-0 flex-1" />
+        )}
+        {showTrailer ? (
+          <CompactAction
+            accessibilityLabel="Watch trailer"
+            icon="play"
+            onPress={onWatchTrailer}
+          />
+        ) : null}
+        <CompactAction
+          accessibilityLabel="Add to List"
+          disabled={!canAddToList || addToListLoading}
+          icon="list"
+          onPress={onAddToList}
         />
-      ) : null}
-      <Button
-        disabled={(isSignedIn && !canUseJournal) || removing}
-        onPress={() => setShowMore((current) => !current)}
-        title={showMore ? 'Close more actions' : 'More actions'}
-        variant="ghost"
-      />
+        <CompactAction
+          accessibilityLabel={showMore ? 'Close more actions' : 'More actions'}
+          disabled={(isSignedIn && !canUseJournal) || removing}
+          icon="ellipsis-horizontal"
+          onPress={() => setShowMore((current) => !current)}
+        />
+      </View>
 
       {showMore ? (
         <View className="gap-2 rounded-app border border-archive-700 bg-archive-800 p-3">
@@ -91,13 +149,6 @@ export function TitleDetailsJournalActions({
           {isSignedIn && summary?.titleState.activePlan ? (
             <Button title="Remove plan" variant="ghost" onPress={onRemovePlan} />
           ) : null}
-          <Button
-            disabled={!canAddToList}
-            loading={addToListLoading}
-            title="Add to List"
-            variant="ghost"
-            onPress={onAddToList}
-          />
           {summary ? (
             <Button
               loading={removing}
