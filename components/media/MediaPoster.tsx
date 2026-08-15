@@ -37,9 +37,10 @@ export function MediaPoster({ imageUrl, size = 'md', className, ...props }: Medi
           contentFit="cover"
           onError={() => setImageFailed(true)}
           style={{ height: '100%', width: '100%' }}
+          testID="media-poster-image"
         />
       ) : (
-        <View className="h-full w-full bg-shelf-700" />
+        <View className="h-full w-full bg-shelf-700" testID="media-poster-fallback" />
       )}
     </View>
   );
