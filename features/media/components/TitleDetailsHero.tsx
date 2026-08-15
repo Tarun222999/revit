@@ -41,9 +41,7 @@ export function TitleDetailsHero({ item }: TitleDetailsHeroProps) {
           testID="title-backdrop-fallback"
         />
       )}
-      <View className="absolute inset-0 bg-archive-900/30" />
-      <View className="absolute inset-x-0 bottom-0 h-80 bg-archive-900/95" />
-      <View className="absolute inset-x-0 bottom-0 h-52 bg-archive-900" />
+      <View className="absolute inset-0 bg-archive-900/45" />
 
       <View className="relative mt-auto flex-row items-end gap-4">
         <MediaPoster
