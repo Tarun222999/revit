@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
-import { View, type ViewProps } from 'react-native';
 import { useEffect, useState } from 'react';
+import { View, type ViewProps } from 'react-native';
 
 import { cn } from '@/lib/utils/cn';
 
@@ -17,6 +17,7 @@ const sizeClasses = {
 
 export function MediaPoster({ imageUrl, size = 'md', className, ...props }: MediaPosterProps) {
   const [imageFailed, setImageFailed] = useState(false);
+  const hasImage = Boolean(imageUrl) && !imageFailed;
 
   useEffect(() => {
     setImageFailed(false);
@@ -30,11 +31,11 @@ export function MediaPoster({ imageUrl, size = 'md', className, ...props }: Medi
         className,
       )}
       {...props}>
-      {imageUrl && !imageFailed ? (
+      {hasImage ? (
         <Image
+          source={{ uri: imageUrl! }}
           contentFit="cover"
           onError={() => setImageFailed(true)}
-          source={{ uri: imageUrl }}
           style={{ height: '100%', width: '100%' }}
           testID="media-poster-image"
         />

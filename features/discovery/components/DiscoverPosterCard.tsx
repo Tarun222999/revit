@@ -7,6 +7,7 @@ import { MEDIA_TYPE_LABELS } from '@/constants/media';
 import type { NormalizedMediaItem } from '@/types/media';
 
 type DiscoverPosterCardProps = PressableProps & {
+  emphasis?: 'lead' | 'standard';
   item: NormalizedMediaItem;
   onPress: () => void;
   variant?: 'rail' | 'listing';
@@ -28,21 +29,26 @@ function formatMetadata(item: NormalizedMediaItem) {
 
 function DiscoverPosterCardComponent({
   className,
+  emphasis = 'standard',
   item,
   onPress,
   variant = 'rail',
   ...props
 }: DiscoverPosterCardProps) {
   const isListing = variant === 'listing';
+  const isLead = emphasis === 'lead';
   const metadata = formatMetadata(item);
 
   return (
     <Pressable
+      accessibilityLabel={`Open ${item.title}`}
       accessibilityRole="button"
       className={cn(
         isListing
           ? 'min-w-0 rounded-app border border-archive-700 bg-archive-800 p-2'
-          : 'w-28',
+          : isLead
+            ? 'w-32'
+            : 'mt-7 w-24',
         className,
       )}
       onPress={onPress}
@@ -51,21 +57,23 @@ function DiscoverPosterCardComponent({
         <MediaPoster
           imageUrl={item.imageUrl}
           size={isListing ? 'lg' : 'md'}
-          className={isListing ? 'h-56 w-full' : 'w-28'}
+          className={
+            isListing
+              ? 'h-56 w-full'
+              : isLead
+                ? 'h-44 w-32'
+                : 'h-36 w-24'
+          }
         />
 
         <View className="gap-1">
-          <View
-            className={cn(
-              'self-start rounded border px-1.5 py-0.5',
-              isListing
-                ? 'border-teal-500 bg-shelf-700'
-                : 'border-gold-400',
-            )}>
-            <Text className="text-[10px] font-bold uppercase text-gold-300">
-              {MEDIA_TYPE_LABELS[item.mediaType]}
-            </Text>
-          </View>
+          {isListing ? (
+            <View className="self-start rounded border border-teal-500 bg-shelf-700 px-1.5 py-0.5">
+              <Text className="text-[10px] font-bold uppercase text-gold-300">
+                {MEDIA_TYPE_LABELS[item.mediaType]}
+              </Text>
+            </View>
+          ) : null}
 
           <Text
             className="text-sm font-semibold leading-5 text-archive-50"
