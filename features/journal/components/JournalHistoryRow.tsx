@@ -88,26 +88,31 @@ export function JournalHistoryRow({
       </View>
 
       {menuOpen ? (
-        <View className="gap-2 border-t border-archive-700 pt-3">
-          <Text className="text-xs font-semibold uppercase text-archive-300">
-            Actions for {date}
-          </Text>
-          <View className="flex-row gap-2">
-            <Pressable
-              accessibilityRole="button"
-              className="min-h-12 flex-1 items-center justify-center rounded-app border border-archive-500 bg-archive-900 px-3"
-              onPress={onEdit}
-            >
-              <Text className="text-sm font-semibold text-archive-50">Edit watch</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              className="min-h-12 flex-1 items-center justify-center rounded-app bg-reel-500 px-3"
-              onPress={onDelete}
-            >
-              <Text className="text-sm font-semibold text-archive-50">Delete watch</Text>
-            </Pressable>
-          </View>
+        <View className="flex-row justify-end gap-2 border-t border-archive-700 pt-3">
+          <Pressable
+            accessibilityHint="Opens this watch for editing."
+            accessibilityLabel="Edit watch"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: pending }}
+            className={`min-h-12 min-w-12 items-center justify-center rounded-app border border-archive-500 bg-archive-900 ${pending ? 'opacity-50' : ''}`}
+            disabled={pending}
+            onPress={onEdit}
+            testID="journal-history-edit"
+          >
+            <Ionicons color="#fbf6ec" name="create-outline" size={22} />
+          </Pressable>
+          <Pressable
+            accessibilityHint="Permanently removes this watch after confirmation."
+            accessibilityLabel="Delete watch"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: pending }}
+            className={`min-h-12 min-w-12 items-center justify-center rounded-app bg-reel-500 ${pending ? 'opacity-50' : ''}`}
+            disabled={pending}
+            onPress={onDelete}
+            testID="journal-history-delete"
+          >
+            <Ionicons color="#fbf6ec" name="trash-outline" size={22} />
+          </Pressable>
         </View>
       ) : null}
     </Card>
