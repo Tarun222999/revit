@@ -7,6 +7,8 @@ type TitleDetailsMetadataCardProps = {
   details: TitleDetailMetric[];
 };
 
+const initiallyVisibleDetailCount = 2;
+
 function DetailMetric({ label, value }: TitleDetailMetric) {
   return (
     <View className="flex-row items-start justify-between gap-5 border-b border-archive-700 py-3">
@@ -27,7 +29,10 @@ export function TitleDetailsMetadataCard({
     return null;
   }
 
-  const visibleDetails = expanded ? details : details.slice(0, 2);
+  const canCollapse = details.length > initiallyVisibleDetailCount + 1;
+  const visibleDetails = expanded || !canCollapse
+    ? details
+    : details.slice(0, initiallyVisibleDetailCount);
   const hiddenCount = details.length - visibleDetails.length;
 
   return (
@@ -42,7 +47,7 @@ export function TitleDetailsMetadataCard({
           />
         ))}
       </View>
-      {details.length > 2 ? (
+      {canCollapse ? (
         <Pressable
           accessibilityLabel={expanded ? 'Show fewer title details' : `Show ${hiddenCount} more title details`}
           accessibilityRole="button"
