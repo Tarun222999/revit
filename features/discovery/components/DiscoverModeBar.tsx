@@ -1,6 +1,4 @@
-import { Text, View } from 'react-native';
-
-import { Chip } from '@/components/ui/Chip';
+import { Pressable, Text, View } from 'react-native';
 import {
   DISCOVERY_MODES,
   type DiscoveryMode,
@@ -30,14 +28,24 @@ export function DiscoverModeBar({ value, onChange }: DiscoverModeBarProps) {
         {modeDescriptions[value]}
       </Text>
 
-      <View className="flex-row flex-wrap gap-2">
+      <View accessibilityRole="tablist" className="flex-row border-b border-archive-700">
         {DISCOVERY_MODES.map((mode) => (
-          <Chip
+          <Pressable
+            accessibilityLabel={`${modeLabels[mode]} discovery mode`}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: value === mode }}
             key={mode}
-            label={modeLabels[mode]}
-            selected={value === mode}
             onPress={() => onChange(mode)}
-          />
+            className={`min-h-11 flex-1 items-center justify-center border-b-2 px-1 ${
+              value === mode ? 'border-gold-400' : 'border-transparent'
+            }`}>
+            <Text
+              className={`text-center text-xs font-bold ${
+                value === mode ? 'text-archive-50' : 'text-archive-400'
+              }`}>
+              {modeLabels[mode]}
+            </Text>
+          </Pressable>
         ))}
       </View>
     </View>
