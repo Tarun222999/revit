@@ -232,7 +232,7 @@ export function TitleDetailsScreen({
       {item ? (
         <>
           <TitleDetailsHero item={item} />
-          <View className="gap-7 px-5 pb-28 pt-5">
+          <View className="-mt-8 gap-7 rounded-t-[32px] bg-archive-900 px-5 pb-28 pt-8">
             <TitleDetailsJournalActions
               addToListLoading={membershipsQuery.isLoading}
               canAddToList={Boolean(user?.id && mediaItemId)}
