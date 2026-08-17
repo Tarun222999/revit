@@ -13,6 +13,7 @@ import { YourJournalSummary } from '@/features/journal/components/YourJournalSum
 import {
   useRemoveJournalPlan,
   useRemoveJournalTitle,
+  useSaveJournalPlan,
 } from '@/features/journal/hooks/useJournalLifecycleMutations';
 import { useJournalTitleSummary } from '@/features/journal/hooks/useJournalReads';
 import {
@@ -20,9 +21,13 @@ import {
   type JournalTitleAction,
 } from '@/features/journal/model/journalTitleActions';
 import { resolveJournalCaptureAction } from '@/features/journal/model/journalNavigation';
+import { localToday } from '@/features/journal/model/journalIntentForm';
 import { AddToListPanel } from '@/features/lists/components/AddToListPanel';
 import { useMediaListMemberships } from '@/features/lists/hooks/useMediaListMemberships';
-import { TitleDetailsHero } from '@/features/media/components/TitleDetailsHero';
+import {
+  TitleDetailsHero,
+  TitleDetailsHeroLoading,
+} from '@/features/media/components/TitleDetailsHero';
 import { TitleDetailsMetadataCard } from '@/features/media/components/TitleDetailsMetadataCard';
 import { TitleDetailsSummaryCard } from '@/features/media/components/TitleDetailsSummaryCard';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
@@ -53,10 +58,14 @@ export function TitleDetailsScreen({
   const mediaItemId = item?.id;
   const journalQuery = useJournalTitleSummary(user?.id, mediaItemId);
   const removePlan = useRemoveJournalPlan();
+  const savePlan = useSaveJournalPlan();
   const removeTitle = useRemoveJournalTitle();
   const membershipsQuery = useMediaListMemberships(user?.id, mediaItemId);
   const summary = journalQuery.data ?? null;
   const [showAddToListPanel, setShowAddToListPanel] = useState(false);
+  const [removedPlan, setRemovedPlan] = useState<{
+    plannedFor: string | null;
+  } | null>(null);
   const openedCaptureRef = useRef(false);
 
   const openJournalIntent = useCallback((
@@ -129,27 +138,33 @@ export function TitleDetailsScreen({
 
   const confirmRemovePlan = () => {
     if (!summary?.titleState.activePlan) return;
-    Alert.alert(
-      'Remove plan?',
-      'This removes only the active plan. Your activity history will stay intact.',
-      [
-        { style: 'cancel', text: 'Cancel' },
-        {
-          style: 'destructive',
-          text: 'Remove plan',
-          onPress: () => {
-            void removePlan
-              .mutateAsync({ journalEntryId: summary.titleState.id })
-              .catch((error) =>
-                Alert.alert(
-                  'Could not remove plan',
-                  errorMessage(error, 'Try again in a moment.'),
-                ),
-              );
-          },
-        },
-      ],
-    );
+    const plannedFor = summary.titleState.activePlan.plannedFor;
+    void removePlan
+      .mutateAsync({ journalEntryId: summary.titleState.id })
+      .then(() => setRemovedPlan({ plannedFor }))
+      .catch((error) =>
+        Alert.alert(
+          'Could not remove plan',
+          errorMessage(error, 'Try again in a moment.'),
+        ),
+      );
+  };
+
+  const undoRemovePlan = () => {
+    if (!removedPlan || !mediaItemId) return;
+    void savePlan
+      .mutateAsync({
+        mediaItemId,
+        plannedFor: removedPlan.plannedFor,
+        today: localToday(),
+      })
+      .then(() => setRemovedPlan(null))
+      .catch((error) =>
+        Alert.alert(
+          'Could not restore plan',
+          errorMessage(error, 'Try again in a moment.'),
+        ),
+      );
   };
 
   const confirmRemoveTitle = () => {
@@ -195,7 +210,12 @@ export function TitleDetailsScreen({
   };
 
   return (
-    <Screen scroll padded={false} className="bg-archive-900">
+    <Screen
+      scroll
+      padded={false}
+      safeAreaEdges={['bottom']}
+      className="bg-archive-900"
+    >
       <Stack.Screen
         options={{
           headerShadowVisible: false,
@@ -205,10 +225,8 @@ export function TitleDetailsScreen({
         }}
       />
 
-      <View className="px-5 pt-6">
-        {detailsQuery.isLoading ? (
-          <LoadingState message="Loading title details" />
-        ) : null}
+      <View>
+        {detailsQuery.isLoading ? <TitleDetailsHeroLoading /> : null}
 
         {detailsQuery.isError ? (
           <ErrorState
@@ -243,12 +261,13 @@ export function TitleDetailsScreen({
               mediaType={item.mediaType}
               onAddToList={() => setShowAddToListPanel(true)}
               onIntent={openJournalIntent}
-              onOpenHistory={openHistory}
               onRemovePlan={confirmRemovePlan}
               onRemoveTitle={confirmRemoveTitle}
               onSignIn={() => router.push('/welcome')}
               onWatchTrailer={openTrailer}
+              onUndoRemovePlan={undoRemovePlan}
               removing={removePlan.isPending || removeTitle.isPending}
+              removedPlanAvailable={Boolean(removedPlan)}
               showTrailer={Boolean(trailerQuery.data?.trailer)}
               summary={summary}
             />
