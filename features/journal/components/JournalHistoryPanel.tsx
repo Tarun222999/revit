@@ -67,7 +67,7 @@ function HistoryHeader({
 
       <Button
         onPress={addPreviousWatch}
-        title="Add previous watch"
+        title="Log another watch"
         variant="secondary"
       />
 
@@ -168,7 +168,7 @@ export function JournalHistoryPanel({
             />
           ) : (
             <EmptyState
-              actionLabel="Add previous watch"
+              actionLabel="Log another watch"
               message="Record another dated watch to keep building this history."
               onAction={() =>
                 router.push({

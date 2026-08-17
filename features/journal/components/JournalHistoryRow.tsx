@@ -55,9 +55,6 @@ export function JournalHistoryRow({
               <Text className="text-base font-bold text-archive-50">{label}</Text>
               <Text className="text-sm text-archive-300">{date}</Text>
             </View>
-            {event.rating != null ? (
-              <Text className="font-bold text-gold-300">{event.rating} / 5</Text>
-            ) : null}
           </View>
           {event.notes ? (
             <Text className="text-sm leading-5 text-archive-300" numberOfLines={3}>
@@ -65,7 +62,11 @@ export function JournalHistoryRow({
             </Text>
           ) : null}
         </View>
-        <Pressable
+        <View className="items-end gap-2">
+          {event.rating != null ? (
+            <Text className="font-bold text-gold-300">{event.rating} / 5</Text>
+          ) : null}
+          <Pressable
           accessibilityHint="Shows edit or delete actions for this activity."
           accessibilityLabel={`Show actions for ${label} on ${date}`}
           accessibilityRole="button"
@@ -84,7 +85,8 @@ export function JournalHistoryRow({
             name={menuOpen ? 'close' : 'ellipsis-horizontal'}
             size={22}
           />
-        </Pressable>
+          </Pressable>
+        </View>
       </View>
 
       {menuOpen ? (

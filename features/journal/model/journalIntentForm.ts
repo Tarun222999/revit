@@ -57,8 +57,8 @@ export const JOURNAL_INTENT_COPY: Record<
   previous_watch: {
     dateLabel: 'Watched on',
     description: 'Add an earlier watch without changing a future plan.',
-    submitLabel: 'Add previous watch',
-    title: 'Add previous watch',
+    submitLabel: 'Log another watch',
+    title: 'Log another watch',
   },
   resume: {
     dateLabel: 'Resumed on',
