@@ -9,7 +9,7 @@ export type JournalTitleAction = {
 
 export type JournalTitleActionModel = {
   primary: JournalTitleAction;
-  secondary: JournalTitleAction | { label: 'View history'; intent: 'history' };
+  secondary: JournalTitleAction;
   planAction: JournalTitleAction | null;
   stopAction: JournalTitleAction | null;
 };
@@ -23,8 +23,6 @@ export function getJournalTitleActions(
   summary: JournalTitleSummary | null,
 ): JournalTitleActionModel {
   const movie = isMovie(mediaType);
-  const hasHistory = Boolean(summary?.activityCount);
-
   if (!summary) {
     return {
       planAction: movie
@@ -37,11 +35,7 @@ export function getJournalTitleActions(
       },
       secondary: movie
         ? { intent: 'plan', label: 'Plan to watch', source: 'title' }
-        : {
-            intent: 'log_finished',
-            label: 'Log as finished',
-            source: 'title',
-          },
+        : { intent: 'log_finished', label: 'Log as finished', source: 'title' },
       stopAction: null,
     };
   }
@@ -54,43 +48,29 @@ export function getJournalTitleActions(
         label: movie ? 'Log as watched' : 'Start watching',
         source: 'planned_title',
       },
-      secondary: {
-        intent: 'edit_plan',
-        label: 'Edit plan',
-        source: 'title',
-      },
+      secondary: { intent: 'edit_plan', label: 'Edit plan', source: 'title' },
       stopAction: null,
     };
   }
 
   if (summary.titleState.status === 'completed') {
     return {
-      planAction: {
-        intent: 'plan',
-        label: 'Plan a rewatch',
-        source: 'title',
-      },
+      planAction: null,
       primary: {
         intent: movie ? 'rewatch' : 'start',
         label: movie ? 'Log a rewatch' : 'Start a rewatch',
         source: 'title',
       },
-      secondary: { intent: 'history', label: 'View history' },
+      secondary: { intent: 'plan', label: 'Plan a rewatch', source: 'title' },
       stopAction: null,
     };
   }
 
   if (summary.titleState.status === 'dropped') {
     return {
-      planAction: {
-        intent: 'plan',
-        label: 'Plan again',
-        source: 'title',
-      },
+      planAction: null,
       primary: { intent: 'resume', label: 'Resume watching', source: 'title' },
-      secondary: hasHistory
-        ? { intent: 'history', label: 'View history' }
-        : { intent: 'plan', label: 'Plan again', source: 'title' },
+      secondary: { intent: 'plan', label: 'Plan again', source: 'title' },
       stopAction: null,
     };
   }
@@ -102,11 +82,7 @@ export function getJournalTitleActions(
       label: movie ? 'Mark watched' : 'Mark finished',
       source: 'title',
     },
-    secondary: hasHistory
-      ? { intent: 'history', label: 'View history' }
-      : { intent: 'stop', label: 'Stop watching', source: 'title' },
-    stopAction: hasHistory
-      ? { intent: 'stop', label: 'Stop watching', source: 'title' }
-      : null,
+    secondary: { intent: 'stop', label: 'Stop watching', source: 'title' },
+    stopAction: null,
   };
 }

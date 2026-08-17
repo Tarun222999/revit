@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
 import {
   AccessibilityInfo,
@@ -20,7 +21,9 @@ export type JournalActionDrawerAction = {
 
 type JournalActionDrawerProps = {
   actions: JournalActionDrawerAction[];
+  children?: ReactNode;
   description?: string;
+  footer?: ReactNode;
   onClose: () => void;
   prompt?: string;
   title: string;
@@ -29,7 +32,9 @@ type JournalActionDrawerProps = {
 
 export function JournalActionDrawer({
   actions,
+  children,
   description,
+  footer,
   onClose,
   prompt,
   title,
@@ -103,6 +108,7 @@ export function JournalActionDrawer({
             </Text>
           ) : null}
           <ScrollView showsVerticalScrollIndicator={false}>
+            {children}
             <View className="border-t border-archive-700">
               {actions.map((action) => (
                 <Pressable
@@ -143,6 +149,7 @@ export function JournalActionDrawer({
               ))}
             </View>
           </ScrollView>
+          {footer ? <View className="border-t border-archive-700 pt-4">{footer}</View> : null}
         </View>
       </View>
     </Modal>

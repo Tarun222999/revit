@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
+import { JournalActionDrawer } from '@/features/journal/components/JournalActionDrawer';
 import type { MediaType } from '@/constants/media';
 import {
   getJournalTitleActions,
@@ -19,11 +20,12 @@ type Props = {
   mediaType: MediaType;
   onAddToList: () => void;
   onIntent: (action: JournalTitleAction) => void;
-  onOpenHistory: () => void;
   onRemovePlan: () => void;
   onRemoveTitle: () => void;
   onSignIn: () => void;
   onWatchTrailer: () => void;
+  onUndoRemovePlan: () => void;
+  removedPlanAvailable: boolean;
   removing: boolean;
   showTrailer: boolean;
   summary: JournalTitleSummary | null;
@@ -64,11 +66,12 @@ export function TitleDetailsJournalActions({
   mediaType,
   onAddToList,
   onIntent,
-  onOpenHistory,
   onRemovePlan,
   onRemoveTitle,
   onSignIn,
   onWatchTrailer,
+  onUndoRemovePlan,
+  removedPlanAvailable,
   removing,
   showTrailer,
   summary,
@@ -77,8 +80,13 @@ export function TitleDetailsJournalActions({
   const actions = getJournalTitleActions(mediaType, summary);
   const secondaryDisabled = !canUseJournal || removing;
   const runSecondary = () => {
-    if (actions.secondary.intent === 'history') onOpenHistory();
-    else onIntent(actions.secondary);
+    onIntent(actions.secondary);
+  };
+
+  const closeMore = () => setShowMore(false);
+  const runMoreAction = (action: () => void) => {
+    closeMore();
+    action();
   };
 
   return (
@@ -127,36 +135,30 @@ export function TitleDetailsJournalActions({
         />
       </View>
 
-      {showMore ? (
-        <View className="gap-2 rounded-app border border-archive-700 bg-archive-800 p-3">
-          {isSignedIn && summary?.activityCount ? (
-            <Button title="View history" variant="ghost" onPress={onOpenHistory} />
-          ) : null}
-          {isSignedIn && actions.planAction ? (
-            <Button
-              title={actions.planAction.label}
-              variant="ghost"
-              onPress={() => onIntent(actions.planAction!)}
-            />
-          ) : null}
-          {isSignedIn && actions.stopAction ? (
-            <Button
-              title={actions.stopAction.label}
-              variant="ghost"
-              onPress={() => onIntent(actions.stopAction!)}
-            />
-          ) : null}
-          {isSignedIn && summary?.titleState.activePlan ? (
-            <Button title="Remove plan" variant="ghost" onPress={onRemovePlan} />
-          ) : null}
-          {summary ? (
-            <Button
-              loading={removing}
-              title="Remove from Journal"
-              variant="danger"
-              onPress={onRemoveTitle}
-            />
-          ) : null}
+      <JournalActionDrawer
+        actions={[
+          ...(isSignedIn && actions.planAction
+            ? [{ label: actions.planAction.label, onPress: () => runMoreAction(() => onIntent(actions.planAction!)), tone: 'standard' as const }]
+            : []),
+          ...(isSignedIn && actions.stopAction
+            ? [{ label: actions.stopAction.label, onPress: () => runMoreAction(() => onIntent(actions.stopAction!)), tone: 'standard' as const }]
+            : []),
+          ...(isSignedIn && summary?.titleState.activePlan
+            ? [{ label: 'Remove plan', onPress: () => runMoreAction(onRemovePlan), tone: 'standard' as const }]
+            : []),
+          ...(summary
+            ? [{ label: 'Remove from Journal', onPress: () => runMoreAction(onRemoveTitle), tone: 'danger' as const }]
+            : []),
+        ]}
+        onClose={closeMore}
+        title="More actions"
+        visible={showMore}
+      />
+
+      {removedPlanAvailable ? (
+        <View className="flex-row items-center gap-3 rounded-app border border-gold-700 bg-archive-800 px-4 py-3">
+          <Text className="min-w-0 flex-1 text-sm text-archive-200">Plan removed</Text>
+          <Button title="Undo" variant="ghost" onPress={onUndoRemovePlan} />
         </View>
       ) : null}
 

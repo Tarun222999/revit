@@ -70,11 +70,11 @@ describe('Title Details Journal action matrix', () => {
     expect(actions.secondary.label).toBe('Edit plan');
   });
 
-  it('offers a rewatch and history for completed titles', () => {
+  it('keeps history on the Your Journal strip for completed titles', () => {
     const actions = getJournalTitleActions('movie', summary('completed'));
     expect(actions.primary.label).toBe('Log a rewatch');
-    expect(actions.secondary).toEqual({ intent: 'history', label: 'View history' });
-    expect(actions.planAction?.label).toBe('Plan a rewatch');
+    expect(actions.secondary).toMatchObject({ intent: 'plan', label: 'Plan a rewatch' });
+    expect(actions.planAction).toBeNull();
   });
 
   it('offers resume without hiding plan-again for stopped titles', () => {
