@@ -8,6 +8,7 @@ import type {
 } from '@/features/journal/types';
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const ISO_DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export const JOURNAL_INTENT_COPY: Record<
   JournalFormIntent,
@@ -97,6 +98,14 @@ export function localToday(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+}
+
+export function isFutureReleaseDate(
+  releaseDate?: string | null,
+  today = localToday(),
+) {
+  if (!releaseDate || !ISO_DATE_INPUT_PATTERN.test(releaseDate)) return false;
+  return releaseDate > today;
 }
 
 export function isPlanningIntent(intent: JournalFormIntent) {

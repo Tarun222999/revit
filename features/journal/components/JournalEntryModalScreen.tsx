@@ -367,6 +367,7 @@ export function JournalEntryModalScreen({
         body="The provider release date is later than this watch date. If you watched it earlier, you can still log it."
         cancelLabel="Go back"
         confirmLabel="Log watch"
+        confirmVariant="primary"
         onCancel={() => setReleaseConfirmationVisible(false)}
         onConfirm={() => {
           releaseConfirmedRef.current = true;

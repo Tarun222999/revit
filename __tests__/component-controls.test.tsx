@@ -5,6 +5,7 @@ import { JournalStatusSelector } from '../features/journal/components/JournalSta
 import { RatingInput } from '../features/journal/components/RatingInput';
 import { SpoilerToggle } from '../features/journal/components/SpoilerToggle';
 import { TitleDetailsJournalActions } from '../features/journal/components/TitleDetailsJournalActions';
+import { JournalActionConfirmation } from '../features/journal/components/JournalActionConfirmation';
 import { YourJournalSummary } from '../features/journal/components/YourJournalSummary';
 import { ListForm, type ListFormValues } from '../features/lists/components/ListForm';
 import { TitleDetailsHero } from '../features/media/components/TitleDetailsHero';
@@ -44,7 +45,6 @@ describe('journal controls', () => {
         onRemovePlan={jest.fn()}
         onRemoveTitle={jest.fn()}
         onSignIn={onSignIn}
-        onOpenHistory={jest.fn()}
         onWatchTrailer={jest.fn()}
         removing={false}
         showTrailer={false}
@@ -176,6 +176,83 @@ describe('title details hero', () => {
 });
 
 describe('cinematic title-detail controls', () => {
+  it('exposes only Remove plan for a plan-only title', async () => {
+    await render(
+      <TitleDetailsJournalActions
+        addToListLoading={false}
+        canAddToList={false}
+        canUseJournal
+        isSignedIn
+        mediaType="movie"
+        onAddToList={jest.fn()}
+        onIntent={jest.fn()}
+        onRemovePlan={jest.fn()}
+        onRemoveTitle={jest.fn()}
+        onSignIn={jest.fn()}
+        onWatchTrailer={jest.fn()}
+        removing={false}
+        showTrailer={false}
+        summary={{
+          activityCount: 0,
+          completedWatchCount: 0,
+          latestCompletedEvent: null,
+          titleState: {
+            activePlan: { plannedFor: null },
+            id: 'entry-1',
+            mediaItemId: 'media-1',
+            status: 'planned',
+            undatedCompletedCount: 0,
+          },
+        }}
+      />,
+    );
+
+    await fireEvent.press(screen.getByRole('button', { name: 'More actions' }));
+    expect(screen.getByText('Remove plan')).toBeTruthy();
+    expect(screen.queryByText('Remove from Journal')).toBeNull();
+  });
+
+  it('hides More when an untracked movie has no additional actions', async () => {
+    await render(
+      <TitleDetailsJournalActions
+        addToListLoading={false}
+        canAddToList={false}
+        canUseJournal
+        isSignedIn
+        mediaType="movie"
+        onAddToList={jest.fn()}
+        onIntent={jest.fn()}
+        onRemovePlan={jest.fn()}
+        onRemoveTitle={jest.fn()}
+        onSignIn={jest.fn()}
+        onWatchTrailer={jest.fn()}
+        removing={false}
+        showTrailer={false}
+        summary={null}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'More actions' })).toBeNull();
+  });
+
+  it('supports a non-destructive primary confirmation action', async () => {
+    const onConfirm = jest.fn();
+    await render(
+      <JournalActionConfirmation
+        body="Check the provider date."
+        confirmLabel="Log watch"
+        confirmVariant="primary"
+        onCancel={jest.fn()}
+        onConfirm={onConfirm}
+        title="Check the release date"
+        visible
+      />,
+    );
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Log watch' }));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps trailer and list controls compact beside one Journal action', async () => {
     const onWatchTrailer = jest.fn();
 
@@ -188,7 +265,6 @@ describe('cinematic title-detail controls', () => {
         mediaType="movie"
         onAddToList={jest.fn()}
         onIntent={jest.fn()}
-        onOpenHistory={jest.fn()}
         onRemovePlan={jest.fn()}
         onRemoveTitle={jest.fn()}
         onSignIn={jest.fn()}

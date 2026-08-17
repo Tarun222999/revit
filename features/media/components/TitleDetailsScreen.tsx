@@ -9,6 +9,7 @@ import { LoadingState } from '@/components/feedback/LoadingState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { TitleDetailsJournalActions } from '@/features/journal/components/TitleDetailsJournalActions';
+import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
 import { YourJournalSummary } from '@/features/journal/components/YourJournalSummary';
 import {
   useRemoveJournalPlan,
@@ -66,6 +67,8 @@ export function TitleDetailsScreen({
   const [removedPlan, setRemovedPlan] = useState<{
     plannedFor: string | null;
   } | null>(null);
+  const [removeTitleConfirmationVisible, setRemoveTitleConfirmationVisible] =
+    useState(false);
   const openedCaptureRef = useRef(false);
 
   const openJournalIntent = useCallback((
@@ -169,28 +172,20 @@ export function TitleDetailsScreen({
 
   const confirmRemoveTitle = () => {
     if (!summary) return;
-    const planText = summary.titleState.activePlan ? ' and its active plan' : '';
-    Alert.alert(
-      'Remove from Journal?',
-      `This permanently removes ${summary.activityCount} recorded ${summary.activityCount === 1 ? 'activity' : 'activities'}${planText}. Lists are not affected.`,
-      [
-        { style: 'cancel', text: 'Cancel' },
-        {
-          style: 'destructive',
-          text: 'Remove from Journal',
-          onPress: () => {
-            void removeTitle
-              .mutateAsync({ journalEntryId: summary.titleState.id })
-              .catch((error) =>
-                Alert.alert(
-                  'Could not remove title',
-                  errorMessage(error, 'Try again in a moment.'),
-                ),
-              );
-          },
-        },
-      ],
-    );
+    setRemoveTitleConfirmationVisible(true);
+  };
+
+  const removeTitleFromJournal = () => {
+    if (!summary) return;
+    void removeTitle
+      .mutateAsync({ journalEntryId: summary.titleState.id })
+      .then(() => setRemoveTitleConfirmationVisible(false))
+      .catch((error) =>
+        Alert.alert(
+          'Could not remove title',
+          errorMessage(error, 'Try again in a moment.'),
+        ),
+      );
   };
 
   const openTrailer = async () => {
@@ -304,6 +299,21 @@ export function TitleDetailsScreen({
           </View>
         </>
       ) : null}
+
+      <JournalActionConfirmation
+        body={
+          summary
+            ? `This permanently removes ${summary.activityCount} recorded ${summary.activityCount === 1 ? 'activity' : 'activities'}${summary.titleState.activePlan ? ' and its active plan' : ''}. Lists are not affected.`
+            : ''
+        }
+        cancelLabel="Keep in Journal"
+        confirmLabel="Remove from Journal"
+        onCancel={() => setRemoveTitleConfirmationVisible(false)}
+        onConfirm={removeTitleFromJournal}
+        pending={removeTitle.isPending}
+        title="Remove from Journal?"
+        visible={removeTitleConfirmationVisible}
+      />
     </Screen>
   );
 }

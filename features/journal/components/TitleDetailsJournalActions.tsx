@@ -24,8 +24,8 @@ type Props = {
   onRemoveTitle: () => void;
   onSignIn: () => void;
   onWatchTrailer: () => void;
-  onUndoRemovePlan: () => void;
-  removedPlanAvailable: boolean;
+  onUndoRemovePlan?: () => void;
+  removedPlanAvailable?: boolean;
   removing: boolean;
   showTrailer: boolean;
   summary: JournalTitleSummary | null;
@@ -71,7 +71,7 @@ export function TitleDetailsJournalActions({
   onSignIn,
   onWatchTrailer,
   onUndoRemovePlan,
-  removedPlanAvailable,
+  removedPlanAvailable = false,
   removing,
   showTrailer,
   summary,
@@ -88,6 +88,21 @@ export function TitleDetailsJournalActions({
     closeMore();
     action();
   };
+  const hasHistory = Boolean(summary?.activityCount);
+  const moreActions = [
+    ...(isSignedIn && actions.planAction
+      ? [{ label: actions.planAction.label, onPress: () => runMoreAction(() => onIntent(actions.planAction!)), tone: 'standard' as const }]
+      : []),
+    ...(isSignedIn && actions.stopAction
+      ? [{ label: actions.stopAction.label, onPress: () => runMoreAction(() => onIntent(actions.stopAction!)), tone: 'standard' as const }]
+      : []),
+    ...(isSignedIn && summary?.titleState.activePlan
+      ? [{ label: 'Remove plan', onPress: () => runMoreAction(onRemovePlan), tone: 'standard' as const }]
+      : []),
+    ...(summary && (!summary.titleState.activePlan || hasHistory)
+      ? [{ label: 'Remove from Journal', onPress: () => runMoreAction(onRemoveTitle), tone: 'danger' as const }]
+      : []),
+  ];
 
   return (
     <View className="gap-3">
@@ -127,32 +142,21 @@ export function TitleDetailsJournalActions({
           icon="list"
           onPress={onAddToList}
         />
-        <CompactAction
-          accessibilityLabel={showMore ? 'Close more actions' : 'More actions'}
-          disabled={(isSignedIn && !canUseJournal) || removing}
-          icon="ellipsis-horizontal"
-          onPress={() => setShowMore((current) => !current)}
-        />
+        {moreActions.length > 0 ? (
+          <CompactAction
+            accessibilityLabel={showMore ? 'Close more actions' : 'More actions'}
+            disabled={(isSignedIn && !canUseJournal) || removing}
+            icon="ellipsis-horizontal"
+            onPress={() => setShowMore((current) => !current)}
+          />
+        ) : null}
       </View>
 
       <JournalActionDrawer
-        actions={[
-          ...(isSignedIn && actions.planAction
-            ? [{ label: actions.planAction.label, onPress: () => runMoreAction(() => onIntent(actions.planAction!)), tone: 'standard' as const }]
-            : []),
-          ...(isSignedIn && actions.stopAction
-            ? [{ label: actions.stopAction.label, onPress: () => runMoreAction(() => onIntent(actions.stopAction!)), tone: 'standard' as const }]
-            : []),
-          ...(isSignedIn && summary?.titleState.activePlan
-            ? [{ label: 'Remove plan', onPress: () => runMoreAction(onRemovePlan), tone: 'standard' as const }]
-            : []),
-          ...(summary
-            ? [{ label: 'Remove from Journal', onPress: () => runMoreAction(onRemoveTitle), tone: 'danger' as const }]
-            : []),
-        ]}
+        actions={moreActions}
         onClose={closeMore}
         title="More actions"
-        visible={showMore}
+        visible={showMore && moreActions.length > 0}
       />
 
       {removedPlanAvailable ? (

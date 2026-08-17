@@ -80,6 +80,7 @@ describe('Title Details Journal action matrix', () => {
   it('offers resume without hiding plan-again for stopped titles', () => {
     const actions = getJournalTitleActions('anime', summary('dropped'));
     expect(actions.primary.intent).toBe('resume');
-    expect(actions.planAction?.label).toBe('Plan again');
+    expect(actions.secondary).toMatchObject({ intent: 'plan', label: 'Plan again' });
+    expect(actions.planAction).toBeNull();
   });
 });
