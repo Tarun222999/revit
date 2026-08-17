@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { DiscoverFeaturePresentation } from '@/features/discovery/components/DiscoverFeaturePresentation';
 import { DiscoverModeBar } from '@/features/discovery/components/DiscoverModeBar';
@@ -7,6 +8,7 @@ import { getFeaturedTitle } from '@/features/discovery/components/DiscoverScreen
 import type { NormalizedMediaItem } from '@/types/media';
 
 const movie = {
+  backdropUrl: 'https://example.com/dune-backdrop.jpg',
   description: 'A desert epic.',
   genres: ['Science Fiction'],
   imageUrl: 'https://example.com/dune.jpg',
@@ -97,6 +99,13 @@ describe('Discover interactions', () => {
 
     await render(
       <DiscoverFeaturePresentation item={movie} loading={false} onPress={onPress} />,
+    );
+
+    expect(screen.getByTestId('discover-feature-backdrop').props.style).toEqual(
+      StyleSheet.absoluteFillObject,
+    );
+    expect(screen.getByTestId('discover-feature-poster').props.style).toEqual(
+      StyleSheet.absoluteFillObject,
     );
 
     await fireEvent.press(screen.getByRole('button', { name: 'Open Dune' }));

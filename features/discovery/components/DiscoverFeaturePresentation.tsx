@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 
 import { cn } from '@/lib/utils/cn';
@@ -84,10 +84,11 @@ export function DiscoverFeaturePresentation({
       {hasBackdrop ? (
         <Image
           cachePolicy="memory-disk"
-          className="absolute inset-0 h-full w-full"
           contentFit="cover"
           onError={() => setBackdropFailed(true)}
           source={{ uri: item.backdropUrl! }}
+          style={StyleSheet.absoluteFillObject}
+          testID="discover-feature-backdrop"
           transition={0}
         />
       ) : (
@@ -101,10 +102,11 @@ export function DiscoverFeaturePresentation({
           {hasPoster ? (
             <Image
               cachePolicy="memory-disk"
-              className="h-full w-full"
               contentFit="cover"
               onError={() => setPosterFailed(true)}
               source={{ uri: item.imageUrl! }}
+              style={StyleSheet.absoluteFillObject}
+              testID="discover-feature-poster"
               transition={0}
             />
           ) : (
