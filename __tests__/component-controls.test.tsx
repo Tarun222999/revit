@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { JournalEntryForm } from '../features/journal/components/JournalEntryForm';
 import { JournalStatusSelector } from '../features/journal/components/JournalStatusSelector';
@@ -146,6 +147,10 @@ describe('journal controls', () => {
 });
 
 describe('title details hero', () => {
+  const safeAreaMetrics = {
+    frame: { x: 0, y: 0, width: 390, height: 844 },
+    insets: { top: 24, right: 0, bottom: 34, left: 0 },
+  };
   const mediaItem = {
     backdropUrl: 'https://example.com/backdrop.jpg',
     genres: ['Drama'],
@@ -157,7 +162,11 @@ describe('title details hero', () => {
   } satisfies NormalizedMediaItem;
 
   it('uses the backdrop, compact metadata, and TMDB rating in the hero', async () => {
-    await render(<TitleDetailsHero item={mediaItem} />);
+    await render(
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <TitleDetailsHero item={mediaItem} />
+      </SafeAreaProvider>,
+    );
 
     expect(screen.getByTestId('title-backdrop-image')).toBeTruthy();
     expect(screen.getByText('2h 22m · Drama')).toBeTruthy();
@@ -165,7 +174,11 @@ describe('title details hero', () => {
   });
 
   it('keeps the hero composition when the backdrop fails', async () => {
-    await render(<TitleDetailsHero item={mediaItem} />);
+    await render(
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <TitleDetailsHero item={mediaItem} />
+      </SafeAreaProvider>,
+    );
     await fireEvent(screen.getByTestId('title-backdrop-image'), 'error', {
       nativeEvent: { error: 'Unable to load artwork.' },
     });
