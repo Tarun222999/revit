@@ -14,7 +14,6 @@ import { YourJournalSummary } from '@/features/journal/components/YourJournalSum
 import {
   useRemoveJournalPlan,
   useRemoveJournalTitle,
-  useSaveJournalPlan,
 } from '@/features/journal/hooks/useJournalLifecycleMutations';
 import { useJournalTitleSummary } from '@/features/journal/hooks/useJournalReads';
 import {
@@ -22,7 +21,6 @@ import {
   type JournalTitleAction,
 } from '@/features/journal/model/journalTitleActions';
 import { resolveJournalCaptureAction } from '@/features/journal/model/journalNavigation';
-import { localToday } from '@/features/journal/model/journalIntentForm';
 import { AddToListPanel } from '@/features/lists/components/AddToListPanel';
 import { useMediaListMemberships } from '@/features/lists/hooks/useMediaListMemberships';
 import {
@@ -59,14 +57,10 @@ export function TitleDetailsScreen({
   const mediaItemId = item?.id;
   const journalQuery = useJournalTitleSummary(user?.id, mediaItemId);
   const removePlan = useRemoveJournalPlan();
-  const savePlan = useSaveJournalPlan();
   const removeTitle = useRemoveJournalTitle();
   const membershipsQuery = useMediaListMemberships(user?.id, mediaItemId);
   const summary = journalQuery.data ?? null;
   const [showAddToListPanel, setShowAddToListPanel] = useState(false);
-  const [removedPlan, setRemovedPlan] = useState<{
-    plannedFor: string | null;
-  } | null>(null);
   const [removeTitleConfirmationVisible, setRemoveTitleConfirmationVisible] =
     useState(false);
   const openedCaptureRef = useRef(false);
@@ -141,30 +135,11 @@ export function TitleDetailsScreen({
 
   const confirmRemovePlan = () => {
     if (!summary?.titleState.activePlan) return;
-    const plannedFor = summary.titleState.activePlan.plannedFor;
     void removePlan
       .mutateAsync({ journalEntryId: summary.titleState.id })
-      .then(() => setRemovedPlan({ plannedFor }))
       .catch((error) =>
         Alert.alert(
           'Could not remove plan',
-          errorMessage(error, 'Try again in a moment.'),
-        ),
-      );
-  };
-
-  const undoRemovePlan = () => {
-    if (!removedPlan || !mediaItemId) return;
-    void savePlan
-      .mutateAsync({
-        mediaItemId,
-        plannedFor: removedPlan.plannedFor,
-        today: localToday(),
-      })
-      .then(() => setRemovedPlan(null))
-      .catch((error) =>
-        Alert.alert(
-          'Could not restore plan',
           errorMessage(error, 'Try again in a moment.'),
         ),
       );
@@ -260,9 +235,7 @@ export function TitleDetailsScreen({
               onRemoveTitle={confirmRemoveTitle}
               onSignIn={() => router.push('/welcome')}
               onWatchTrailer={openTrailer}
-              onUndoRemovePlan={undoRemovePlan}
               removing={removePlan.isPending || removeTitle.isPending}
-              removedPlanAvailable={Boolean(removedPlan)}
               showTrailer={Boolean(trailerQuery.data?.trailer)}
               summary={summary}
             />

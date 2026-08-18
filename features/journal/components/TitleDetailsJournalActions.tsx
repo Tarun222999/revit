@@ -24,8 +24,6 @@ type Props = {
   onRemoveTitle: () => void;
   onSignIn: () => void;
   onWatchTrailer: () => void;
-  onUndoRemovePlan?: () => void;
-  removedPlanAvailable?: boolean;
   removing: boolean;
   showTrailer: boolean;
   summary: JournalTitleSummary | null;
@@ -70,8 +68,6 @@ export function TitleDetailsJournalActions({
   onRemoveTitle,
   onSignIn,
   onWatchTrailer,
-  onUndoRemovePlan,
-  removedPlanAvailable = false,
   removing,
   showTrailer,
   summary,
@@ -158,13 +154,6 @@ export function TitleDetailsJournalActions({
         title="More actions"
         visible={showMore && moreActions.length > 0}
       />
-
-      {removedPlanAvailable ? (
-        <View className="flex-row items-center gap-3 rounded-app border border-gold-700 bg-archive-800 px-4 py-3">
-          <Text className="min-w-0 flex-1 text-sm text-archive-200">Plan removed</Text>
-          <Button title="Undo" variant="ghost" onPress={onUndoRemovePlan} />
-        </View>
-      ) : null}
 
       {!isSignedIn ? (
         <Text className="text-center text-xs leading-4 text-archive-300">

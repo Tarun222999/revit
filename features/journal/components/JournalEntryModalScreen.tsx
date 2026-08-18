@@ -364,7 +364,7 @@ export function JournalEntryModalScreen({
         values={values}
       />
       <JournalActionConfirmation
-        body="The provider release date is later than this watch date. If you watched it earlier, you can still log it."
+        body="You can still log it if the date is right for you."
         cancelLabel="Go back"
         confirmLabel="Log watch"
         confirmVariant="primary"
@@ -374,7 +374,7 @@ export function JournalEntryModalScreen({
           setReleaseConfirmationVisible(false);
           void submit();
         }}
-        title="Check the release date"
+        title="This movie is yet to release"
         visible={releaseConfirmationVisible}
       />
     </JournalEntryModalFrame>,

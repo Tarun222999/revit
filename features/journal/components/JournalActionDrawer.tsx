@@ -5,6 +5,7 @@ import {
   AccessibilityInfo,
   findNodeHandle,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -48,6 +49,10 @@ export function JournalActionDrawer({
     AccessibilityInfo.announceForAccessibility(
       [title, description, prompt].filter(Boolean).join('. '),
     );
+    if (Platform.OS === 'web') {
+      return;
+    }
+
     const focusTimer = setTimeout(() => {
       const node = findNodeHandle(headingRef.current);
       if (node) AccessibilityInfo.setAccessibilityFocus(node);
