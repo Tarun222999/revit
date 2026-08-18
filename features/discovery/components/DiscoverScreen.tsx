@@ -87,12 +87,9 @@ export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
 
   return (
     <View className="gap-7">
-      <View className="gap-2">
-        <Text className="text-2xl font-bold text-archive-50">Discover</Text>
-        <Text className="font-serif text-3xl leading-9 text-archive-100">
-          Your personal screening room
-        </Text>
-      </View>
+      <Text className="font-serif text-3xl leading-9 text-archive-100">
+        Find something worth your time.
+      </Text>
 
       <DiscoverModeBar value={mode} onChange={setMode} />
 
