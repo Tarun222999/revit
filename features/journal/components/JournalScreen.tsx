@@ -59,8 +59,7 @@ function JournalViewSegment({
           accessibilityRole="tab"
           accessibilityState={{ selected: activeView === view }}
           className={cn(
-            'min-h-11 flex-1 items-center justify-center border-b-2 border-transparent px-3',
-            activeView === view && 'border-gold-400',
+            'relative min-h-11 flex-1 items-center justify-center px-3',
           )}
           key={view}
           onPress={() => onChange(view)}>
@@ -71,6 +70,19 @@ function JournalViewSegment({
             )}>
             {view}
           </Text>
+          {activeView === view ? (
+            <View
+              pointerEvents="none"
+              style={{
+                backgroundColor: '#f4c95d',
+                bottom: -1,
+                height: 2,
+                left: 0,
+                position: 'absolute',
+                right: 0,
+              }}
+            />
+          ) : null}
         </Pressable>
       ))}
     </View>
