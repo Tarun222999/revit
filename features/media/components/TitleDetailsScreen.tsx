@@ -61,6 +61,8 @@ export function TitleDetailsScreen({
   const membershipsQuery = useMediaListMemberships(user?.id, mediaItemId);
   const summary = journalQuery.data ?? null;
   const [showAddToListPanel, setShowAddToListPanel] = useState(false);
+  const [removePlanConfirmationVisible, setRemovePlanConfirmationVisible] =
+    useState(false);
   const [removeTitleConfirmationVisible, setRemoveTitleConfirmationVisible] =
     useState(false);
   const openedCaptureRef = useRef(false);
@@ -135,8 +137,14 @@ export function TitleDetailsScreen({
 
   const confirmRemovePlan = () => {
     if (!summary?.titleState.activePlan) return;
+    setRemovePlanConfirmationVisible(true);
+  };
+
+  const removePlanFromJournal = () => {
+    if (!summary?.titleState.activePlan) return;
     void removePlan
       .mutateAsync({ journalEntryId: summary.titleState.id })
+      .then(() => setRemovePlanConfirmationVisible(false))
       .catch((error) =>
         Alert.alert(
           'Could not remove plan',
@@ -272,6 +280,17 @@ export function TitleDetailsScreen({
           </View>
         </>
       ) : null}
+
+      <JournalActionConfirmation
+        body="This removes only the active plan. Your activity history will stay intact."
+        cancelLabel="Keep plan"
+        confirmLabel="Remove plan"
+        onCancel={() => setRemovePlanConfirmationVisible(false)}
+        onConfirm={removePlanFromJournal}
+        pending={removePlan.isPending}
+        title="Remove plan?"
+        visible={removePlanConfirmationVisible}
+      />
 
       <JournalActionConfirmation
         body={

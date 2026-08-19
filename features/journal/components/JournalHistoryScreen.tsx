@@ -67,13 +67,24 @@ export function JournalHistoryScreen({ titleId }: { titleId?: string }) {
         </View>
       ) : null}
 
-      {detailsQuery.data?.item && journalQuery.isLoading ? (
+      {detailsQuery.data?.item && !user?.id ? (
+        <View className="px-5 pt-5">
+          <EmptyState
+            actionLabel="Sign in"
+            message="Sign in to view and manage your personal watch history."
+            onAction={() => router.push('/welcome')}
+            title="Sign in to view history"
+          />
+        </View>
+      ) : null}
+
+      {detailsQuery.data?.item && user?.id && journalQuery.isLoading ? (
         <View className="px-5 pt-5">
           <LoadingState message="Loading your history" />
         </View>
       ) : null}
 
-      {detailsQuery.data?.item && journalQuery.isError ? (
+      {detailsQuery.data?.item && user?.id && journalQuery.isError ? (
         <View className="px-5 pt-5">
           <ErrorState
             message={errorMessage(
@@ -86,7 +97,7 @@ export function JournalHistoryScreen({ titleId }: { titleId?: string }) {
         </View>
       ) : null}
 
-      {detailsQuery.data?.item && journalQuery.isSuccess && !summary ? (
+      {detailsQuery.data?.item && user?.id && journalQuery.isSuccess && !summary ? (
         <View className="px-5 pt-5">
           <EmptyState
             message="History is available after you record a watch for this title."
