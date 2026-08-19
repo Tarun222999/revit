@@ -8,6 +8,19 @@ const mockRemovePlan = jest.fn();
 const mockSavePlan = jest.fn();
 let mockPlannerItems: JournalPlannerItem[] = [];
 
+function plannerActionLabel(title: string, plannedFor: string | null) {
+  if (!plannedFor) return `${title}, Someday. Open plan actions.`;
+
+  const [year, month, day] = plannedFor.split('-').map(Number);
+  const date = new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(year, month - 1, day));
+
+  return `${title}, ${date}. Open plan actions.`;
+}
+
 jest.mock('expo-router', () => ({ router: { push: mockPush } }));
 jest.mock('@/features/journal/hooks/useJournalReads', () => ({
   useJournalPlanner: () => ({
@@ -18,11 +31,16 @@ jest.mock('@/features/journal/hooks/useJournalReads', () => ({
   }),
 }));
 jest.mock('@/features/journal/hooks/useJournalLifecycleMutations', () => ({
-  useRemoveJournalPlan: () => ({ isPending: false, mutateAsync: mockRemovePlan }),
+  useRemoveJournalPlan: () => ({
+    isPending: false,
+    mutateAsync: mockRemovePlan,
+  }),
   useSaveJournalPlan: () => ({ isPending: false, mutateAsync: mockSavePlan }),
 }));
 
-function plannerItem(section: JournalPlannerItem['section']): JournalPlannerItem {
+function plannerItem(
+  section: JournalPlannerItem['section'],
+): JournalPlannerItem {
   return {
     media: {
       id: `media-${section}`,
@@ -46,7 +64,7 @@ function plannerItem(section: JournalPlannerItem['section']): JournalPlannerItem
   };
 }
 
-describe('Planner card management actions', () => {
+describe('Planner row action drawers', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockPlannerItems = [plannerItem('upcoming')];
@@ -54,31 +72,27 @@ describe('Planner card management actions', () => {
     mockSavePlan.mockResolvedValue(undefined);
   });
 
-  it('keeps the primary action visible and expands plan management on demand', async () => {
+  it('uses one accessible row and reveals actions in a contextual drawer', async () => {
     await render(<JournalPlannerView userId="user-1" />);
 
-    expect(screen.getByRole('button', { name: 'Log watch' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Log watch' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Reschedule' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove plan' })).toBeNull();
 
-    const more = screen.getByLabelText('Show plan actions for upcoming movie');
-    expect(more.props.accessibilityRole).toBe('button');
-    expect(more.props.accessibilityState).toEqual({
-      disabled: false,
-      expanded: false,
-    });
-    expect(more.props.hitSlop).toBe(4);
+    const row = screen.getByLabelText(plannerActionLabel('upcoming movie', '2026-08-10'));
+    expect(row.props.accessibilityRole).toBe('button');
+    expect(row.props.accessibilityHint).toBe('Opens plan actions');
 
-    await fireEvent.press(more);
+    await fireEvent.press(row);
 
-    const close = screen.getByLabelText('Hide plan actions for upcoming movie');
-    expect(close.props.accessibilityState.expanded).toBe(true);
+    expect(screen.getByTestId('journal-action-drawer')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Log watch' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Reschedule' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Move to Someday' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Move to Someday' }),
+    ).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Remove plan' })).toBeTruthy();
-
-    await fireEvent.press(close);
-    expect(screen.queryByRole('button', { name: 'Reschedule' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'View title details' })).toBeTruthy();
   });
 
   it('shows section-specific actions for Someday without Move to Someday', async () => {
@@ -86,26 +100,100 @@ describe('Planner card management actions', () => {
     await render(<JournalPlannerView userId="user-1" />);
 
     await fireEvent.press(
-      screen.getByLabelText('Show plan actions for someday movie'),
+      screen.getByLabelText(plannerActionLabel('someday movie', null)),
     );
 
     expect(screen.getByRole('button', { name: 'Schedule' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Move to Someday' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Move to Someday' }),
+    ).toBeNull();
     expect(screen.getByRole('button', { name: 'Remove plan' })).toBeTruthy();
+  });
+
+  it('uses decision language for missed plans', async () => {
+    mockPlannerItems = [plannerItem('missed')];
+    await render(<JournalPlannerView userId="user-1" />);
+
+    await fireEvent.press(
+      screen.getByLabelText(plannerActionLabel('missed movie', '2026-08-10')),
+    );
+
+    expect(screen.getByText('What happened with this plan?')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'I watched it' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Reschedule' })).toBeTruthy();
   });
 
   it('moves any dated plan to Someday through the existing plan mutation', async () => {
     await render(<JournalPlannerView userId="user-1" />);
 
     await fireEvent.press(
-      screen.getByLabelText('Show plan actions for upcoming movie'),
+      screen.getByLabelText(plannerActionLabel('upcoming movie', '2026-08-10')),
     );
-    await fireEvent.press(screen.getByRole('button', { name: 'Move to Someday' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Move to Someday' }),
+    );
 
     expect(mockSavePlan).toHaveBeenCalledWith({
       mediaItemId: 'media-upcoming',
       plannedFor: null,
       today: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
+  });
+
+  it('uses the Revit confirmation surface before removing a plan', async () => {
+    await render(<JournalPlannerView userId="user-1" />);
+
+    await fireEvent.press(
+      screen.getByLabelText(plannerActionLabel('upcoming movie', '2026-08-10')),
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove plan' }));
+
+    const confirmation = screen.getByTestId('journal-action-confirmation');
+    expect(confirmation).toBeTruthy();
+    expect(confirmation.props.accessibilityViewIsModal).toBe(true);
+    expect(
+      screen.getByText(
+        'This removes the plan only. Existing Journal history remains.',
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Keep plan' })).toBeTruthy();
+
+    const removeButtons = screen.getAllByRole('button', {
+      name: 'Remove plan',
+    });
+    await fireEvent.press(removeButtons[removeButtons.length - 1]);
+
+    expect(mockRemovePlan).toHaveBeenCalledWith({
+      journalEntryId: 'entry-upcoming',
+    });
+    expect(screen.queryByTestId('journal-action-confirmation')).toBeNull();
+  });
+
+  it('shows custom failure feedback and supports retrying plan removal', async () => {
+    mockRemovePlan
+      .mockRejectedValueOnce(new Error('Network unavailable'))
+      .mockResolvedValueOnce(undefined);
+
+    await render(<JournalPlannerView userId="user-1" />);
+
+    await fireEvent.press(
+      screen.getByLabelText(plannerActionLabel('upcoming movie', '2026-08-10')),
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove plan' }));
+    const removeButtons = screen.getAllByRole('button', {
+      name: 'Remove plan',
+    });
+    await fireEvent.press(removeButtons[removeButtons.length - 1]);
+
+    const feedback = screen.getByTestId('journal-action-feedback');
+    expect(feedback).toBeTruthy();
+    expect(feedback.props.accessibilityViewIsModal).toBe(true);
+    expect(screen.getByRole('alert')).toBeTruthy();
+    expect(screen.getByText('Network unavailable')).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(mockRemovePlan).toHaveBeenCalledTimes(2);
+    expect(screen.queryByTestId('journal-action-feedback')).toBeNull();
   });
 });

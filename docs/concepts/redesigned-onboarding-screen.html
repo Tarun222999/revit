@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Revit — Redesigned Onboarding</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #0d0b09;
+        --ink-raised: #171310;
+        --ink-soft: #221b15;
+        --paper: #fbf6ec;
+        --paper-muted: #aa9473;
+        --paper-faint: #7f7468;
+        --gold: #d7a94d;
+        --gold-soft: #e8c77d;
+        --teal: #8bc6bd;
+        --danger: #e48672;
+        --line: rgba(251, 246, 236, 0.11);
+        --line-strong: rgba(251, 246, 236, 0.2);
+        --shadow: 0 32px 88px rgba(0, 0, 0, 0.56);
+      }
+
+      * { box-sizing: border-box; }
+
+      html { min-width: 320px; background: #080706; }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at 14% 18%, rgba(215, 169, 77, 0.09), transparent 25rem),
+          radial-gradient(circle at 84% 82%, rgba(77, 145, 136, 0.06), transparent 28rem),
+          #080706;
+        color: var(--paper);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button, input { color: inherit; font: inherit; }
+      button { cursor: pointer; }
+      button:focus-visible, input:focus-visible { outline: 3px solid rgba(232, 199, 125, 0.34); outline-offset: 3px; }
+
+      .concept-shell {
+        width: min(1180px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 54px 0 72px;
+      }
+
+      .concept-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.88fr) minmax(390px, 1.12fr);
+        align-items: center;
+        gap: 72px;
+      }
+
+      .eyebrow {
+        margin: 0 0 16px;
+        color: var(--gold-soft);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 630px;
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(44px, 6vw, 76px);
+        font-weight: 500;
+        letter-spacing: -0.055em;
+        line-height: 0.98;
+      }
+
+      h1 em { color: var(--gold-soft); font-style: normal; }
+
+      .lede {
+        max-width: 560px;
+        margin: 24px 0 0;
+        color: var(--paper-muted);
+        font-size: 18px;
+        line-height: 1.65;
+      }
+
+      .principles { display: grid; margin-top: 34px; border-top: 1px solid var(--line); }
+
+      .principle {
+        display: grid;
+        grid-template-columns: 36px 1fr;
+        gap: 12px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .principle-number { color: var(--gold-soft); font-family: Georgia, serif; font-size: 18px; }
+      .principle strong { display: block; margin-bottom: 4px; font-size: 14px; }
+      .principle span:last-child { color: var(--paper-muted); font-size: 13px; line-height: 1.5; }
+
+      .prototype-controls { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 25px; }
+
+      .prototype-control {
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: 10px;
+        background: transparent;
+        color: var(--paper-muted);
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .prototype-control:hover { border-color: rgba(232, 199, 125, 0.5); color: var(--paper); }
+
+      .demo-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin: 0 0 14px;
+        color: var(--paper-muted);
+        font-size: 11px;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .demo-label::before {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--teal);
+        box-shadow: 0 0 14px rgba(139, 198, 189, 0.55);
+        content: "";
+      }
+
+      .phone {
+        position: relative;
+        width: min(100%, 430px);
+        min-height: 810px;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 36px;
+        background: var(--ink);
+        box-shadow: var(--shadow);
+      }
+
+      .phone-screen {
+        position: relative;
+        min-height: 810px;
+        overflow: hidden;
+        padding: 22px 22px 28px;
+        background:
+          linear-gradient(180deg, rgba(215, 169, 77, 0.035), transparent 290px),
+          var(--ink);
+      }
+
+      .phone-screen::before {
+        position: absolute;
+        top: -88px;
+        right: -122px;
+        width: 340px;
+        height: 255px;
+        border-radius: 50%;
+        background: radial-gradient(ellipse, rgba(215, 169, 77, 0.13), transparent 66%);
+        transform: rotate(-16deg);
+        content: "";
+        pointer-events: none;
+      }
+
+      .phone-screen.success-mode > :not(.success-screen) { visibility: hidden; }
+      .phone-screen.success-mode .success-screen { visibility: visible; }
+
+      .statusbar, .topbar, .progress-row, .identity-preview, .field-head, .username-row, .success-mark {
+        display: flex;
+        align-items: center;
+      }
+
+      .statusbar, .topbar, .progress-row, .field-head { justify-content: space-between; }
+
+      .statusbar {
+        position: relative;
+        z-index: 2;
+        margin-bottom: 19px;
+        color: #ded5c9;
+        font-size: 11px;
+        font-weight: 750;
+      }
+
+      .topbar { position: relative; z-index: 2; margin-bottom: 30px; }
+
+      .brand { display: flex; align-items: center; gap: 9px; }
+
+      .brand-mark {
+        position: relative;
+        width: 25px;
+        height: 25px;
+        border: 1px solid rgba(232, 199, 125, 0.72);
+        border-radius: 50%;
+      }
+
+      .brand-mark::after {
+        position: absolute;
+        inset: 6px;
+        border-radius: 50%;
+        background: var(--gold);
+        box-shadow: 0 0 18px rgba(215, 169, 77, 0.35);
+        content: "";
+      }
+
+      .brand-name { font-family: Georgia, serif; font-size: 20px; font-weight: 700; }
+      .signed-in { color: var(--paper-faint); font-size: 10px; font-weight: 700; }
+
+      .progress-row {
+        position: relative;
+        z-index: 2;
+        gap: 14px;
+        margin-bottom: 20px;
+        color: var(--paper-faint);
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .progress-track { height: 2px; flex: 1; overflow: hidden; background: var(--line-strong); }
+      .progress-track span { display: block; width: 100%; height: 100%; background: var(--gold); }
+
+      .screen-heading {
+        position: relative;
+        z-index: 2;
+        max-width: 350px;
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 36px;
+        font-weight: 500;
+        letter-spacing: -0.038em;
+        line-height: 1.02;
+      }
+
+      .screen-copy {
+        position: relative;
+        z-index: 2;
+        max-width: 355px;
+        margin: 12px 0 23px;
+        color: var(--paper-muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .identity-preview {
+        position: relative;
+        z-index: 2;
+        gap: 14px;
+        margin: 0 0 23px;
+        padding: 14px 0 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .avatar-picker {
+        position: relative;
+        display: grid;
+        width: 72px;
+        height: 72px;
+        flex: 0 0 auto;
+        place-items: center;
+        overflow: hidden;
+        padding: 0;
+        border: 1px dashed rgba(232, 199, 125, 0.72);
+        border-radius: 50%;
+        background: radial-gradient(circle at 50% 42%, rgba(215, 169, 77, 0.2), transparent 62%), var(--ink-raised);
+        color: var(--gold-soft);
+        font-family: Georgia, serif;
+        font-size: 27px;
+        font-weight: 700;
+      }
+
+      .avatar-picker img { width: 100%; height: 100%; object-fit: cover; }
+
+      .avatar-add {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        display: grid;
+        width: 26px;
+        height: 26px;
+        place-items: center;
+        border: 3px solid var(--ink);
+        border-radius: 50%;
+        background: var(--gold);
+        color: #2f210c;
+        font-size: 16px;
+        font-weight: 900;
+      }
+
+      .identity-copy { min-width: 0; flex: 1; }
+      .identity-copy strong { display: block; margin-bottom: 5px; overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
+      .identity-copy span { color: var(--gold-soft); font-size: 11px; }
+
+      .photo-label {
+        min-height: 44px;
+        padding: 0 1px 0 10px;
+        border: 0;
+        background: transparent;
+        color: var(--paper-muted);
+        font-size: 10px;
+        font-weight: 750;
+      }
+
+      .profile-form { position: relative; z-index: 2; display: grid; gap: 18px; }
+      .field { display: grid; gap: 8px; }
+      .field-head label { color: #e9dfd1; font-size: 12px; font-weight: 800; }
+      .field-head span { color: var(--paper-faint); font-size: 9px; }
+
+      .text-field {
+        width: 100%;
+        min-height: 52px;
+        padding: 0 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: 11px;
+        background: #100d0b;
+        color: var(--paper);
+        font-size: 14px;
+        transition: border-color 150ms ease, background 150ms ease;
+      }
+
+      .text-field:hover { border-color: rgba(232, 199, 125, 0.42); }
+      .text-field:focus { border-color: var(--gold); background: #15110e; }
+      .text-field::placeholder { color: #6f6358; }
+      .text-field[aria-invalid="true"] { border-color: var(--danger); }
+
+      .username-row {
+        min-height: 52px;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 11px;
+        background: #100d0b;
+        transition: border-color 150ms ease, background 150ms ease;
+      }
+
+      .username-row:focus-within { border-color: var(--gold); background: #15110e; outline: 3px solid rgba(232, 199, 125, 0.34); outline-offset: 3px; }
+      .username-row.invalid { border-color: var(--danger); }
+      .username-prefix { padding-left: 14px; color: var(--gold-soft); font-size: 15px; font-weight: 750; }
+      .username-row .text-field { min-height: 50px; padding-left: 3px; border: 0; border-radius: 0; background: transparent; outline: 0; }
+
+      .field-note { min-height: 16px; margin: 0; color: var(--paper-faint); font-size: 10px; line-height: 1.45; }
+      .field-note.valid { color: var(--teal); }
+      .field-note.error { color: var(--danger); }
+
+      .form-summary {
+        display: none;
+        padding: 11px 12px;
+        border-left: 2px solid var(--danger);
+        background: rgba(212, 106, 85, 0.08);
+        color: #f0b4a8;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .form-summary.visible { display: block; }
+
+      .primary-action {
+        width: 100%;
+        min-height: 54px;
+        margin-top: 2px;
+        border: 0;
+        border-radius: 11px;
+        background: var(--gold);
+        color: #2c1f0d;
+        font-size: 13px;
+        font-weight: 850;
+        box-shadow: 0 12px 28px rgba(215, 169, 77, 0.15);
+      }
+
+      .primary-action:hover { background: var(--gold-soft); }
+      .primary-action[disabled] { cursor: wait; opacity: 0.62; }
+
+      .account-action {
+        min-height: 44px;
+        border: 0;
+        background: transparent;
+        color: var(--paper-muted);
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .account-action:hover { color: var(--paper); }
+
+      .toast {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        left: 18px;
+        z-index: 8;
+        display: flex;
+        min-height: 48px;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border: 1px solid rgba(139, 198, 189, 0.35);
+        border-radius: 12px;
+        background: rgba(23, 19, 16, 0.97);
+        color: var(--paper);
+        font-size: 11px;
+        font-weight: 750;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(10px);
+        transition: 180ms ease;
+      }
+
+      .toast.visible { opacity: 1; transform: translateY(0); }
+
+      .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
+
+      .success-screen {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        display: none;
+        place-content: center;
+        padding: 34px;
+        background:
+          radial-gradient(circle at 50% 38%, rgba(215, 169, 77, 0.12), transparent 18rem),
+          var(--ink);
+        text-align: center;
+      }
+
+      .success-screen.visible { display: grid; }
+
+      .success-mark {
+        width: 72px;
+        height: 72px;
+        justify-content: center;
+        margin: 0 auto 23px;
+        border: 1px solid rgba(139, 198, 189, 0.46);
+        border-radius: 50%;
+        background: rgba(139, 198, 189, 0.09);
+        color: var(--teal);
+        font-size: 30px;
+      }
+
+      .success-screen h3 { margin: 0; font-family: Georgia, serif; font-size: 35px; font-weight: 500; letter-spacing: -0.035em; }
+      .success-screen p { margin: 13px auto 25px; color: var(--paper-muted); font-size: 13px; line-height: 1.55; }
+      .success-screen .primary-action { min-width: 230px; }
+
+      .audit-strip {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1px;
+        margin-top: 72px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--line);
+      }
+
+      .audit-step { min-height: 184px; padding: 24px; background: rgba(23, 19, 16, 0.86); }
+      .audit-step > span { color: var(--gold-soft); font-family: Georgia, serif; font-size: 18px; }
+      .audit-step h3 { margin: 27px 0 8px; font-size: 15px; }
+      .audit-step p { margin: 0; color: var(--paper-muted); font-size: 12px; line-height: 1.55; }
+
+      @media (max-width: 940px) {
+        .concept-grid { grid-template-columns: 1fr; gap: 50px; }
+        .intro { max-width: 720px; margin: 0 auto; }
+        .audit-strip { grid-template-columns: repeat(2, 1fr); }
+      }
+
+      @media (max-width: 520px) {
+        .concept-shell { width: 100%; padding: 34px 0 0; }
+        .intro, .audit-strip { margin-right: 18px; margin-left: 18px; }
+        h1 { font-size: 46px; }
+        .lede { font-size: 16px; }
+        .demo-label { padding: 0 18px; }
+        .phone { width: 100%; border-right: 0; border-left: 0; border-radius: 0; }
+        .audit-strip { grid-template-columns: 1fr; margin-top: 44px; margin-bottom: 36px; }
+        .audit-step { min-height: auto; }
+        .audit-step h3 { margin-top: 15px; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="concept-shell">
+      <div class="concept-grid">
+        <section class="intro" aria-labelledby="concept-title">
+          <p class="eyebrow">Onboarding redesign · Impeccable pass</p>
+          <h1 id="concept-title">A profile, without the <em>paperwork.</em></h1>
+          <p class="lede">
+            The final auth step should feel like signing the inside cover of a journal: personal,
+            direct, and finished in under a minute.
+          </p>
+
+          <div class="principles">
+            <div class="principle">
+              <span class="principle-number">01</span>
+              <span><strong>One visible outcome</strong><span>“Start my journal” is the only dominant action. Account switching becomes a quiet escape hatch.</span></span>
+            </div>
+            <div class="principle">
+              <span class="principle-number">02</span>
+              <span><strong>No form inside a card</strong><span>Removing the heavy container gives the identity preview and required fields a calmer reading order.</span></span>
+            </div>
+            <div class="principle">
+              <span class="principle-number">03</span>
+              <span><strong>Guidance where it matters</strong><span>Username formatting, validation, and conflict recovery live beside the username—not in a paragraph below the form.</span></span>
+            </div>
+          </div>
+
+          <div class="prototype-controls" aria-label="Prototype states">
+            <button class="prototype-control" id="fillExample" type="button">Fill example</button>
+            <button class="prototype-control" id="showConflict" type="button">Show username conflict</button>
+            <button class="prototype-control" id="resetPrototype" type="button">Reset</button>
+          </div>
+        </section>
+
+        <section aria-label="Interactive redesigned onboarding prototype">
+          <p class="demo-label">Interactive prototype</p>
+          <article class="phone">
+            <div class="phone-screen">
+              <div class="statusbar" aria-hidden="true"><span>9:41</span><span>● ● ●</span></div>
+
+              <header class="topbar">
+                <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">Revit</span></div>
+                <span class="signed-in">Signed in</span>
+              </header>
+
+              <div class="progress-row" aria-label="Final onboarding step">
+                <span>Profile setup</span>
+                <span class="progress-track" aria-hidden="true"><span></span></span>
+                <span>Final step</span>
+              </div>
+
+              <h2 class="screen-heading">Make your journal yours.</h2>
+              <p class="screen-copy">Choose the name and handle shown beside your watches. Add a photo now or any time later.</p>
+
+              <section class="identity-preview" aria-label="Profile preview">
+                <div style="position: relative">
+                  <button class="avatar-picker" id="avatarPicker" type="button" aria-label="Choose optional profile photo">
+                    <span id="avatarInitial">R</span>
+                    <img id="avatarImage" alt="Selected profile preview" hidden />
+                  </button>
+                  <span class="avatar-add" aria-hidden="true">+</span>
+                </div>
+                <div class="identity-copy">
+                  <strong id="previewName">Your journal identity</strong>
+                  <span id="previewUsername">@username</span>
+                </div>
+                <button class="photo-label" id="photoLabel" type="button">Photo · optional</button>
+                <input id="avatarInput" type="file" accept="image/*" hidden />
+              </section>
+
+              <form class="profile-form" id="profileForm" novalidate>
+                <div class="field">
+                  <div class="field-head"><label for="displayName">Display name</label><span>Required</span></div>
+                  <input
+                    class="text-field"
+                    id="displayName"
+                    name="displayName"
+                    autocomplete="name"
+                    maxlength="40"
+                    placeholder="What should we call you?"
+                    aria-describedby="displayNameNote"
+                  />
+                  <p class="field-note" id="displayNameNote">Shown on your private profile and journal.</p>
+                </div>
+
+                <div class="field">
+                  <div class="field-head"><label for="username">Username</label><span id="usernameCount">0 / 24</span></div>
+                  <div class="username-row" id="usernameRow">
+                    <span class="username-prefix" aria-hidden="true">@</span>
+                    <input
+                      class="text-field"
+                      id="username"
+                      name="username"
+                      autocomplete="username"
+                      maxlength="24"
+                      placeholder="your_handle"
+                      aria-describedby="usernameNote"
+                    />
+                  </div>
+                  <p class="field-note" id="usernameNote">3–24 lowercase letters, numbers, or underscores.</p>
+                </div>
+
+                <div class="form-summary" id="formSummary" role="alert"></div>
+
+                <button class="primary-action" id="submitButton" type="submit">Start my journal</button>
+                <button class="account-action" id="accountAction" type="button">Use a different account</button>
+              </form>
+
+              <div class="toast" id="toast" role="status" aria-live="polite">
+                <span class="toast-dot" aria-hidden="true"></span><span id="toastMessage"></span>
+              </div>
+
+              <section class="success-screen" id="successScreen" aria-hidden="true" aria-labelledby="successTitle">
+                <div>
+                  <div class="success-mark" aria-hidden="true">✓</div>
+                  <h3 id="successTitle">Your journal is ready.</h3>
+                  <p><span id="successName">Your profile</span> now has a place for every plan, watch, and rewatch.</p>
+                  <button class="primary-action" id="enterButton" type="button">Enter Discover</button>
+                </div>
+              </section>
+            </div>
+          </article>
+        </section>
+      </div>
+
+      <section class="audit-strip" aria-label="Impeccable design interventions">
+        <article class="audit-step"><span>/distill</span><h3>Strip the form down</h3><p>Two required fields, one optional photo, one primary action. No interest quiz or premature personalization.</p></article>
+        <article class="audit-step"><span>/clarify</span><h3>Name the outcome</h3><p>Replace generic “Continue” with “Start my journal,” and explain exactly where the identity appears.</p></article>
+        <article class="audit-step"><span>/audit</span><h3>Make recovery visible</h3><p>Large targets, explicit labels, inline errors, preserved input, and an announced username conflict state.</p></article>
+        <article class="audit-step"><span>/polish</span><h3>Keep the Revit atmosphere</h3><p>Warm archive tones and restrained serif moments carry the Personal Screening Room identity without turning auth into a poster wall.</p></article>
+      </section>
+    </main>
+
+    <script>
+      const form = document.querySelector('#profileForm');
+      const displayName = document.querySelector('#displayName');
+      const username = document.querySelector('#username');
+      const usernameRow = document.querySelector('#usernameRow');
+      const displayNameNote = document.querySelector('#displayNameNote');
+      const usernameNote = document.querySelector('#usernameNote');
+      const usernameCount = document.querySelector('#usernameCount');
+      const previewName = document.querySelector('#previewName');
+      const previewUsername = document.querySelector('#previewUsername');
+      const avatarInitial = document.querySelector('#avatarInitial');
+      const avatarImage = document.querySelector('#avatarImage');
+      const avatarInput = document.querySelector('#avatarInput');
+      const avatarPicker = document.querySelector('#avatarPicker');
+      const photoLabel = document.querySelector('#photoLabel');
+      const formSummary = document.querySelector('#formSummary');
+      const submitButton = document.querySelector('#submitButton');
+      const successScreen = document.querySelector('#successScreen');
+      const phoneScreen = document.querySelector('.phone-screen');
+      const successName = document.querySelector('#successName');
+      const toast = document.querySelector('#toast');
+      const toastMessage = document.querySelector('#toastMessage');
+      let forceConflict = false;
+      let toastTimer;
+
+      function normalizeUsername(value) {
+        return value
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, '_')
+          .replace(/[^a-z0-9_]/g, '')
+          .replace(/_+/g, '_')
+          .slice(0, 24);
+      }
+
+      function setNote(element, message, tone = '') {
+        element.textContent = message;
+        element.className = `field-note ${tone}`.trim();
+      }
+
+      function showToast(message) {
+        toastMessage.textContent = message;
+        toast.classList.add('visible');
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove('visible'), 2200);
+      }
+
+      function renderPreview() {
+        const name = displayName.value.trim();
+        const normalized = normalizeUsername(username.value);
+        previewName.textContent = name || 'Your journal identity';
+        previewUsername.textContent = `@${normalized || 'username'}`;
+        avatarInitial.textContent = (name[0] || normalized[0] || 'R').toUpperCase();
+        usernameCount.textContent = `${normalized.length} / 24`;
+      }
+
+      function validateName(showError = true) {
+        const value = displayName.value.trim();
+        const error = value.length < 2 ? 'Enter at least 2 characters for your display name.' : '';
+        displayName.setAttribute('aria-invalid', String(Boolean(error)));
+        if (showError) setNote(displayNameNote, error || 'This is how your name will appear.', error ? 'error' : 'valid');
+        return !error;
+      }
+
+      function validateUsername(showError = true) {
+        const normalized = normalizeUsername(username.value);
+        let error = '';
+        if (normalized.length < 3) error = 'Use at least 3 characters.';
+        else if (forceConflict) error = `@${normalized} is already taken. Your other details are still here.`;
+        username.value = normalized;
+        usernameRow.classList.toggle('invalid', Boolean(error));
+        username.setAttribute('aria-invalid', String(Boolean(error)));
+        if (showError) setNote(usernameNote, error || `@${normalized} is ready to use.`, error ? 'error' : 'valid');
+        renderPreview();
+        return !error;
+      }
+
+      displayName.addEventListener('input', () => {
+        renderPreview();
+        if (displayName.getAttribute('aria-invalid') === 'true') validateName();
+      });
+
+      username.addEventListener('input', () => {
+        forceConflict = false;
+        username.value = normalizeUsername(username.value);
+        renderPreview();
+        setNote(usernameNote, '3–24 lowercase letters, numbers, or underscores.');
+        usernameRow.classList.remove('invalid');
+        username.setAttribute('aria-invalid', 'false');
+      });
+
+      displayName.addEventListener('blur', () => { if (displayName.value) validateName(); });
+      username.addEventListener('blur', () => { if (username.value) validateUsername(); });
+
+      function openAvatarPicker() { avatarInput.click(); }
+      avatarPicker.addEventListener('click', openAvatarPicker);
+      photoLabel.addEventListener('click', openAvatarPicker);
+
+      avatarInput.addEventListener('change', () => {
+        const file = avatarInput.files && avatarInput.files[0];
+        if (!file) return;
+        avatarImage.src = URL.createObjectURL(file);
+        avatarImage.hidden = false;
+        avatarInitial.hidden = true;
+        photoLabel.textContent = 'Change photo';
+        showToast('Photo added. You can still change it later.');
+      });
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const nameValid = validateName();
+        const usernameValid = validateUsername();
+        if (!nameValid || !usernameValid) {
+          formSummary.textContent = 'Check the highlighted field. Your entries have been preserved.';
+          formSummary.classList.add('visible');
+          (nameValid ? username : displayName).focus();
+          return;
+        }
+
+        formSummary.classList.remove('visible');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Creating your profile…';
+        window.setTimeout(() => {
+          successName.textContent = displayName.value.trim();
+          phoneScreen.classList.add('success-mode');
+          successScreen.classList.add('visible');
+          successScreen.setAttribute('aria-hidden', 'false');
+          document.querySelector('#enterButton').focus();
+          submitButton.disabled = false;
+          submitButton.textContent = 'Start my journal';
+        }, 650);
+      });
+
+      document.querySelector('#fillExample').addEventListener('click', () => {
+        forceConflict = false;
+        displayName.value = 'Mira Thomas';
+        username.value = 'mira_watches';
+        renderPreview();
+        validateName();
+        validateUsername();
+        formSummary.classList.remove('visible');
+        displayName.focus();
+      });
+
+      document.querySelector('#showConflict').addEventListener('click', () => {
+        displayName.value = displayName.value || 'Mira Thomas';
+        username.value = 'filmjournal';
+        forceConflict = true;
+        renderPreview();
+        validateName();
+        validateUsername();
+        formSummary.textContent = 'Choose another username. Your display name and photo will not be cleared.';
+        formSummary.classList.add('visible');
+        username.focus();
+      });
+
+      document.querySelector('#resetPrototype').addEventListener('click', () => {
+        form.reset();
+        forceConflict = false;
+        avatarImage.hidden = true;
+        avatarImage.removeAttribute('src');
+        avatarInitial.hidden = false;
+        photoLabel.textContent = 'Photo · optional';
+        displayName.removeAttribute('aria-invalid');
+        username.removeAttribute('aria-invalid');
+        usernameRow.classList.remove('invalid');
+        formSummary.classList.remove('visible');
+        successScreen.classList.remove('visible');
+        successScreen.setAttribute('aria-hidden', 'true');
+        phoneScreen.classList.remove('success-mode');
+        setNote(displayNameNote, 'Shown on your private profile and journal.');
+        setNote(usernameNote, '3–24 lowercase letters, numbers, or underscores.');
+        renderPreview();
+      });
+
+      document.querySelector('#accountAction').addEventListener('click', () => showToast('This returns to the welcome screen after confirmation.'));
+      document.querySelector('#enterButton').addEventListener('click', (event) => {
+        event.currentTarget.textContent = 'Opening Discover…';
+        event.currentTarget.disabled = true;
+      });
+
+      renderPreview();
+    </script>
+  </body>
+</html>

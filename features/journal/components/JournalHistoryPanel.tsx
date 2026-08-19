@@ -1,142 +1,281 @@
-import { Alert, Text, View } from 'react-native';
+import { router } from 'expo-router';
+import { useMemo, useState } from 'react';
+import { FlatList, Text, View } from 'react-native';
 
+import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
+import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
+import { JournalActionFeedback } from '@/features/journal/components/JournalActionFeedback';
+import {
+  formatJournalHistoryDate,
+  getJournalHistoryEventLabel,
+  JournalHistoryRow,
+} from '@/features/journal/components/JournalHistoryRow';
 import { useDeleteJournalEvent } from '@/features/journal/hooks/useJournalLifecycleMutations';
 import { useJournalHistory } from '@/features/journal/hooks/useJournalReads';
 import type { JournalEvent, JournalTitleSummary } from '@/features/journal/types';
+import type { NormalizedMediaItem } from '@/types/media';
 
-function formatDate(value: string) {
-  const [year, month, day] = value.split('-').map(Number);
-  return new Intl.DateTimeFormat(undefined, {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(year, month - 1, day));
-}
+type DeleteRequest = {
+  event: JournalEvent;
+  finalEvent: boolean;
+  emptyTitleAction?: 'keep_someday' | 'remove';
+};
 
-function eventLabel(event: JournalEvent, completedIndex: number, completedCount: number) {
-  if (event.type === 'started') return 'Started watching';
-  if (event.type === 'stopped') return 'Stopped watching';
-  return completedIndex < completedCount - 1 ? 'Rewatched' : 'Watched';
+function HistoryHeader({
+  media,
+  summary,
+}: {
+  media: NormalizedMediaItem;
+  summary: JournalTitleSummary;
+}) {
+  const latestDate = summary.latestCompletedEvent
+    ? formatJournalHistoryDate(summary.latestCompletedEvent.eventDate)
+    : 'No completed watch yet';
+
+  const addPreviousWatch = () => {
+    router.push({
+      pathname: '/modals/journal-entry',
+      params: {
+        intent: 'previous_watch',
+        mediaItemId: media.id,
+        source: 'history',
+      },
+    });
+  };
+
+  return (
+    <View className="gap-4">
+      <View className="flex-row items-center gap-3 rounded-app border border-archive-700 bg-archive-800 p-4">
+        <MediaPoster imageUrl={media.imageUrl} size="sm" />
+        <View className="min-w-0 flex-1 gap-1">
+          <Text className="text-lg font-bold text-archive-50" numberOfLines={2}>
+            {media.title}
+          </Text>
+          <Text className="text-sm text-archive-300">Latest watch · {latestDate}</Text>
+        </View>
+        <View className="items-end">
+          <Text className="text-2xl font-bold text-gold-300">
+            {summary.completedWatchCount}
+          </Text>
+          <Text className="text-xs text-archive-300">watches</Text>
+        </View>
+      </View>
+
+      <Button
+        onPress={addPreviousWatch}
+        title="Log another watch"
+        variant="secondary"
+      />
+
+      <View className="flex-row items-baseline justify-between px-1 pt-2">
+        <Text className="text-lg font-bold text-archive-50">All activity</Text>
+        <Text className="text-xs text-archive-300">Newest first</Text>
+      </View>
+    </View>
+  );
 }
 
 export function JournalHistoryPanel({
+  media,
   onEdit,
   summary,
   userId,
 }: {
+  media: NormalizedMediaItem;
   onEdit: (event: JournalEvent) => void;
   summary: JournalTitleSummary;
   userId: string;
 }) {
   const query = useJournalHistory(userId, summary.titleState.id);
   const deleteEvent = useDeleteJournalEvent();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deleteRequest, setDeleteRequest] = useState<DeleteRequest | null>(null);
+  const [retryRequest, setRetryRequest] = useState<DeleteRequest | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const events = query.data?.pages.flatMap((page) => page.events) ?? [];
-  let completedIndex = 0;
+  const completedIndexes = useMemo(() => {
+    let completedIndex = 0;
+    const indexes = new Map<string, number>();
 
-  const remove = (event: JournalEvent, emptyTitleAction?: 'keep_someday' | 'remove') => {
-    void deleteEvent.mutateAsync({ eventId: event.id, emptyTitleAction }).catch((error) => {
-      Alert.alert(
-        'Could not delete activity',
-        error instanceof Error ? error.message : 'Try again in a moment.',
-      );
+    events.forEach((event) => {
+      if (event.type === 'completed') {
+        indexes.set(event.id, completedIndex);
+        completedIndex += 1;
+      }
+    });
+
+    return indexes;
+  }, [events]);
+
+  const requestDelete = (event: JournalEvent) => {
+    setOpenMenuId(null);
+    setDeleteError(null);
+    setRetryRequest(null);
+    setDeleteRequest({
+      event,
+      finalEvent: summary.activityCount === 1 && !summary.titleState.activePlan,
     });
   };
 
-  const confirmDelete = (event: JournalEvent) => {
-    if (summary.activityCount === 1 && !summary.titleState.activePlan) {
-      Alert.alert(
-        'Delete final activity?',
-        'Choose whether this title stays in Someday or is removed from your Journal.',
-        [
-          { style: 'cancel', text: 'Cancel' },
-          { text: 'Keep in Someday', onPress: () => remove(event, 'keep_someday') },
-          { style: 'destructive', text: 'Remove title', onPress: () => remove(event, 'remove') },
-        ],
+  const executeDelete = async (
+    request: DeleteRequest,
+    emptyTitleAction = request.emptyTitleAction,
+  ) => {
+    try {
+      const result = await deleteEvent.mutateAsync({
+        emptyTitleAction,
+        eventId: request.event.id,
+      });
+      setDeleteRequest(null);
+      setRetryRequest(null);
+      setDeleteError(null);
+      if (result.titleDeleted) router.back();
+    } catch (error) {
+      setDeleteRequest(null);
+      setRetryRequest({ ...request, emptyTitleAction });
+      setDeleteError(
+        error instanceof Error ? error.message : 'Try again in a moment.',
       );
-      return;
     }
-
-    Alert.alert(
-      'Delete this activity?',
-      `Delete ${eventLabel(event, 0, summary.completedWatchCount).toLowerCase()} from ${formatDate(event.eventDate)}? Other history and plans stay intact.`,
-      [
-        { style: 'cancel', text: 'Cancel' },
-        { style: 'destructive', text: 'Delete activity', onPress: () => remove(event) },
-      ],
-    );
   };
 
+  const completedCount = Math.max(summary.completedWatchCount, events.filter((event) => event.type === 'completed').length);
+
   return (
-    <Card className="gap-4">
-      <View className="gap-1">
-        <Text className="text-lg font-bold text-archive-50">History</Text>
-        <Text className="text-sm text-archive-300">
-          Every activity is separate. Editing one will not overwrite another.
-        </Text>
-      </View>
-
-      {query.isLoading ? <LoadingState message="Loading history" /> : null}
-      {query.isError ? (
-        <ErrorState
-          message={query.error instanceof Error ? query.error.message : 'Unable to load history.'}
-          onRetry={() => query.refetch()}
-          title="History unavailable"
-        />
-      ) : null}
-      {query.isSuccess && events.length === 0 ? (
-        <Text className="text-sm text-archive-300">No dated activity yet.</Text>
-      ) : null}
-
-      {events.map((event) => {
-        const currentCompletedIndex = event.type === 'completed' ? completedIndex++ : -1;
-        return (
-          <View className="gap-3 border-t border-archive-700 pt-4" key={event.id}>
-            <View className="flex-row items-start justify-between gap-3">
-              <View className="min-w-0 flex-1 gap-1">
-                <Text className="font-bold text-archive-50">
-                  {eventLabel(event, currentCompletedIndex, summary.completedWatchCount)}
+    <>
+      <FlatList
+        className="flex-1"
+        contentContainerClassName="gap-3 px-5 pb-28 pt-5"
+        data={events}
+        keyExtractor={(event) => event.id}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          query.isLoading ? (
+            <LoadingState message="Loading history" />
+          ) : query.isError ? (
+            <ErrorState
+              message={
+                query.error instanceof Error
+                  ? query.error.message
+                  : 'Unable to load your history.'
+              }
+              onRetry={() => query.refetch()}
+              title="History unavailable"
+            />
+          ) : (
+            <EmptyState
+              actionLabel="Log another watch"
+              message="Record another dated watch to keep building this history."
+              onAction={() =>
+                router.push({
+                  pathname: '/modals/journal-entry',
+                  params: {
+                    intent: 'previous_watch',
+                    mediaItemId: media.id,
+                    source: 'history',
+                  },
+                })
+              }
+              title="No history yet"
+            />
+          )
+        }
+        ListFooterComponent={
+          <View className="gap-3">
+            {query.isFetchNextPageError ? (
+              <View className="gap-3">
+                <Text className="text-sm text-reel-300">
+                  {query.error instanceof Error
+                    ? query.error.message
+                    : 'Unable to load earlier activity.'}
                 </Text>
-                <Text className="text-sm text-archive-300">{formatDate(event.eventDate)}</Text>
+                <Button
+                  onPress={() => query.fetchNextPage()}
+                  title="Try again"
+                  variant="secondary"
+                />
               </View>
-              {event.rating != null ? (
-                <Text className="font-bold text-gold-300">{event.rating} / 5</Text>
-              ) : null}
-            </View>
-            {event.notes ? (
-              <Text className="text-sm leading-5 text-archive-300">{event.notes}</Text>
             ) : null}
-            <View className="flex-row gap-2">
+            {query.hasNextPage && !query.isFetchNextPageError ? (
               <Button
-                className="min-w-0 flex-1"
-                disabled={deleteEvent.isPending}
-                onPress={() => onEdit(event)}
-                title="Edit activity"
+                loading={query.isFetchingNextPage}
+                onPress={() => query.fetchNextPage()}
+                title="Load earlier activity"
                 variant="secondary"
               />
-              <Button
-                className="min-w-0 flex-1"
-                disabled={deleteEvent.isPending}
-                onPress={() => confirmDelete(event)}
-                title="Delete activity"
-                variant="ghost"
-              />
-            </View>
+            ) : null}
           </View>
-        );
-      })}
+        }
+        ListHeaderComponent={<HistoryHeader media={media} summary={summary} />}
+        renderItem={({ item }) => (
+          <JournalHistoryRow
+            completedCount={completedCount}
+            completedIndex={completedIndexes.get(item.id) ?? -1}
+            event={item}
+            menuOpen={openMenuId === item.id}
+            onDelete={() => requestDelete(item)}
+            onEdit={() => {
+              setOpenMenuId(null);
+              onEdit(item);
+            }}
+            onToggleMenu={() => setOpenMenuId((current) => (current === item.id ? null : item.id))}
+            pending={deleteEvent.isPending}
+          />
+        )}
+        showsVerticalScrollIndicator={false}
+        testID="journal-history-list"
+      />
 
-      {query.hasNextPage ? (
-        <Button
-          loading={query.isFetchingNextPage}
-          onPress={() => query.fetchNextPage()}
-          title="Load earlier activity"
-          variant="secondary"
-        />
-      ) : null}
-    </Card>
+      <JournalActionConfirmation
+        body={
+          deleteRequest?.finalEvent
+            ? 'This is the final activity. Keep the title in Someday or remove the title and its Journal record.'
+            : deleteRequest
+              ? `Delete ${getJournalHistoryEventLabel(
+                  deleteRequest.event,
+                  completedIndexes.get(deleteRequest.event.id) ?? 0,
+                  completedCount,
+                ).toLowerCase()} from ${formatJournalHistoryDate(deleteRequest.event.eventDate)}? Other history and plans stay intact.`
+              : ''
+        }
+        cancelLabel="Cancel"
+        confirmLabel={deleteRequest?.finalEvent ? 'Remove title' : 'Delete watch'}
+        onCancel={() => setDeleteRequest(null)}
+        onConfirm={() => {
+          if (deleteRequest) {
+            void executeDelete(deleteRequest, deleteRequest.finalEvent ? 'remove' : undefined);
+          }
+        }}
+        onSecondary={
+          deleteRequest?.finalEvent
+            ? () => {
+                void executeDelete(deleteRequest, 'keep_someday');
+              }
+            : undefined
+        }
+        pending={deleteEvent.isPending}
+        secondaryLabel={deleteRequest?.finalEvent ? 'Keep in Someday' : undefined}
+        title={deleteRequest?.finalEvent ? 'Delete final watch?' : 'Delete this watch?'}
+        visible={deleteRequest !== null}
+      />
+
+      <JournalActionFeedback
+        body={deleteError ?? 'Try again in a moment.'}
+        onClose={() => {
+          setDeleteError(null);
+          setRetryRequest(null);
+        }}
+        onRetry={() => {
+          if (retryRequest) void executeDelete(retryRequest);
+        }}
+        pending={deleteEvent.isPending}
+        title="Could not delete watch"
+        visible={deleteError !== null}
+      />
+    </>
   );
 }

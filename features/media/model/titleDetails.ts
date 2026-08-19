@@ -57,6 +57,36 @@ export function formatTitleMetadataLine(item: NormalizedMediaItem) {
   return parts.join(' - ');
 }
 
+export function formatTitleHeroMetadata(item: NormalizedMediaItem) {
+  const metadata = item.metadata;
+  const runtime = formatRuntime(metadata.runtime);
+  const episodeRuntime = Array.isArray(metadata.episodeRuntime)
+    ? formatRuntime(metadata.episodeRuntime[0])
+    : null;
+  const seasonCount =
+    typeof metadata.seasonCount === 'number' && metadata.seasonCount > 0
+      ? `${metadata.seasonCount} ${metadata.seasonCount === 1 ? 'season' : 'seasons'}`
+      : null;
+
+  return [
+    item.year,
+    runtime ?? episodeRuntime ?? seasonCount,
+    ...item.genres.slice(0, 2),
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join(' · ');
+}
+
+export function formatTmdbRating(item: NormalizedMediaItem) {
+  const rating = item.metadata.voteAverage;
+
+  if (typeof rating !== 'number' || !Number.isFinite(rating) || rating <= 0) {
+    return null;
+  }
+
+  return `${rating.toFixed(1)} TMDB`;
+}
+
 export function getTitleDetailMetrics(item: NormalizedMediaItem) {
   const metadata = item.metadata;
   const runtime = formatRuntime(metadata.runtime);

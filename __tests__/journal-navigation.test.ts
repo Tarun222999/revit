@@ -1,4 +1,5 @@
 import {
+  getJournalCaptureCancelNavigation,
   getJournalFastCapture,
   resolveJournalCaptureAction,
 } from '../features/journal/model/journalNavigation';
@@ -18,6 +19,13 @@ const plannedSummary: JournalTitleSummary = {
 };
 
 describe('Journal fast capture navigation', () => {
+  it('clears capture state before replacing the picker with Journal', () => {
+    expect(getJournalCaptureCancelNavigation()).toEqual({
+      params: { journalCapture: undefined, journalReturn: undefined },
+      route: '/journal',
+    });
+  });
+
   it('uses Log in Timeline and Calendar and Add plan in Planner', () => {
     expect(getJournalFastCapture('timeline')).toEqual({ capture: 'log', label: 'Log' });
     expect(getJournalFastCapture('calendar')).toEqual({ capture: 'log', label: 'Log' });
