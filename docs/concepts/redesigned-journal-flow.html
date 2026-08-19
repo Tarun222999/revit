@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0d0b09" />
+    <title>Revit — Redesigned Journal Flow</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #0d0b09;
+        --ink-raised: #17130f;
+        --ink-soft: #211b15;
+        --paper: #fbf6ec;
+        --paper-muted: #b9aa97;
+        --paper-faint: #7f7468;
+        --gold: #dfad43;
+        --gold-soft: #e7bf68;
+        --teal: #72c7aa;
+        --danger: #ef8c83;
+        --line: rgba(251, 246, 236, 0.11);
+        --line-strong: rgba(251, 246, 236, 0.2);
+        --shadow: 0 34px 90px rgba(0, 0, 0, 0.48);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        min-width: 320px;
+        background: #080706;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 12% 8%, rgba(223, 173, 67, 0.09), transparent 30rem),
+          radial-gradient(circle at 92% 36%, rgba(114, 199, 170, 0.06), transparent 28rem),
+          #080706;
+        color: var(--paper);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        color: inherit;
+      }
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 3px solid var(--teal);
+        outline-offset: 3px;
+      }
+
+      .concept-shell {
+        width: min(1180px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 54px 0 72px;
+      }
+
+      .concept-header {
+        display: grid;
+        grid-template-columns: minmax(0, 0.86fr) minmax(380px, 1.14fr);
+        gap: 72px;
+        align-items: center;
+      }
+
+      .eyebrow {
+        margin: 0 0 16px;
+        color: var(--gold-soft);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.17em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        max-width: 640px;
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: clamp(44px, 6vw, 76px);
+        font-weight: 500;
+        letter-spacing: -0.055em;
+        line-height: 0.98;
+      }
+
+      h1 em {
+        color: var(--gold-soft);
+        font-style: normal;
+      }
+
+      .lede {
+        max-width: 560px;
+        margin: 24px 0 0;
+        color: var(--paper-muted);
+        font-size: 18px;
+        line-height: 1.65;
+      }
+
+      .principles {
+        display: grid;
+        gap: 0;
+        margin: 34px 0 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .principle {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 12px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .principle-number {
+        color: var(--gold-soft);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 18px;
+      }
+
+      .principle strong {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 14px;
+      }
+
+      .principle span:last-child {
+        color: var(--paper-muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .demo-column {
+        min-width: 0;
+      }
+
+      .demo-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        color: var(--paper-muted);
+        font-size: 12px;
+      }
+
+      .demo-label::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--teal);
+        box-shadow: 0 0 14px rgba(114, 199, 170, 0.6);
+      }
+
+      .phone {
+        position: relative;
+        width: min(100%, 430px);
+        min-height: 790px;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 1px solid var(--line-strong);
+        border-radius: 36px;
+        background: var(--ink);
+        box-shadow: var(--shadow);
+      }
+
+      .phone-content {
+        min-height: 790px;
+        padding: 22px 20px 106px;
+        background:
+          linear-gradient(180deg, rgba(223, 173, 67, 0.025), transparent 240px),
+          var(--ink);
+      }
+
+      .statusbar,
+      .appbar,
+      .journal-heading,
+      .timeline-row,
+      .plan-row,
+      .calendar-heading,
+      .calendar-entry,
+      .bottom-nav,
+      .drawer-title,
+      .drawer-action,
+      .add-result,
+      .date-choice-row {
+        display: flex;
+        align-items: center;
+      }
+
+      .statusbar,
+      .appbar,
+      .journal-heading,
+      .calendar-heading,
+      .drawer-title {
+        justify-content: space-between;
+      }
+
+      .statusbar {
+        margin-bottom: 27px;
+        color: #ded5c9;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .appbar {
+        margin-bottom: 28px;
+      }
+
+      .appbar-title {
+        margin: 0;
+        font-size: 21px;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+      }
+
+      .avatar {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 1px solid rgba(223, 173, 67, 0.72);
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 50% 32%, #d1b48d 0 16%, transparent 17%),
+          radial-gradient(ellipse at 50% 90%, #4c3829 0 36%, transparent 37%),
+          #251f1a;
+      }
+
+      .journal-heading {
+        gap: 14px;
+        margin-bottom: 17px;
+      }
+
+      .journal-heading h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 760;
+        letter-spacing: -0.02em;
+      }
+
+      .journal-heading p {
+        margin: 4px 0 0;
+        color: var(--paper-muted);
+        font-size: 13px;
+      }
+
+      .primary-action {
+        min-height: 42px;
+        padding: 0 16px;
+        border: 0;
+        border-radius: 11px;
+        background: var(--gold);
+        color: #17120d;
+        font-weight: 720;
+      }
+
+      .view-tabs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        margin: 0 0 24px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .view-tab {
+        min-height: 44px;
+        padding: 0 4px;
+        border: 0;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        color: var(--paper-faint);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .view-tab[aria-selected="true"] {
+        border-bottom-color: var(--gold);
+        color: var(--paper);
+      }
+
+      .view-panel {
+        display: none;
+      }
+
+      .view-panel.active {
+        display: block;
+      }
+
+      .section-label {
+        margin: 0 0 3px;
+        font-size: 18px;
+        font-weight: 760;
+      }
+
+      .section-note {
+        margin: 0 0 12px;
+        color: var(--paper-muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .month-label {
+        margin: 4px 0 12px;
+        color: var(--gold-soft);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .timeline-list {
+        position: relative;
+      }
+
+      .timeline-list::before {
+        content: "";
+        position: absolute;
+        top: 25px;
+        bottom: 26px;
+        left: 23px;
+        width: 1px;
+        background: var(--line);
+      }
+
+      .timeline-row {
+        position: relative;
+        width: 100%;
+        gap: 13px;
+        padding: 7px 0 15px;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        text-align: left;
+      }
+
+      .date-medallion {
+        z-index: 1;
+        display: grid;
+        width: 47px;
+        height: 47px;
+        flex: 0 0 auto;
+        place-content: center;
+        border: 1px solid rgba(223, 173, 67, 0.48);
+        border-radius: 50%;
+        background: var(--ink-raised);
+        color: var(--gold-soft);
+        text-align: center;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .date-medallion strong {
+        display: block;
+        color: var(--paper);
+        font-size: 14px;
+      }
+
+      .timeline-card {
+        display: grid;
+        grid-template-columns: 58px 1fr;
+        gap: 12px;
+        min-width: 0;
+        flex: 1;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: var(--ink-raised);
+      }
+
+      .poster {
+        width: 58px;
+        height: 82px;
+        border-radius: 8px;
+        background: linear-gradient(150deg, #7d2320, #d3c4a7 48%, #24221f 49%, #111);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      }
+
+      .poster.blue {
+        background: linear-gradient(155deg, #1b3f50, #718e93 43%, #e1c999 44%, #1a2025);
+      }
+
+      .poster.sheep {
+        background: linear-gradient(150deg, #b49a5a, #5a785d 46%, #ddd2a9 47%, #29271f);
+      }
+
+      .poster.purple {
+        background: linear-gradient(150deg, #312448, #846a91 46%, #d0b57b 47%, #17131d);
+      }
+
+      .event-type {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--teal);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .item-title {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 16px;
+        font-weight: 760;
+        line-height: 1.2;
+      }
+
+      .item-meta {
+        display: block;
+        color: var(--paper-muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .rating {
+        display: block;
+        margin-top: 8px;
+        color: var(--gold-soft);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .plan-section + .plan-section {
+        margin-top: 25px;
+      }
+
+      .plan-list {
+        border-top: 1px solid var(--line);
+      }
+
+      .plan-row {
+        width: 100%;
+        gap: 12px;
+        padding: 13px 2px;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        background: transparent;
+        color: inherit;
+        text-align: left;
+      }
+
+      .plan-copy {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .plan-copy .item-title {
+        margin-bottom: 4px;
+      }
+
+      .chevron {
+        color: var(--paper-faint);
+        font-size: 24px;
+        font-weight: 300;
+      }
+
+      .calendar-heading {
+        margin-bottom: 15px;
+      }
+
+      .calendar-heading strong {
+        font-size: 18px;
+      }
+
+      .month-control {
+        display: grid;
+        width: 40px;
+        height: 40px;
+        place-content: center;
+        border: 0;
+        background: transparent;
+        color: var(--paper-muted);
+        font-size: 22px;
+      }
+
+      .weekdays,
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+      }
+
+      .weekdays span {
+        padding: 6px 0;
+        color: var(--paper-faint);
+        text-align: center;
+        font-size: 9px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .calendar-day {
+        position: relative;
+        aspect-ratio: 1;
+        min-width: 0;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--paper-muted);
+        font-size: 11px;
+      }
+
+      .calendar-day.muted-day {
+        color: #4f4942;
+      }
+
+      .calendar-day.has-log::after,
+      .calendar-day.has-plan::before {
+        content: "";
+        position: absolute;
+        bottom: 7px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+      }
+
+      .calendar-day.has-log::after {
+        left: calc(50% - 5px);
+        background: var(--teal);
+      }
+
+      .calendar-day.has-plan::before {
+        left: calc(50% + 2px);
+        background: var(--gold);
+      }
+
+      .calendar-day[aria-selected="true"] {
+        border-color: var(--gold);
+        background: var(--gold);
+        color: #17120d;
+        font-weight: 800;
+      }
+
+      .selected-date {
+        margin: 18px 0 10px;
+        color: var(--paper-muted);
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .calendar-entry {
+        width: 100%;
+        gap: 11px;
+        padding: 11px 0;
+        border: 0;
+        border-top: 1px solid var(--line);
+        background: transparent;
+        color: inherit;
+        text-align: left;
+      }
+
+      .calendar-entry .poster {
+        width: 45px;
+        height: 64px;
+      }
+
+      .bottom-nav {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        justify-content: space-around;
+        padding: 13px 10px 19px;
+        border-top: 1px solid var(--line);
+        background: rgba(13, 11, 9, 0.97);
+      }
+
+      .nav-item {
+        min-width: 58px;
+        border: 0;
+        background: transparent;
+        color: var(--paper-faint);
+        font-size: 10px;
+      }
+
+      .nav-icon {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 19px;
+      }
+
+      .nav-item.active {
+        color: var(--gold-soft);
+      }
+
+      .scrim {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        display: none;
+        background: rgba(0, 0, 0, 0.58);
+      }
+
+      .scrim.open {
+        display: block;
+      }
+
+      .drawer {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 5;
+        display: none;
+        max-height: 75%;
+        overflow-y: auto;
+        padding: 10px 20px 27px;
+        border-top: 1px solid var(--line-strong);
+        border-radius: 21px 21px 0 0;
+        background: #191512;
+        box-shadow: 0 -20px 52px rgba(0, 0, 0, 0.45);
+      }
+
+      .drawer.open {
+        display: block;
+      }
+
+      .grabber {
+        width: 38px;
+        height: 4px;
+        margin: 0 auto 17px;
+        border-radius: 4px;
+        background: #5b5149;
+      }
+
+      .drawer-title {
+        gap: 12px;
+        padding-bottom: 14px;
+      }
+
+      .drawer-title-copy {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .drawer-title-copy strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 18px;
+      }
+
+      .drawer-close {
+        width: 44px;
+        height: 44px;
+        border: 0;
+        background: transparent;
+        color: var(--paper-muted);
+        font-size: 21px;
+      }
+
+      .decision-note {
+        margin: 0 0 8px;
+        padding: 10px 12px;
+        border-left: 2px solid var(--gold);
+        background: var(--ink-soft);
+        color: #d7ccbd;
+        font-size: 13px;
+      }
+
+      .drawer-action {
+        width: 100%;
+        min-height: 50px;
+        gap: 12px;
+        padding: 0 2px;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        background: transparent;
+        color: var(--paper);
+        text-align: left;
+      }
+
+      .drawer-action:last-child {
+        border-bottom: 0;
+      }
+
+      .drawer-action.primary {
+        color: var(--gold-soft);
+        font-weight: 760;
+      }
+
+      .drawer-action.danger {
+        color: var(--danger);
+      }
+
+      .action-mark {
+        width: 25px;
+        color: currentColor;
+        text-align: center;
+      }
+
+      .add-flow h3 {
+        margin: 0 0 5px;
+        font-size: 19px;
+      }
+
+      .add-flow > p {
+        margin: 0 0 15px;
+        color: var(--paper-muted);
+        font-size: 13px;
+      }
+
+      .search-field {
+        width: 100%;
+        min-height: 46px;
+        margin-bottom: 10px;
+        padding: 0 14px;
+        border: 1px solid var(--line-strong);
+        border-radius: 10px;
+        background: var(--ink);
+        color: var(--paper);
+      }
+
+      .add-result {
+        width: 100%;
+        gap: 11px;
+        padding: 10px 0;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        background: transparent;
+        color: inherit;
+        text-align: left;
+      }
+
+      .add-result .poster {
+        width: 44px;
+        height: 62px;
+      }
+
+      .date-choice-row {
+        gap: 8px;
+        margin: 14px 0;
+      }
+
+      .date-choice {
+        min-height: 40px;
+        padding: 0 13px;
+        border: 1px solid var(--line-strong);
+        border-radius: 9px;
+        background: transparent;
+        color: var(--paper-muted);
+      }
+
+      .date-choice[aria-pressed="true"] {
+        border-color: var(--gold);
+        background: rgba(223, 173, 67, 0.13);
+        color: var(--paper);
+      }
+
+      .save-plan {
+        width: 100%;
+        min-height: 48px;
+        border: 0;
+        border-radius: 11px;
+        background: var(--gold);
+        color: #17120d;
+        font-weight: 760;
+      }
+
+      .flow-strip {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        margin-top: 72px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--line);
+      }
+
+      .flow-step {
+        min-height: 190px;
+        padding: 25px;
+        background: rgba(23, 19, 15, 0.82);
+      }
+
+      .flow-step span {
+        color: var(--gold-soft);
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 25px;
+      }
+
+      .flow-step h3 {
+        margin: 30px 0 8px;
+        font-size: 16px;
+      }
+
+      .flow-step p {
+        margin: 0;
+        color: var(--paper-muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .toast {
+        position: absolute;
+        right: 18px;
+        bottom: 92px;
+        left: 18px;
+        z-index: 7;
+        display: none;
+        padding: 13px 15px;
+        border: 1px solid rgba(114, 199, 170, 0.36);
+        border-radius: 11px;
+        background: #183128;
+        color: #d8f4e9;
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .toast.show {
+        display: block;
+      }
+
+      @media (max-width: 900px) {
+        .concept-header {
+          grid-template-columns: 1fr;
+          gap: 50px;
+        }
+
+        .intro {
+          max-width: 720px;
+          margin: 0 auto;
+        }
+
+        .flow-strip {
+          grid-template-columns: 1fr;
+        }
+
+        .flow-step {
+          min-height: auto;
+        }
+
+        .flow-step h3 {
+          margin-top: 16px;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .concept-shell {
+          width: 100%;
+          padding: 34px 0 0;
+        }
+
+        .intro,
+        .flow-strip {
+          margin-right: 18px;
+          margin-left: 18px;
+        }
+
+        h1 {
+          font-size: 46px;
+        }
+
+        .lede {
+          font-size: 16px;
+        }
+
+        .demo-label {
+          padding: 0 18px;
+        }
+
+        .phone {
+          width: 100%;
+          border-right: 0;
+          border-left: 0;
+          border-radius: 0;
+        }
+
+        .flow-strip {
+          margin-top: 44px;
+          margin-bottom: 36px;
+        }
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .drawer.open {
+          animation: rise 180ms ease-out;
+        }
+
+        .toast.show {
+          animation: rise 160ms ease-out;
+        }
+
+        @keyframes rise {
+          from {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="concept-shell">
+      <div class="concept-header">
+        <section class="intro">
+          <p class="eyebrow">Revit Journal · Interaction concept</p>
+          <h1>Your history, plans, and next watch—<em>without the button wall.</em></h1>
+          <p class="lede">
+            The redesigned Journal keeps one clear action at the top, turns repeated cards into calm rows,
+            and reveals decisions only when they are needed.
+          </p>
+          <div class="principles" aria-label="Design principles">
+            <div class="principle"><span class="principle-number">01</span><span><strong>One primary action</strong><span>Log or Add plan changes with the selected Journal view.</span></span></div>
+            <div class="principle"><span class="principle-number">02</span><span><strong>Content is the control</strong><span>Tap a title row to reveal its relevant actions—no repeated ellipsis buttons.</span></span></div>
+            <div class="principle"><span class="principle-number">03</span><span><strong>Decisions appear in context</strong><span>Missed plans ask what happened; upcoming plans stay quiet.</span></span></div>
+          </div>
+        </section>
+
+        <section class="demo-column" aria-label="Interactive redesigned Journal">
+          <div class="demo-label">Interactive concept · try the tabs, rows, dates, and Add plan</div>
+          <div class="phone">
+            <div class="phone-content">
+              <div class="statusbar"><span>10:21</span><span>● 33%</span></div>
+              <div class="appbar"><h2 class="appbar-title">Journal</h2><button class="avatar" type="button" aria-label="Open profile"></button></div>
+              <div class="journal-heading">
+                <div><h2>Your Journal</h2><p data-subtitle>Keep your personal viewing record.</p></div>
+                <button class="primary-action" type="button" data-primary>Log</button>
+              </div>
+
+              <div class="view-tabs" role="tablist" aria-label="Journal views">
+                <button class="view-tab" type="button" role="tab" data-view="timeline" aria-selected="true">Timeline</button>
+                <button class="view-tab" type="button" role="tab" data-view="planner" aria-selected="false">Planner</button>
+                <button class="view-tab" type="button" role="tab" data-view="calendar" aria-selected="false">Calendar</button>
+              </div>
+
+              <section class="view-panel active" data-panel="timeline" aria-label="Timeline">
+                <div class="month-label">August 2026</div>
+                <div class="timeline-list">
+                  <button class="timeline-row" type="button" data-entry="The Grand Budapest Hotel" data-entry-meta="Watched · 9 Aug 2026">
+                    <span class="date-medallion">Aug<strong>09</strong></span>
+                    <span class="timeline-card"><span class="poster purple"></span><span><span class="event-type">Watched</span><span class="item-title">The Grand Budapest Hotel</span><span class="item-meta">2014 · Movie</span><span class="rating">4.5 / 5</span></span></span>
+                  </button>
+                  <button class="timeline-row" type="button" data-entry="Severance" data-entry-meta="Started watching · 4 Aug 2026">
+                    <span class="date-medallion">Aug<strong>04</strong></span>
+                    <span class="timeline-card"><span class="poster blue"></span><span><span class="event-type">Started watching</span><span class="item-title">Severance</span><span class="item-meta">2022 · Series</span></span></span>
+                  </button>
+                </div>
+              </section>
+
+              <section class="view-panel" data-panel="planner" aria-label="Planner">
+                <div class="plan-section">
+                  <h3 class="section-label">Upcoming</h3>
+                  <p class="section-note">Future plans in date order.</p>
+                  <div class="plan-list">
+                    <button class="plan-row" type="button" data-plan="upcoming" data-title="DC" data-meta="7 Aug 2026 · Planned">
+                      <span class="poster"></span><span class="plan-copy"><span class="item-title">DC</span><span class="item-meta">7 Aug 2026 · Planned</span></span><span class="chevron">›</span>
+                    </button>
+                    <button class="plan-row" type="button" data-plan="upcoming" data-title="I Will Find You" data-meta="18 Aug 2026 · Planned">
+                      <span class="poster blue"></span><span class="plan-copy"><span class="item-title">I Will Find You</span><span class="item-meta">18 Aug 2026 · Planned</span></span><span class="chevron">›</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="plan-section">
+                  <h3 class="section-label">Missed</h3>
+                  <p class="section-note">Past plans waiting for a decision.</p>
+                  <div class="plan-list">
+                    <button class="plan-row" type="button" data-plan="missed" data-title="The Sheep Detectives" data-meta="27 Jun 2026 · Needs a decision">
+                      <span class="poster sheep"></span><span class="plan-copy"><span class="item-title">The Sheep Detectives</span><span class="item-meta">27 Jun 2026 · Needs a decision</span></span><span class="chevron">›</span>
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="view-panel" data-panel="calendar" aria-label="Calendar">
+                <div class="calendar-heading"><button class="month-control" type="button" aria-label="Previous month">‹</button><strong>August 2026</strong><button class="month-control" type="button" aria-label="Next month">›</button></div>
+                <div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+                <div class="calendar-grid" data-calendar></div>
+                <div class="selected-date" data-selected-date>9 August · 1 logged title</div>
+                <button class="calendar-entry" type="button" data-entry="The Grand Budapest Hotel" data-entry-meta="Watched · 9 Aug 2026"><span class="poster purple"></span><span class="plan-copy"><span class="event-type">Watched</span><span class="item-title">The Grand Budapest Hotel</span><span class="item-meta">4.5 / 5</span></span><span class="chevron">›</span></button>
+              </section>
+            </div>
+
+            <nav class="bottom-nav" aria-label="Main navigation">
+              <button class="nav-item" type="button"><span class="nav-icon">⌂</span>Discover</button>
+              <button class="nav-item" type="button"><span class="nav-icon">⌕</span>Search</button>
+              <button class="nav-item active" type="button"><span class="nav-icon">▤</span>Journal</button>
+              <button class="nav-item" type="button"><span class="nav-icon">☷</span>Lists</button>
+            </nav>
+
+            <div class="scrim" data-scrim></div>
+            <section class="drawer" data-drawer role="dialog" aria-modal="true" aria-labelledby="drawer-heading">
+              <div class="grabber" aria-hidden="true"></div>
+              <div data-drawer-content></div>
+            </section>
+            <div class="toast" data-toast role="status" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="flow-strip" aria-label="Redesigned Journal flow">
+        <article class="flow-step"><span>01</span><h3>Choose the right lens</h3><p>Timeline remembers, Planner decides, and Calendar locates. The same Journal data, organized by intent.</p></article>
+        <article class="flow-step"><span>02</span><h3>Act on the title</h3><p>The whole row is tappable. Relevant actions arrive in a focused drawer instead of living on every card.</p></article>
+        <article class="flow-step"><span>03</span><h3>Return without losing place</h3><p>Complete the action and return to the same section, date, and scroll position with quiet confirmation.</p></article>
+      </section>
+    </main>
+
+    <script>
+      (() => {
+        const tabs = [...document.querySelectorAll('[data-view]')];
+        const panels = [...document.querySelectorAll('[data-panel]')];
+        const primary = document.querySelector('[data-primary]');
+        const subtitle = document.querySelector('[data-subtitle]');
+        const drawer = document.querySelector('[data-drawer]');
+        const drawerContent = document.querySelector('[data-drawer-content]');
+        const scrim = document.querySelector('[data-scrim]');
+        const toast = document.querySelector('[data-toast]');
+        let activeView = 'timeline';
+        let toastTimer;
+
+        const viewCopy = {
+          timeline: { action: 'Log', subtitle: 'Keep your personal viewing record.' },
+          planner: { action: 'Add plan', subtitle: 'Decide what comes next.' },
+          calendar: { action: 'Log', subtitle: 'See when stories became part of your life.' }
+        };
+
+        const closeDrawer = () => {
+          drawer.classList.remove('open');
+          scrim.classList.remove('open');
+          drawer.setAttribute('aria-hidden', 'true');
+        };
+
+        const openDrawer = (content) => {
+          drawerContent.innerHTML = content;
+          drawer.classList.add('open');
+          scrim.classList.add('open');
+          drawer.setAttribute('aria-hidden', 'false');
+          drawer.querySelector('[data-close-drawer]')?.focus();
+        };
+
+        const showToast = (message) => {
+          window.clearTimeout(toastTimer);
+          toast.textContent = message;
+          toast.classList.add('show');
+          toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2200);
+        };
+
+        const actionButton = (mark, label, tone = '') =>
+          `<button class="drawer-action ${tone}" type="button" data-complete="${label}"><span class="action-mark" aria-hidden="true">${mark}</span><span>${label}</span></button>`;
+
+        const drawerHeader = (title, meta, posterClass = '') => `
+          <div class="drawer-title">
+            <span class="poster ${posterClass}"></span>
+            <span class="drawer-title-copy"><strong id="drawer-heading">${title}</strong><span class="item-meta">${meta}</span></span>
+            <button class="drawer-close" type="button" data-close-drawer aria-label="Close">×</button>
+          </div>`;
+
+        const openPlanActions = (button) => {
+          const missed = button.dataset.plan === 'missed';
+          const posterClass = button.querySelector('.poster').classList.contains('sheep') ? 'sheep' : button.querySelector('.poster').classList.contains('blue') ? 'blue' : '';
+          openDrawer(`
+            ${drawerHeader(button.dataset.title, button.dataset.meta, posterClass)}
+            ${missed ? '<p class="decision-note">What happened with this plan?</p>' : ''}
+            ${actionButton('✓', missed ? 'I watched it' : 'Log watch', 'primary')}
+            ${actionButton('◷', 'Reschedule')}
+            ${actionButton('◇', 'Move to Someday')}
+            ${actionButton('↗', 'View title details')}
+            ${actionButton('−', 'Remove plan', 'danger')}
+          `);
+        };
+
+        const openEntryActions = (button) => {
+          openDrawer(`
+            ${drawerHeader(button.dataset.entry, button.dataset.entryMeta, 'purple')}
+            ${actionButton('↗', 'View title details', 'primary')}
+            ${actionButton('✎', 'Edit Journal entry')}
+            ${actionButton('↻', 'Log a rewatch')}
+          `);
+        };
+
+        const openCapture = () => {
+          if (activeView === 'planner') {
+            openDrawer(`
+              <div class="drawer-title"><span class="drawer-title-copy"><strong id="drawer-heading">Add a plan</strong><span class="item-meta">Choose a title, then decide when.</span></span><button class="drawer-close" type="button" data-close-drawer aria-label="Close">×</button></div>
+              <div class="add-flow">
+                <input class="search-field" type="search" value="The Bear" aria-label="Search titles" />
+                <button class="add-result" type="button"><span class="poster blue"></span><span class="plan-copy"><span class="item-title">The Bear</span><span class="item-meta">2022 · Series</span></span><span class="chevron">›</span></button>
+                <div class="date-choice-row" aria-label="Plan date"><button class="date-choice" type="button" aria-pressed="true">Tonight</button><button class="date-choice" type="button" aria-pressed="false">This weekend</button><button class="date-choice" type="button" aria-pressed="false">Someday</button></div>
+                <button class="save-plan" type="button" data-complete="Plan saved">Save plan</button>
+              </div>
+            `);
+          } else {
+            openDrawer(`
+              <div class="drawer-title"><span class="drawer-title-copy"><strong id="drawer-heading">Log a watch</strong><span class="item-meta">Find the title you just watched.</span></span><button class="drawer-close" type="button" data-close-drawer aria-label="Close">×</button></div>
+              <div class="add-flow"><input class="search-field" type="search" placeholder="Search movies and series" aria-label="Search titles" /><button class="add-result" type="button"><span class="poster purple"></span><span class="plan-copy"><span class="item-title">The Grand Budapest Hotel</span><span class="item-meta">2014 · Movie</span></span><span class="chevron">›</span></button></div>
+            `);
+          }
+        };
+
+        tabs.forEach((tab) => {
+          tab.addEventListener('click', () => {
+            activeView = tab.dataset.view;
+            tabs.forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
+            panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === activeView));
+            primary.textContent = viewCopy[activeView].action;
+            subtitle.textContent = viewCopy[activeView].subtitle;
+            closeDrawer();
+          });
+        });
+
+        document.querySelectorAll('[data-plan]').forEach((button) => button.addEventListener('click', () => openPlanActions(button)));
+        document.querySelectorAll('[data-entry]').forEach((button) => button.addEventListener('click', () => openEntryActions(button)));
+        primary.addEventListener('click', openCapture);
+        scrim.addEventListener('click', closeDrawer);
+
+        drawer.addEventListener('click', (event) => {
+          const close = event.target.closest('[data-close-drawer]');
+          const complete = event.target.closest('[data-complete]');
+          const dateChoice = event.target.closest('.date-choice');
+          if (close) closeDrawer();
+          if (dateChoice) {
+            drawer.querySelectorAll('.date-choice').forEach((choice) => choice.setAttribute('aria-pressed', String(choice === dateChoice)));
+          }
+          if (complete) {
+            const label = complete.dataset.complete;
+            closeDrawer();
+            showToast(label === 'Plan saved' ? 'Plan saved for tonight' : `${label} selected`);
+          }
+        });
+
+        const calendar = document.querySelector('[data-calendar]');
+        const selectedDate = document.querySelector('[data-selected-date]');
+        const leadingDays = [26, 27, 28, 29, 30, 31];
+        const days = [...leadingDays.map((day) => ({ day, muted: true })), ...Array.from({ length: 31 }, (_, index) => ({ day: index + 1, muted: false }))];
+        calendar.innerHTML = days.map(({ day, muted }) => {
+          const classes = ['calendar-day'];
+          if (muted) classes.push('muted-day');
+          if (!muted && [4, 9, 17].includes(day)) classes.push('has-log');
+          if (!muted && [7, 18, 24].includes(day)) classes.push('has-plan');
+          return `<button class="${classes.join(' ')}" type="button" data-day="${day}" ${!muted && day === 9 ? 'aria-selected="true"' : 'aria-selected="false"'}>${day}</button>`;
+        }).join('');
+
+        calendar.addEventListener('click', (event) => {
+          const day = event.target.closest('[data-day]');
+          if (!day || day.classList.contains('muted-day')) return;
+          calendar.querySelectorAll('[data-day]').forEach((item) => item.setAttribute('aria-selected', String(item === day)));
+          const hasLog = day.classList.contains('has-log');
+          const hasPlan = day.classList.contains('has-plan');
+          const count = Number(hasLog) + Number(hasPlan);
+          selectedDate.textContent = `${day.dataset.day} August · ${count ? `${count} Journal item${count > 1 ? 's' : ''}` : 'Nothing recorded'}`;
+        });
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') closeDrawer();
+        });
+      })();
+    </script>
+  </body>
+</html>

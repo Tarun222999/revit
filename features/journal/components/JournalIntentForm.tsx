@@ -181,9 +181,9 @@ export function JournalIntentForm({
 
       {releaseWarning ? (
         <Card className="gap-1 border-gold-700 bg-archive-800">
-          <Text className="font-semibold text-gold-300">Check the date</Text>
+          <Text className="font-semibold text-gold-300">This movie is yet to release</Text>
           <Text className="text-sm leading-5 text-archive-300">
-            This is before the provider release date. You can still save it if the date is right for you.
+            You can still log it if the date is right for you.
           </Text>
         </Card>
       ) : null}

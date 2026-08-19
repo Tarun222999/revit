@@ -6,6 +6,7 @@ import {
   isJournalFormIntent,
   lifecycleIntentForForm,
   localToday,
+  isFutureReleaseDate,
   JOURNAL_INTENT_COPY,
   validateJournalIntentForm,
 } from '../features/journal/model/journalIntentForm';
@@ -74,6 +75,17 @@ describe('intent-based Journal form', () => {
         '2026-07-29',
       ),
     ).toEqual({});
+  });
+
+  it('only flags a valid future provider release date', () => {
+    expect(isFutureReleaseDate('2999-01-01')).toBe(true);
+    expect(isFutureReleaseDate(null)).toBe(false);
+    expect(isFutureReleaseDate('not-a-date')).toBe(false);
+  });
+
+  it('uses the precise rewatch logging label', () => {
+    expect(JOURNAL_INTENT_COPY.previous_watch.submitLabel).toBe('Log another watch');
+    expect(JOURNAL_INTENT_COPY.previous_watch.title).toBe('Log another watch');
   });
 
   it('detects dirty edits and exposes rating only for completions', () => {

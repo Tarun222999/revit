@@ -3,7 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { PropsWithChildren } from 'react';
 
 import { logJournalEvent } from '@/features/journal/api/journal-mutation-api';
-import { invalidateJournalReadData } from '@/features/journal/api/journal-query-keys';
+import {
+  invalidateJournalReadData,
+  reconcileJournalPlannerCache,
+} from '@/features/journal/api/journal-query-keys';
 import { useLogJournalEvent } from '@/features/journal/hooks/useJournalLifecycleMutations';
 
 jest.mock('@/features/journal/api/journal-mutation-api', () => ({
@@ -17,10 +20,14 @@ jest.mock('@/features/journal/api/journal-mutation-api', () => ({
 
 jest.mock('@/features/journal/api/journal-query-keys', () => ({
   invalidateJournalReadData: jest.fn(),
+  reconcileJournalPlannerCache: jest.fn(),
 }));
 
 const mockLogJournalEvent = jest.mocked(logJournalEvent);
 const mockInvalidateJournalReadData = jest.mocked(invalidateJournalReadData);
+const mockReconcileJournalPlannerCache = jest.mocked(
+  reconcileJournalPlannerCache,
+);
 
 function createHarness() {
   const queryClient = new QueryClient({
@@ -73,6 +80,11 @@ describe('Journal lifecycle mutation hooks', () => {
     expect(mockInvalidateJournalReadData).toHaveBeenCalledWith(queryClient, {
       affectedDates: ['2026-07-29', '2026-08-01'],
       eventId: 'event-1',
+      journalEntryId: 'entry-1',
+      mediaItemId: 'media-1',
+      userId: 'user-1',
+    });
+    expect(mockReconcileJournalPlannerCache).toHaveBeenCalledWith(queryClient, {
       journalEntryId: 'entry-1',
       mediaItemId: 'media-1',
       userId: 'user-1',

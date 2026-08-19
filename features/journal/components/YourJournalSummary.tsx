@@ -1,6 +1,5 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { Card } from '@/components/ui/Card';
 import { JOURNAL_STATUS_LABELS } from '@/constants/journal';
 import type { JournalTitleSummary } from '@/features/journal/types';
 
@@ -14,28 +13,36 @@ function formatJournalDate(value: string | null) {
   }).format(new Date(year, month - 1, day));
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="min-w-0 flex-1 rounded-app border border-archive-700 bg-archive-900 p-3">
-      <Text className="text-xs font-semibold uppercase text-archive-300">{label}</Text>
-      <Text className="mt-1 text-base font-bold text-archive-50">{value}</Text>
-    </View>
-  );
-}
+type Props = {
+  disabled?: boolean;
+  onPress?: () => void;
+  summary: JournalTitleSummary | null;
+};
 
 export function YourJournalSummary({
+  disabled = false,
+  onPress,
   summary,
-}: {
-  summary: JournalTitleSummary | null;
-}) {
+}: Props) {
+  const isInteractive = Boolean(onPress && !disabled);
+
   if (!summary) {
     return (
-      <Card className="gap-2">
-        <Text className="text-lg font-bold text-archive-50">Your Journal</Text>
-        <Text className="text-sm leading-5 text-archive-300">
-          No plan or activity yet. Log what happened or plan what comes next.
-        </Text>
-      </Card>
+      <Pressable
+        accessibilityHint={
+          isInteractive ? 'Opens the next Journal action for this title.' : undefined
+        }
+        accessibilityLabel="Your Journal. Nothing recorded yet."
+        accessibilityRole={isInteractive ? 'button' : undefined}
+        className="min-h-20 flex-row items-center justify-between gap-4 border-y border-archive-700 py-4"
+        disabled={!isInteractive}
+        onPress={onPress}>
+        <View className="min-w-0 flex-1 gap-1">
+          <Text className="font-serif text-xl text-archive-50">Your Journal</Text>
+          <Text className="text-sm leading-5 text-archive-300">Nothing recorded yet</Text>
+        </View>
+        <Text className="text-sm font-semibold text-gold-300">Start →</Text>
+      </Pressable>
     );
   }
 
@@ -45,51 +52,43 @@ export function YourJournalSummary({
       ? formatJournalDate(titleState.activePlan.plannedFor)
       : 'Someday'
     : null;
+  const journalCopy = latestCompletedEvent
+    ? `Latest watch · ${formatJournalDate(latestCompletedEvent.eventDate)}`
+    : planLabel
+      ? `Planned for ${planLabel}`
+      : titleState.status === 'in_progress'
+        ? 'Watching now'
+        : JOURNAL_STATUS_LABELS[titleState.status];
+  const activityLabel = summary.completedWatchCount
+    ? `${summary.completedWatchCount} ${summary.completedWatchCount === 1 ? 'watch' : 'watches'}`
+    : JOURNAL_STATUS_LABELS[titleState.status];
+  const ratingLabel = latestCompletedEvent?.rating == null
+    ? null
+    : `${latestCompletedEvent.rating} / 5`;
 
   return (
-    <Card className="gap-4">
-      <View className="flex-row items-start justify-between gap-3">
-        <Text className="min-w-0 flex-1 text-lg font-bold text-archive-50">
-          Your Journal
+    <Pressable
+      accessibilityHint={isInteractive ? 'Opens this title’s watch history.' : undefined}
+      accessibilityLabel={`Your Journal. ${journalCopy}. ${activityLabel}.`}
+      accessibilityRole={isInteractive ? 'button' : undefined}
+      className="min-h-20 flex-row items-center gap-4 border-y border-archive-700 py-4"
+      disabled={!isInteractive}
+      onPress={onPress}>
+      <View className="min-w-0 flex-1 gap-1">
+        <Text className="font-serif text-xl text-archive-50">Your Journal</Text>
+        <Text className="text-sm leading-5 text-archive-300" numberOfLines={1}>
+          {journalCopy}
         </Text>
-        <View className="rounded-full border border-teal-500 px-3 py-1">
-          <Text className="text-xs font-bold text-teal-300">
-            {JOURNAL_STATUS_LABELS[titleState.status]}
+        {latestCompletedEvent?.notes ? (
+          <Text className="text-xs leading-4 text-archive-400" numberOfLines={1}>
+            {latestCompletedEvent.notes}
           </Text>
-        </View>
+        ) : null}
       </View>
-
-      {planLabel ? <Metric label="Active plan" value={planLabel} /> : null}
-
-      <View className="flex-row gap-3">
-        <Metric
-          label="Watches"
-          value={String(summary.completedWatchCount)}
-        />
-        <Metric
-          label="Latest rating"
-          value={
-            latestCompletedEvent?.rating == null
-              ? 'Not rated'
-              : `${latestCompletedEvent.rating} / 5`
-          }
-        />
+      <View className="items-end gap-1">
+        <Text className="text-sm font-semibold text-gold-300">{activityLabel}</Text>
+        {ratingLabel ? <Text className="text-xs text-archive-200">{ratingLabel}</Text> : null}
       </View>
-
-      {latestCompletedEvent ? (
-        <View className="gap-2">
-          <Text className="text-sm font-semibold text-archive-100">
-            Latest watch · {formatJournalDate(latestCompletedEvent.eventDate)}
-          </Text>
-          {latestCompletedEvent.notes ? (
-            <Text className="text-sm leading-5 text-archive-300" numberOfLines={3}>
-              {latestCompletedEvent.notes}
-            </Text>
-          ) : null}
-        </View>
-      ) : titleState.status === 'in_progress' && summary.activityCount ? (
-        <Text className="text-sm text-archive-300">Watching now</Text>
-      ) : null}
-    </Card>
+    </Pressable>
   );
 }

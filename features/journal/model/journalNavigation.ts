@@ -5,6 +5,13 @@ import type { JournalTitleSummary } from '@/features/journal/types';
 export type JournalNavigationView = 'timeline' | 'planner' | 'calendar';
 export type JournalCaptureIntent = 'log' | 'plan';
 
+export function getJournalCaptureCancelNavigation() {
+  return {
+    params: { journalCapture: undefined, journalReturn: undefined },
+    route: '/journal' as const,
+  };
+}
+
 export function getJournalFastCapture(view: JournalNavigationView) {
   return view === 'planner'
     ? { capture: 'plan' as const, label: 'Add plan' }

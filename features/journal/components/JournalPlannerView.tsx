@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, SectionList, Text, View } from 'react-native';
+import { Pressable, SectionList, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { MediaPoster } from '@/components/media/MediaPoster';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { JOURNAL_STATUS_LABELS } from '@/constants/journal';
+import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
+import { JournalActionDrawer } from '@/features/journal/components/JournalActionDrawer';
+import { JournalActionFeedback } from '@/features/journal/components/JournalActionFeedback';
 import {
   useRemoveJournalPlan,
   useSaveJournalPlan,
@@ -28,7 +28,11 @@ import type {
 } from '@/features/journal/types';
 import { createMediaRouteId } from '@/features/media/api/media-api';
 
-const SECTIONS: Array<{ key: JournalPlannerSection; title: string; description: string }> = [
+const SECTIONS: Array<{
+  key: JournalPlannerSection;
+  title: string;
+  description: string;
+}> = [
   { key: 'today', title: 'Today', description: 'Plans scheduled for your local day.' },
   { key: 'upcoming', title: 'Upcoming', description: 'Future plans in date order.' },
   { key: 'missed', title: 'Missed', description: 'Past plans waiting for a decision.' },
@@ -48,11 +52,7 @@ function formatDate(value: string | null) {
 function openIntent(item: JournalPlannerItem, intent: JournalFormIntent) {
   router.push({
     pathname: '/modals/journal-entry',
-    params: {
-      intent,
-      mediaItemId: item.media.id,
-      source: 'planner',
-    },
+    params: { intent, mediaItemId: item.media.id, source: 'planner' },
   });
 }
 
@@ -65,126 +65,149 @@ function openTitle(item: JournalPlannerItem) {
   router.push(`/title/${encodeURIComponent(routeId)}`);
 }
 
-function PlannerCard({ item }: { item: JournalPlannerItem }) {
-  const [showManagement, setShowManagement] = useState(false);
+function PlannerRow({ item }: { item: JournalPlannerItem }) {
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [removeConfirmationVisible, setRemoveConfirmationVisible] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
   const removePlan = useRemoveJournalPlan();
   const savePlan = useSaveJournalPlan();
-  const action = getPlannerWatchAction(item);
+  const watchAction = getPlannerWatchAction(item);
   const managementActions = getPlannerManagementActions(item.section);
   const pending = removePlan.isPending || savePlan.isPending;
+  const plannedFor = item.titleState.activePlan?.plannedFor ?? null;
 
-  const confirmRemove = () => {
-    Alert.alert(
-      'Remove plan?',
-      'This removes the plan only. Existing Journal history remains.',
-      [
-        { style: 'cancel', text: 'Cancel' },
-        {
-          style: 'destructive',
-          text: 'Remove plan',
-          onPress: () => {
-            void removePlan
-              .mutateAsync({ journalEntryId: item.titleState.id })
-              .catch((error) =>
-                Alert.alert(
-                  'Could not remove plan',
-                  error instanceof Error ? error.message : 'Try again in a moment.',
-                ),
-              );
-          },
-        },
-      ],
-    );
-  };
-
-  const moveToSomeday = () => {
-    void savePlan
-      .mutateAsync({ mediaItemId: item.media.id, plannedFor: null, today: localToday() })
-      .catch((error) =>
-        Alert.alert(
-          'Could not move plan',
-          error instanceof Error ? error.message : 'Try again in a moment.',
-        ),
-      );
-  };
-
-  const runManagementAction = (managementAction: PlannerManagementAction) => {
-    switch (managementAction.id) {
-      case 'edit_plan':
-        openIntent(item, 'edit_plan');
-        return;
-      case 'move_to_someday':
-        moveToSomeday();
-        return;
-      case 'remove_plan':
-        confirmRemove();
+  const executeRemovePlan = async () => {
+    try {
+      await removePlan.mutateAsync({ journalEntryId: item.titleState.id });
+      setRemoveConfirmationVisible(false);
+      setRemoveError(null);
+    } catch (error) {
+      setRemoveConfirmationVisible(false);
+      setRemoveError(error instanceof Error ? error.message : 'Try again in a moment.');
     }
   };
 
+  const moveToSomeday = async () => {
+    setDrawerVisible(false);
+    try {
+      await savePlan.mutateAsync({
+        mediaItemId: item.media.id,
+        plannedFor: null,
+        today: localToday(),
+      });
+      setMoveError(null);
+    } catch (error) {
+      setMoveError(error instanceof Error ? error.message : 'Try again in a moment.');
+    }
+  };
+
+  const runManagementAction = (managementAction: PlannerManagementAction) => {
+    if (managementAction.id === 'edit_plan') {
+      setDrawerVisible(false);
+      openIntent(item, 'edit_plan');
+      return;
+    }
+    if (managementAction.id === 'move_to_someday') {
+      void moveToSomeday();
+      return;
+    }
+
+    setDrawerVisible(false);
+    setRemoveError(null);
+    setRemoveConfirmationVisible(true);
+  };
+
+  const primaryLabel = item.section === 'missed' ? 'I watched it' : watchAction.label;
+  const drawerActions = [
+    {
+      label: primaryLabel,
+      onPress: () => {
+        setDrawerVisible(false);
+        openIntent(item, watchAction.intent);
+      },
+      tone: 'primary' as const,
+    },
+    ...managementActions.filter((action) => action.id !== 'remove_plan').map((action) => ({
+      label: action.label,
+      onPress: () => runManagementAction(action),
+      tone: 'standard' as const,
+    })),
+    {
+      label: 'View title details',
+      onPress: () => {
+        setDrawerVisible(false);
+        openTitle(item);
+      },
+      tone: 'standard' as const,
+    },
+    ...managementActions.filter((action) => action.id === 'remove_plan').map((action) => ({
+      label: action.label,
+      onPress: () => runManagementAction(action),
+      tone: 'danger' as const,
+    })),
+  ];
+
   return (
-    <Card className="gap-3">
-      <Pressable accessibilityRole="button" className="flex-row gap-3" onPress={() => openTitle(item)}>
+    <>
+      <Pressable
+        accessibilityHint="Opens plan actions"
+        accessibilityLabel={`${item.media.title}, ${formatDate(plannedFor)}. Open plan actions.`}
+        accessibilityRole="button"
+        className="flex-row items-center gap-3 border-b border-archive-700 py-3"
+        onPress={() => setDrawerVisible(true)}
+      >
         <MediaPoster imageUrl={item.media.imageUrl} size="sm" />
         <View className="min-w-0 flex-1 gap-1">
-          <Text className="text-lg font-bold text-archive-50" numberOfLines={2}>
+          <Text className="text-base font-bold text-archive-50" numberOfLines={2}>
             {item.media.title}
           </Text>
-          <Text className="text-sm text-archive-300">
-            {formatDate(item.titleState.activePlan?.plannedFor ?? null)}
-          </Text>
-          <Text className="text-xs font-semibold text-teal-300">
+          <Text className="text-sm text-archive-300">{formatDate(plannedFor)}</Text>
+          <Text className="text-xs font-semibold text-teal-300" numberOfLines={1}>
             {item.titleState.status === 'completed'
               ? 'Previously completed · Rewatch plan'
-              : JOURNAL_STATUS_LABELS[item.titleState.status]}
+              : item.media.mediaType === 'movie'
+                ? 'Plan to watch'
+                : 'Plan to start'}
           </Text>
         </View>
+        <Ionicons color="#b9aa97" name="chevron-forward" size={20} />
       </Pressable>
 
-      <View className="flex-row items-stretch gap-2">
-        <Button
-          className="min-w-[140px] flex-1"
-          disabled={pending}
-          onPress={() => openIntent(item, action.intent)}
-          title={action.label}
-        />
-        <Pressable
-          accessibilityHint="Shows plan management actions"
-          accessibilityLabel={`${showManagement ? 'Hide' : 'Show'} plan actions for ${item.media.title}`}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: pending, expanded: showManagement }}
-          className={`min-h-12 min-w-12 items-center justify-center rounded-app border ${
-            showManagement
-              ? 'border-gold-400 bg-gold-500/20'
-              : 'border-archive-500 bg-archive-800'
-          } ${pending ? 'opacity-50' : ''}`}
-          disabled={pending}
-          hitSlop={4}
-          onPress={() => setShowManagement((current) => !current)}>
-          <Ionicons
-            color={showManagement ? '#f4c95d' : '#fbf6ec'}
-            name={showManagement ? 'close' : 'ellipsis-horizontal'}
-            size={22}
-          />
-        </Pressable>
-      </View>
-      {showManagement ? (
-        <View className="gap-2 rounded-app border border-archive-700 bg-archive-900 p-3">
-          {managementActions.map((managementAction) => (
-            <Button
-              key={managementAction.id}
-              disabled={pending}
-              loading={
-                (managementAction.id === 'move_to_someday' && savePlan.isPending) ||
-                (managementAction.id === 'remove_plan' && removePlan.isPending)
-              }
-              onPress={() => runManagementAction(managementAction)}
-              title={managementAction.label}
-              variant={managementAction.id === 'remove_plan' ? 'danger' : 'secondary'}
-            />
-          ))}
-        </View>
-      ) : null}
-    </Card>
+      <JournalActionDrawer
+        actions={drawerActions}
+        description={formatDate(plannedFor)}
+        onClose={() => setDrawerVisible(false)}
+        prompt={item.section === 'missed' ? 'What happened with this plan?' : undefined}
+        title={item.media.title}
+        visible={drawerVisible}
+      />
+      <JournalActionConfirmation
+        body="This removes the plan only. Existing Journal history remains."
+        confirmLabel="Remove plan"
+        onCancel={() => setRemoveConfirmationVisible(false)}
+        onConfirm={() => void executeRemovePlan()}
+        pending={removePlan.isPending}
+        title="Remove plan?"
+        visible={removeConfirmationVisible}
+      />
+      <JournalActionFeedback
+        body={removeError ?? 'Try again in a moment.'}
+        onClose={() => setRemoveError(null)}
+        onRetry={() => void executeRemovePlan()}
+        pending={removePlan.isPending}
+        title="Could not remove plan"
+        visible={removeError !== null}
+      />
+      <JournalActionFeedback
+        body={moveError ?? 'Try again in a moment.'}
+        onClose={() => setMoveError(null)}
+        onRetry={() => void moveToSomeday()}
+        pending={savePlan.isPending}
+        title="Could not move plan"
+        visible={moveError !== null}
+      />
+    </>
   );
 }
 
@@ -194,11 +217,7 @@ export function JournalPlannerView({ userId }: { userId: string }) {
   const items = query.data ?? [];
 
   if (query.isLoading) {
-    return (
-      <View className="px-5 pt-5">
-        <LoadingState message="Loading Planner" />
-      </View>
-    );
+    return <View className="px-5 pt-5"><LoadingState message="Loading Planner" /></View>;
   }
   if (query.isError) {
     return (
@@ -232,13 +251,13 @@ export function JournalPlannerView({ userId }: { userId: string }) {
   return (
     <SectionList
       className="flex-1"
-      contentContainerClassName="gap-3 px-5 pb-28 pt-5"
+      contentContainerClassName="px-5 pb-28 pt-2"
       keyExtractor={(item) => item.titleState.id}
-      renderItem={({ item }) => <PlannerCard item={item} />}
+      renderItem={({ item }) => <PlannerRow item={item} />}
       renderSectionHeader={({ section }) => (
-        <View className="gap-1 bg-archive-900 pb-1 pt-3">
+        <View className="bg-archive-900 pb-2 pt-6">
           <Text className="text-xl font-bold text-archive-50">{section.title}</Text>
-          <Text className="text-sm text-archive-300">{section.description}</Text>
+          <Text className="mt-1 text-sm text-archive-300">{section.description}</Text>
         </View>
       )}
       sections={sections}

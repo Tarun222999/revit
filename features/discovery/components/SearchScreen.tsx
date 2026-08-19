@@ -18,6 +18,7 @@ import {
   mediaItemKey,
 } from '@/features/discovery/utils/dedupeMediaItems';
 import { createMediaRouteId } from '@/features/media/api/media-api';
+import { getJournalCaptureCancelNavigation } from '@/features/journal/model/journalNavigation';
 import type { NormalizedMediaItem } from '@/types/media';
 
 const SEARCH_MIN_QUERY_LENGTH = 2;
@@ -294,8 +295,9 @@ export function SearchScreen() {
                   title="Cancel and return to Journal"
                   variant="ghost"
                   onPress={() => {
-                    router.setParams({ journalCapture: undefined, journalReturn: undefined });
-                    router.dismissTo('/journal');
+                    const navigation = getJournalCaptureCancelNavigation();
+                    router.setParams(navigation.params);
+                    router.replace(navigation.route);
                   }}
                 />
               </View>
