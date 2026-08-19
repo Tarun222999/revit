@@ -50,24 +50,39 @@ function JournalViewSegment({
   onChange: (view: JournalView) => void;
 }) {
   return (
-    <View className="flex-row rounded-app border border-archive-700 bg-archive-800 p-1">
+    <View
+      accessibilityRole="tablist"
+      className="flex-row border-b border-archive-700"
+    >
       {(['timeline', 'planner', 'calendar'] as const).map((view) => (
         <Pressable
           accessibilityRole="tab"
           accessibilityState={{ selected: activeView === view }}
           className={cn(
-            'min-h-10 flex-1 items-center justify-center rounded-md px-3',
-            activeView === view && 'bg-gold-400',
+            'relative min-h-11 flex-1 items-center justify-center px-3',
           )}
           key={view}
           onPress={() => onChange(view)}>
           <Text
             className={cn(
               'text-sm font-semibold capitalize',
-              activeView === view ? 'text-archive-900' : 'text-archive-200',
+              activeView === view ? 'text-archive-50' : 'text-archive-300',
             )}>
             {view}
           </Text>
+          {activeView === view ? (
+            <View
+              pointerEvents="none"
+              style={{
+                backgroundColor: '#f4c95d',
+                bottom: -1,
+                height: 2,
+                left: 0,
+                position: 'absolute',
+                right: 0,
+              }}
+            />
+          ) : null}
         </Pressable>
       ))}
     </View>

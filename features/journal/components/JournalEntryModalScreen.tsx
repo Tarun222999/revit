@@ -8,6 +8,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { JournalDiscardConfirmation } from '@/features/journal/components/JournalDiscardConfirmation';
+import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
 import { JournalEntryModalFrame } from '@/features/journal/components/JournalEntryModalFrame';
 import { JournalIntentForm } from '@/features/journal/components/JournalIntentForm';
 import {
@@ -26,6 +27,8 @@ import {
   hasJournalIntentFormErrors,
   isJournalFormIntent,
   isPlanningIntent,
+  isCompletedIntent,
+  isFutureReleaseDate,
   JOURNAL_INTENT_COPY,
   lifecycleIntentForForm,
   localToday,
@@ -118,6 +121,9 @@ export function JournalEntryModalScreen({
   const initialValuesRef = useRef(createJournalIntentFormValues(intent));
   const [values, setValues] = useState(initialValuesRef.current);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [releaseConfirmationVisible, setReleaseConfirmationVisible] =
+    useState(false);
+  const releaseConfirmedRef = useRef(false);
   const today = localToday();
   const errors = useMemo(
     () => validateJournalIntentForm(intent, values, today),
@@ -215,6 +221,15 @@ export function JournalEntryModalScreen({
     if (mutationPending || hasJournalIntentFormErrors(errors)) return;
     if (!user?.id || !mediaItemId) {
       setSubmitError('Sign in and reopen this title before saving.');
+      return;
+    }
+
+    if (
+      !releaseConfirmedRef.current &&
+      isCompletedIntent(intent) &&
+      isFutureReleaseDate(detailsQuery.data?.item?.releaseDate)
+    ) {
+      setReleaseConfirmationVisible(true);
       return;
     }
 
@@ -347,6 +362,20 @@ export function JournalEntryModalScreen({
         onSubmit={submit}
         submitError={submitError}
         values={values}
+      />
+      <JournalActionConfirmation
+        body="You can still log it if the date is right for you."
+        cancelLabel="Go back"
+        confirmLabel="Log watch"
+        confirmVariant="primary"
+        onCancel={() => setReleaseConfirmationVisible(false)}
+        onConfirm={() => {
+          releaseConfirmedRef.current = true;
+          setReleaseConfirmationVisible(false);
+          void submit();
+        }}
+        title="This movie is yet to release"
+        visible={releaseConfirmationVisible}
       />
     </JournalEntryModalFrame>,
   );

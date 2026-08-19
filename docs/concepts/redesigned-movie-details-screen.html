@@ -587,7 +587,7 @@
                 <div class="history-count"><strong id="historyCount">1</strong><span>watches</span></div>
               </div>
 
-              <button class="previous-watch" type="button">Add previous watch</button>
+              <button class="previous-watch" id="anotherWatch" type="button">Log another watch</button>
 
               <div class="history-section-head"><strong>All activity</strong><span>Newest first</span></div>
               <article class="history-event">
@@ -634,6 +634,7 @@
       const notes = document.querySelector('#notes');
       const eventMenu = document.querySelector('#eventMenu');
       const eventActions = document.querySelector('#eventActions');
+      const anotherWatch = document.querySelector('#anotherWatch');
       let historyReady = false;
       let toastTimer;
 
@@ -700,6 +701,12 @@
         historyScreen.classList.remove('open');
         historyScreen.setAttribute('aria-hidden', 'true');
         journalStrip.focus();
+      });
+
+      anotherWatch.addEventListener('click', () => {
+        entryLayer.classList.add('open');
+        entryLayer.setAttribute('aria-hidden', 'false');
+        entryClose.focus();
       });
 
       eventMenu.addEventListener('click', () => {

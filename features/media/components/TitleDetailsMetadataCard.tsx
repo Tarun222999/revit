@@ -1,19 +1,21 @@
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { useState } from 'react';
 
-import { Card } from '@/components/ui/Card';
 import type { TitleDetailMetric } from '@/features/media/model/titleDetails';
 
 type TitleDetailsMetadataCardProps = {
   details: TitleDetailMetric[];
 };
 
+const initiallyVisibleDetailCount = 2;
+
 function DetailMetric({ label, value }: TitleDetailMetric) {
   return (
-    <View className="min-w-[45%] flex-1 rounded-app border border-archive-700 bg-archive-900 p-3">
-      <Text className="text-xs font-semibold uppercase text-archive-300">
-        {label}
+    <View className="flex-row items-start justify-between gap-5 border-b border-archive-700 py-3">
+      <Text className="text-sm text-archive-300">{label}</Text>
+      <Text className="max-w-[65%] text-right text-sm font-medium text-archive-100">
+        {value}
       </Text>
-      <Text className="mt-1 text-sm font-bold text-archive-50">{value}</Text>
     </View>
   );
 }
@@ -21,15 +23,23 @@ function DetailMetric({ label, value }: TitleDetailMetric) {
 export function TitleDetailsMetadataCard({
   details,
 }: TitleDetailsMetadataCardProps) {
+  const [expanded, setExpanded] = useState(false);
+
   if (details.length === 0) {
     return null;
   }
 
+  const canCollapse = details.length > initiallyVisibleDetailCount + 1;
+  const visibleDetails = expanded || !canCollapse
+    ? details
+    : details.slice(0, initiallyVisibleDetailCount);
+  const hiddenCount = details.length - visibleDetails.length;
+
   return (
-    <Card className="gap-3">
-      <Text className="text-lg font-bold text-archive-50">Details</Text>
-      <View className="flex-row flex-wrap gap-3">
-        {details.map((detail) => (
+    <View>
+      <Text className="font-serif text-2xl text-archive-50">Details</Text>
+      <View className="mt-2 border-t border-archive-700">
+        {visibleDetails.map((detail) => (
           <DetailMetric
             key={detail.label}
             label={detail.label}
@@ -37,6 +47,18 @@ export function TitleDetailsMetadataCard({
           />
         ))}
       </View>
-    </Card>
+      {canCollapse ? (
+        <Pressable
+          accessibilityLabel={expanded ? 'Show fewer title details' : `Show ${hiddenCount} more title details`}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          className="min-h-11 self-start justify-center py-1"
+          onPress={() => setExpanded((current) => !current)}>
+          <Text className="text-sm font-semibold text-gold-300">
+            {expanded ? 'Show fewer details' : `See ${hiddenCount} more details`}
+          </Text>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }

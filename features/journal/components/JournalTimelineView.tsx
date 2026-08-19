@@ -1,9 +1,11 @@
-import type { ReactElement } from 'react';
+import { router } from 'expo-router';
+import { useState, type ReactElement } from 'react';
 import { FlatList, Pressable, Text, View } from 'react-native';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { JournalActionDrawer } from '@/features/journal/components/JournalActionDrawer';
 import type { JournalTimelineItem } from '@/features/journal/types';
 
 function localDate(value: string) {
@@ -82,29 +84,53 @@ export function JournalTimelineView({
   onItemPress: (item: JournalTimelineItem) => void;
   onLoadMore: () => void;
 }) {
+  const [selectedItem, setSelectedItem] = useState<JournalTimelineItem | null>(null);
+
+  const openEdit = (item: JournalTimelineItem) => {
+    setSelectedItem(null);
+    router.push({
+      pathname: '/modals/journal-entry',
+      params: {
+        eventId: item.event.id,
+        intent: 'edit_event',
+        mediaItemId: item.media.id,
+        source: 'history',
+      },
+    });
+  };
+
+  const openRewatch = (item: JournalTimelineItem) => {
+    setSelectedItem(null);
+    router.push({
+      pathname: '/modals/journal-entry',
+      params: { intent: 'rewatch', mediaItemId: item.media.id, source: 'title' },
+    });
+  };
+
   return (
-    <FlatList
-      className="flex-1"
-      contentContainerClassName="gap-4 px-5 pb-28 pt-5"
-      data={items}
-      keyExtractor={(item) => item.event.id}
-      keyboardShouldPersistTaps="handled"
-      ListEmptyComponent={empty}
-      ListFooterComponent={
-        <View className="gap-3">
-          {hasNextPage ? (
-            <Button
-              loading={isFetchingNextPage}
-              onPress={onLoadMore}
-              title="Load earlier activity"
-              variant="secondary"
-            />
-          ) : null}
-          {footer}
-        </View>
-      }
-      ListHeaderComponent={header}
-      renderItem={({ item, index }) => {
+    <>
+      <FlatList
+        className="flex-1"
+        contentContainerClassName="gap-4 px-5 pb-28 pt-5"
+        data={items}
+        keyExtractor={(item) => item.event.id}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={empty}
+        ListFooterComponent={
+          <View className="gap-3">
+            {hasNextPage ? (
+              <Button
+                loading={isFetchingNextPage}
+                onPress={onLoadMore}
+                title="Load earlier activity"
+                variant="secondary"
+              />
+            ) : null}
+            {footer}
+          </View>
+        }
+        ListHeaderComponent={header}
+        renderItem={({ item, index }) => {
         const month = item.event.eventDate.slice(0, 7);
         const showMonth =
           index === 0 ||
@@ -128,14 +154,44 @@ export function JournalTimelineView({
                 ) : null}
               </View>
               <View className="min-w-0 flex-1 pb-2">
-                <TimelineCard item={item} onPress={() => onItemPress(item)} />
+                <TimelineCard item={item} onPress={() => setSelectedItem(item)} />
               </View>
             </View>
           </View>
         );
-      }}
-      showsVerticalScrollIndicator={false}
-      testID="journal-timeline-list"
-    />
+        }}
+        showsVerticalScrollIndicator={false}
+        testID="journal-timeline-list"
+      />
+      <JournalActionDrawer
+        actions={
+          selectedItem
+            ? [
+                {
+                  label: 'View title details',
+                  onPress: () => {
+                    const item = selectedItem;
+                    setSelectedItem(null);
+                    onItemPress(item);
+                  },
+                  tone: 'primary',
+                },
+                { label: 'Edit activity', onPress: () => openEdit(selectedItem) },
+                ...(selectedItem.event.type === 'completed'
+                  ? [{ label: 'Log a rewatch', onPress: () => openRewatch(selectedItem) }]
+                  : []),
+              ]
+            : []
+        }
+        description={
+          selectedItem
+            ? `${eventLabel(selectedItem)} · ${selectedItem.event.eventDate}`
+            : undefined
+        }
+        onClose={() => setSelectedItem(null)}
+        title={selectedItem?.media.title ?? ''}
+        visible={selectedItem !== null}
+      />
+    </>
   );
 }

@@ -18,6 +18,7 @@ type JournalActionConfirmationProps = {
   onConfirm: () => void;
   onSecondary?: () => void;
   pending?: boolean;
+  confirmVariant?: 'danger' | 'primary';
   secondaryLabel?: string;
   title: string;
   visible: boolean;
@@ -27,6 +28,7 @@ export function JournalActionConfirmation({
   body,
   cancelLabel = 'Keep plan',
   confirmLabel,
+  confirmVariant = 'danger',
   onCancel,
   onConfirm,
   onSecondary,
@@ -104,7 +106,7 @@ export function JournalActionConfirmation({
               loading={pending}
               onPress={onConfirm}
               title={confirmLabel}
-              variant="danger"
+              variant={confirmVariant}
             />
           </View>
         </View>
