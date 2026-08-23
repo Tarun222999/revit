@@ -11,7 +11,8 @@
     "lint": "expo lint",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run test -- --runInBand && npm run typecheck && npm run lint",
+    "typecheck:edge": "tsc -p supabase/functions/tsconfig.json",
+    "verify": "npm run test -- --runInBand && npm run typecheck && npm run typecheck:edge && npm run lint",
     "doctor": "expo install --check",
     "export:web": "expo export --platform web",
     "check": "npm run typecheck && npm run lint && npm run doctor"
