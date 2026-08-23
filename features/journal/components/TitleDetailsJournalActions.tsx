@@ -19,6 +19,7 @@ type Props = {
   isSignedIn: boolean;
   mediaType: MediaType;
   onAddToList: () => void;
+  onEditCompletedPlay?: () => void;
   onIntent: (action: JournalTitleAction) => void;
   onRemovePlan: () => void;
   onRemoveTitle: () => void;
@@ -63,6 +64,7 @@ export function TitleDetailsJournalActions({
   isSignedIn,
   mediaType,
   onAddToList,
+  onEditCompletedPlay,
   onIntent,
   onRemovePlan,
   onRemoveTitle,
@@ -75,7 +77,17 @@ export function TitleDetailsJournalActions({
   const [showMore, setShowMore] = useState(false);
   const actions = getJournalTitleActions(mediaType, summary);
   const secondaryDisabled = !canUseJournal || removing;
+  const secondaryNeedsFullWidth =
+    mediaType === 'game' && actions.secondary.intent === 'log_finished';
   const runSecondary = () => {
+    if (
+      mediaType === 'game' &&
+      summary?.titleState.status === 'completed' &&
+      onEditCompletedPlay
+    ) {
+      onEditCompletedPlay();
+      return;
+    }
     onIntent(actions.secondary);
   };
 
@@ -103,14 +115,37 @@ export function TitleDetailsJournalActions({
   return (
     <View className="gap-3">
       <Button
+        accessibilityState={{
+          disabled: Boolean((isSignedIn && !canUseJournal) || removing || actions.primary.disabled),
+        }}
         className="min-h-14"
-        disabled={(isSignedIn && !canUseJournal) || removing}
+        disabled={(isSignedIn && !canUseJournal) || removing || actions.primary.disabled}
         onPress={isSignedIn ? () => onIntent(actions.primary) : onSignIn}
         title={isSignedIn ? actions.primary.label : 'Sign in to use Journal'}
       />
 
+      {actions.primary.disabledReason ? (
+        <Text className="text-center text-xs leading-4 text-archive-300">
+          {actions.primary.disabledReason}
+        </Text>
+      ) : null}
+
+      {isSignedIn && secondaryNeedsFullWidth ? (
+        <Pressable
+          accessibilityLabel={actions.secondary.label}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: secondaryDisabled }}
+          className="min-h-12 w-full items-center justify-center px-3"
+          disabled={secondaryDisabled}
+          onPress={runSecondary}>
+          <Text className="text-center text-sm font-semibold leading-5 text-gold-300">
+            {actions.secondary.label}
+          </Text>
+        </Pressable>
+      ) : null}
+
       <View className="flex-row items-center gap-2">
-        {isSignedIn ? (
+        {isSignedIn && !secondaryNeedsFullWidth ? (
           <Pressable
             accessibilityLabel={actions.secondary.label}
             accessibilityRole="button"
@@ -122,9 +157,9 @@ export function TitleDetailsJournalActions({
               {actions.secondary.label}
             </Text>
           </Pressable>
-        ) : (
+        ) : !secondaryNeedsFullWidth ? (
           <View className="min-w-0 flex-1" />
-        )}
+        ) : null}
         {showTrailer ? (
           <CompactAction
             accessibilityLabel="Watch trailer"
@@ -157,7 +192,9 @@ export function TitleDetailsJournalActions({
 
       {!isSignedIn ? (
         <Text className="text-center text-xs leading-4 text-archive-300">
-          Sign in to plan, log watches, and keep history for this title.
+          {mediaType === 'game'
+            ? 'Sign in to plan, log plays, and keep history for this title.'
+            : 'Sign in to plan, log watches, and keep history for this title.'}
         </Text>
       ) : !canUseJournal ? (
         <Text className="text-center text-xs leading-4 text-archive-300">

@@ -29,8 +29,13 @@ import {
 } from '@/features/media/components/TitleDetailsHero';
 import { TitleDetailsMetadataCard } from '@/features/media/components/TitleDetailsMetadataCard';
 import { TitleDetailsSummaryCard } from '@/features/media/components/TitleDetailsSummaryCard';
+import { GameTitleDetailsContent } from '@/features/media/components/GameTitleDetailsContent';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
 import { useMediaTrailer } from '@/features/media/hooks/useMediaTrailer';
+import {
+  getGameDetailsModel,
+  isGame,
+} from '@/features/media/model/gameDetails';
 import { getTitleDetailMetrics } from '@/features/media/model/titleDetails';
 
 type TitleDetailsScreenProps = {
@@ -51,6 +56,7 @@ export function TitleDetailsScreen({
   const { user } = useAuth();
   const detailsQuery = useMediaDetails(titleId);
   const item = detailsQuery.data?.item;
+  const game = item && isGame(item) ? getGameDetailsModel(item) : null;
   const trailerQuery = useMediaTrailer(
     item?.source === 'tmdb' ? item.sourceId : undefined,
   );
@@ -126,6 +132,24 @@ export function TitleDetailsScreen({
     openJournalIntent(getJournalTitleActions(item.mediaType, summary).primary);
   };
 
+  const openEditCompletedPlay = () => {
+    const eventId = summary?.latestCompletedEvent?.id;
+    if (!mediaItemId || !eventId) {
+      openHistory();
+      return;
+    }
+
+    router.push({
+      pathname: '/modals/journal-entry',
+      params: {
+        eventId,
+        intent: 'edit_event',
+        mediaItemId,
+        source: 'history',
+      },
+    });
+  };
+
   const openJournalSummary = () => {
     if (!user?.id) {
       router.push('/welcome');
@@ -172,13 +196,13 @@ export function TitleDetailsScreen({
   };
 
   const openTrailer = async () => {
-    const trailer = trailerQuery.data?.trailer;
+    const trailerKey = game?.trailerKey ?? trailerQuery.data?.trailer?.key;
 
-    if (!trailer) {
+    if (!trailerKey) {
       return;
     }
 
-    const url = `https://www.youtube.com/watch?v=${encodeURIComponent(trailer.key)}`;
+    const url = `https://www.youtube.com/watch?v=${encodeURIComponent(trailerKey)}`;
 
     try {
       await Linking.openURL(url);
@@ -238,13 +262,16 @@ export function TitleDetailsScreen({
               isSignedIn={Boolean(user?.id)}
               mediaType={item.mediaType}
               onAddToList={() => setShowAddToListPanel(true)}
+              onEditCompletedPlay={openEditCompletedPlay}
               onIntent={openJournalIntent}
               onRemovePlan={confirmRemovePlan}
               onRemoveTitle={confirmRemoveTitle}
               onSignIn={() => router.push('/welcome')}
               onWatchTrailer={openTrailer}
               removing={removePlan.isPending || removeTitle.isPending}
-              showTrailer={Boolean(trailerQuery.data?.trailer)}
+              showTrailer={Boolean(
+                game?.trailerKey ?? trailerQuery.data?.trailer,
+              )}
               summary={summary}
             />
 
@@ -270,13 +297,19 @@ export function TitleDetailsScreen({
             ) : (
               <YourJournalSummary
                 disabled={Boolean(user?.id && !journalQuery.isSuccess)}
-                onPress={summary?.activityCount ? openHistory : openJournalSummary}
+                onPress={
+                  summary?.activityCount ? openHistory : openJournalSummary
+                }
                 summary={summary}
               />
             )}
 
             <TitleDetailsSummaryCard description={item.description} />
-            <TitleDetailsMetadataCard details={getTitleDetailMetrics(item)} />
+            {game ? (
+              <GameTitleDetailsContent item={item} />
+            ) : (
+              <TitleDetailsMetadataCard details={getTitleDetailMetrics(item)} />
+            )}
           </View>
         </>
       ) : null}

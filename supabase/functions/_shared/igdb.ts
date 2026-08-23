@@ -14,12 +14,16 @@ import {
 import { IgdbProviderError } from './provider-errors.ts';
 
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
-const IGDB_GAMES_URL = 'https://api.igdb.com/v4/games';
+const IGDB_ENDPOINT_URLS = {
+  games: 'https://api.igdb.com/v4/games',
+  game_time_to_beats: 'https://api.igdb.com/v4/game_time_to_beats',
+} as const;
 const PROVIDER_TIMEOUT_MS = 10 * 1000;
 const SLOT_WAIT_TIMEOUT_MS = 5 * 1000;
 const SLOT_WAIT_MAX_ATTEMPTS = 50;
 
 type Fetcher = typeof fetch;
+export type IgdbEndpoint = keyof typeof IGDB_ENDPOINT_URLS;
 
 type IgdbClientDependencies = {
   assertEnabled: () => void;
@@ -105,6 +109,13 @@ export class IgdbClient {
   }
 
   async queryGames<T>(query: string): Promise<T[]> {
+    return this.query<T>('games', query);
+  }
+
+  async query<T>(endpoint: IgdbEndpoint, query: string): Promise<T[]> {
+    if (!Object.prototype.hasOwnProperty.call(IGDB_ENDPOINT_URLS, endpoint)) {
+      throw new IgdbProviderError('igdb_invalid_response');
+    }
     this.dependencies.assertEnabled();
     const credentials = this.dependencies.credentials();
     let accessToken = await this.dependencies.tokenManager.getAccessToken();
@@ -113,6 +124,7 @@ export class IgdbClient {
 
     while (true) {
       const response = await this.requestWithSlot(
+        endpoint,
         query,
         credentials.clientId,
         accessToken,
@@ -163,6 +175,7 @@ export class IgdbClient {
   }
 
   private async requestWithSlot(
+    endpoint: IgdbEndpoint,
     query: string,
     clientId: string,
     accessToken: string,
@@ -183,7 +196,7 @@ export class IgdbClient {
       try {
         this.dependencies.assertEnabled();
         try {
-          return await this.fetcher(IGDB_GAMES_URL, {
+          return await this.fetcher(IGDB_ENDPOINT_URLS[endpoint], {
             method: 'POST',
             headers: {
               Accept: 'application/json',

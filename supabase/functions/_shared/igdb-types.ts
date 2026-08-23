@@ -26,6 +26,43 @@ export type IgdbPlatform = IgdbNamedReference & {
   abbreviation?: string | null;
 };
 
+export type IgdbReleaseDate = {
+  id?: IgdbId | null;
+  date?: number | string | null;
+  human?: string | null;
+  platform?: IgdbPlatform | null;
+  release_region?: (IgdbNamedReference & { region?: string | null }) | null;
+};
+
+export type IgdbInvolvedCompany = {
+  id?: IgdbId | null;
+  company?: IgdbNamedReference | null;
+  developer?: boolean | null;
+  publisher?: boolean | null;
+  supporting?: boolean | null;
+  porting?: boolean | null;
+};
+
+export type IgdbTimeToBeat = {
+  game_id?: number | null;
+  hastily?: number | null;
+  normally?: number | null;
+  completely?: number | null;
+};
+
+export type IgdbVideo = {
+  id?: IgdbId | null;
+  name?: string | null;
+  video_id?: string | null;
+};
+
+export type IgdbWebsite = {
+  id?: IgdbId | null;
+  type?: number | (IgdbNamedReference & { type?: string | null }) | null;
+  trusted?: boolean | null;
+  url?: string | null;
+};
+
 export type IgdbAgeRatingCategory = {
   id?: IgdbId | null;
   organization?: number | IgdbNamedReference | null;
@@ -75,7 +112,14 @@ export type IgdbGame = {
   artworks?: IgdbImageReference[] | null;
   screenshots?: IgdbImageReference[] | null;
   genres?: IgdbNamedReference[] | null;
+  game_modes?: IgdbNamedReference[] | null;
+  multiplayer_modes?: IgdbNamedReference[] | null;
+  player_perspectives?: IgdbNamedReference[] | null;
   platforms?: IgdbPlatform[] | null;
+  release_dates?: IgdbReleaseDate[] | null;
+  involved_companies?: IgdbInvolvedCompany[] | null;
+  videos?: IgdbVideo[] | null;
+  websites?: IgdbWebsite[] | null;
   age_ratings?: IgdbAgeRating[] | null;
   game_type?: number | IgdbGameType | null;
   game_status?: number | IgdbGameStatus | null;
@@ -84,6 +128,7 @@ export type IgdbGame = {
   rating?: number | null;
   aggregated_rating?: number | null;
   total_rating?: number | null;
+  total_rating_count?: number | null;
   rating_count?: number | null;
   aggregated_rating_count?: number | null;
   popularity?: number | null;
