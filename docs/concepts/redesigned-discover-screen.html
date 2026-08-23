@@ -97,6 +97,9 @@
       .poster.past-lives { background-image: url("https://image.tmdb.org/t/p/w500/7HR38hMBl23lf38MAN63y4pKsHz.jpg"),linear-gradient(145deg,#243d31,#79926d 46%,#d8c7a0 47%,#191d19); }
       .poster.wild-robot { background-image: url("https://image.tmdb.org/t/p/w500/v9acaWVVFdZT5yAU7J2QjwfhXyD.jpg"),linear-gradient(155deg,#1b3f50,#718e93 43%,#e1c999 44%,#1a2025); }
       .poster.severance { background-image: url("https://image.tmdb.org/t/p/w500/npD65vPa4vvn1ZHpp3o05A5vdKT.jpg"),linear-gradient(155deg,#1b3f50,#718e93 43%,#e1c999 44%,#1a2025); }
+      .poster.bg3 { background-image: url("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1086940/library_600x900_2x.jpg"),linear-gradient(150deg,#4e301d,#b69361 46%,#353d39 47%,#111); }
+      .poster.hades-two { background-image: url("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1145350/library_600x900_2x.jpg"),linear-gradient(150deg,#182c4f,#5f4b86 44%,#c9b162 45%,#111); }
+      .poster.silksong { background-image: url("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1030300/library_600x900_2x.jpg"),linear-gradient(150deg,#701f2b,#d48377 44%,#d8c79f 45%,#16100f); }
       .poster-card strong { display: block; margin-top: 7px; overflow: hidden; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
       .poster-card small { display: block; margin-top: 3px; color: #9f9385; font-size: 9px; }
 
@@ -138,12 +141,12 @@
       <div class="concept-grid">
         <section class="intro">
           <p class="eyebrow">Revit Discover · Feature presentation</p>
-          <h1>Browsing that feels like entering your <em>own screening room.</em></h1>
-          <p class="lede">One title opens the experience, varied shelves create rhythm, and the catalog remains familiar without looking like a generic streaming clone.</p>
+          <h1>Stories to watch. Worlds to <em>step inside.</em></h1>
+          <p class="lede">One title opens the experience, varied shelves create rhythm, and games join the catalog without turning Discover into a store or changing its editorial character.</p>
           <div class="principles" aria-label="Design principles">
             <div class="principle"><span class="principle-number">01</span><span><strong>Begin with a feature</strong><span>The first real result becomes a cinematic focal point—no new recommendation system required.</span></span></div>
             <div class="principle"><span class="principle-number">02</span><span><strong>Change the viewing rhythm</strong><span>One larger poster leads each shelf while supporting titles stay compact.</span></span></div>
-            <div class="principle"><span class="principle-number">03</span><span><strong>Let context do the labeling</strong><span>Movies, Series, and Anime live in named shelves, so every poster no longer repeats its media type.</span></span></div>
+            <div class="principle"><span class="principle-number">03</span><span><strong>Let context do the labeling</strong><span>Movies, Series, Anime, and Games live in named shelves, so every cover no longer repeats its media type.</span></span></div>
           </div>
         </section>
 
@@ -153,8 +156,8 @@
             <div class="phone-content">
               <div class="statusbar"><span>10:21</span><span>● 33%</span></div>
               <div class="appbar"><h2>Discover</h2><button class="avatar" type="button" aria-label="Open profile"></button></div>
-              <p class="screen-kicker">Your personal screening room</p>
-              <h1 class="screen-heading">Find something worth giving your evening to.</h1>
+              <p class="screen-kicker">Your personal entertainment room</p>
+              <h1 class="screen-heading">Find a story—or a world—worth your time.</h1>
               <div class="mode-tabs" role="tablist" aria-label="Discovery modes">
                 <button class="mode-tab" type="button" data-mode="trending" aria-selected="true">Trending</button>
                 <button class="mode-tab" type="button" data-mode="new" aria-selected="false">New releases</button>
@@ -183,6 +186,15 @@
                   <button class="poster-card" type="button" data-title-card data-title="Shōgun" data-year="2024" data-genres="Drama · History" data-description="An English navigator becomes entangled in a struggle for power in feudal Japan." data-poster="red"><span class="poster red"></span><strong>Shōgun</strong><small>2024 · Drama</small></button>
                 </div>
               </section>
+
+              <section class="shelf">
+                <div class="shelf-head"><h3>Games worth getting lost in</h3><button type="button">View all</button></div>
+                <div class="poster-row">
+                  <button class="poster-card featured-poster" type="button" data-title-card data-media="game" data-title="Baldur's Gate 3" data-year="2023" data-genres="RPG · PC · PS5" data-description="Gather your party and return to the Forgotten Realms in a story shaped by fellowship, betrayal, sacrifice, and survival." data-poster="bg3"><span class="poster bg3"></span><strong>Baldur's Gate 3</strong><small>2023 · RPG</small></button>
+                  <button class="poster-card" type="button" data-title-card data-media="game" data-title="Hades II" data-year="2025" data-genres="Roguelike · PC" data-description="Battle beyond the Underworld as the immortal Princess of the Underworld in a mythic roguelike journey." data-poster="hades-two"><span class="poster hades-two"></span><strong>Hades II</strong><small>2025 · Roguelike</small></button>
+                  <button class="poster-card" type="button" data-title-card data-media="game" data-title="Hollow Knight: Silksong" data-year="2025" data-genres="Metroidvania · PC · Console" data-description="Ascend through a haunted kingdom as Hornet, mastering new moves, tools, and mysteries." data-poster="silksong"><span class="poster silksong"></span><strong>Silksong</strong><small>2025 · Adventure</small></button>
+                </div>
+              </section>
             </div>
 
             <nav class="bottom-nav" aria-label="Main navigation">
@@ -202,9 +214,9 @@
       </div>
 
       <section class="flow-strip" aria-label="Redesigned Discover structure">
-        <article class="flow-step"><span>01</span><h3>Set the mood</h3><p>The selected mode changes the program while preserving a recognizable screening-room identity.</p></article>
+        <article class="flow-step"><span>01</span><h3>Set the mood</h3><p>The selected mode changes the program while preserving a recognizable editorial identity across stories and games.</p></article>
         <article class="flow-step"><span>02</span><h3>Offer one clear entrance</h3><p>A featured title gives the eye somewhere to begin before browsing the wider catalog.</p></article>
-        <article class="flow-step"><span>03</span><h3>Continue through shelves</h3><p>Movies, Series, and Anime retain their existing routes and data, presented with varied visual rhythm.</p></article>
+        <article class="flow-step"><span>03</span><h3>Continue through shelves</h3><p>Movies, Series, Anime, and Games share one browsing rhythm while each shelf keeps provider-specific context useful.</p></article>
       </section>
     </main>
 
@@ -225,11 +237,13 @@
         const closeDrawer = () => { drawer.classList.remove('open'); scrim.classList.remove('open'); };
         const openTitle = (button) => {
           const posterClass = button.dataset.poster || '';
+          const isGame = button.dataset.media === 'game';
           drawerContent.innerHTML = `
             <div class="drawer-head"><span class="poster ${posterClass}"></span><span class="drawer-copy"><strong id="drawer-title">${button.dataset.title}</strong><span>${button.dataset.year} · ${button.dataset.genres}</span></span><button class="drawer-close" type="button" data-close aria-label="Close">×</button></div>
             <p class="drawer-description">${button.dataset.description}</p>
             <button class="drawer-action primary" type="button"><span class="action-mark">↗</span><span>Open title details</span></button>
-            <button class="drawer-action" type="button"><span class="action-mark">＋</span><span>Add to Journal</span></button>
+            <button class="drawer-action" type="button"><span class="action-mark">${isGame ? '▶' : '＋'}</span><span>${isGame ? 'Start playing' : 'Add to Journal'}</span></button>
+            ${isGame ? '<button class="drawer-action" type="button"><span class="action-mark">◇</span><span>Plan to play</span></button>' : ''}
             <button class="drawer-action" type="button"><span class="action-mark">☷</span><span>Add to List</span></button>`;
           drawer.classList.add('open'); scrim.classList.add('open');
         };
