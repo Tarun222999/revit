@@ -19,6 +19,7 @@ type DiscoverRailProps = {
   mode: DiscoveryMode;
   mediaType: DiscoveryMediaType;
   onSeeAll?: (mode: DiscoveryMode, mediaType: DiscoveryMediaType) => void;
+  queryEnabled?: boolean;
 };
 
 const RAIL_RESULT_LIMIT = 10;
@@ -78,8 +79,9 @@ export function DiscoverRail({
   mode,
   mediaType,
   onSeeAll,
+  queryEnabled = true,
 }: DiscoverRailProps) {
-  const railQuery = useDiscoverRail(mode, mediaType);
+  const railQuery = useDiscoverRail(mode, mediaType, 1, queryEnabled);
   const results = useMemo(
     () =>
       dedupeMediaItems(railQuery.data?.results ?? []).slice(
