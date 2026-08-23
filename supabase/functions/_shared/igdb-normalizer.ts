@@ -3,6 +3,7 @@ import type {
   IgdbGame,
   IgdbImageReference,
   IgdbNamedReference,
+  IgdbTimeToBeat,
 } from './igdb-types.ts';
 
 /** Pure copy of the app-facing normalized media contract for edge modules. */
@@ -67,11 +68,17 @@ function toIsoDate(value: unknown): string | null {
         ? Number(value)
         : null;
 
-  if (numericValue !== null && Number.isFinite(numericValue) && numericValue >= 0) {
+  if (
+    numericValue !== null &&
+    Number.isFinite(numericValue) &&
+    numericValue >= 0
+  ) {
     const date = new Date(
       numericValue < 1_000_000_000_000 ? numericValue * 1000 : numericValue,
     );
-    return Number.isNaN(date.getTime()) ? null : date.toISOString().slice(0, 10);
+    return Number.isNaN(date.getTime())
+      ? null
+      : date.toISOString().slice(0, 10);
   }
 
   const text = nonEmptyString(value);
@@ -88,7 +95,8 @@ function toIsoDate(value: unknown): string | null {
   }
 
   const date = new Date(`${match[1]}-${match[2]}-${match[3]}T00:00:00.000Z`);
-  return Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== `${match[1]}-${match[2]}-${match[3]}`
+  return Number.isNaN(date.getTime()) ||
+    date.toISOString().slice(0, 10) !== `${match[1]}-${match[2]}-${match[3]}`
     ? null
     : date.toISOString().slice(0, 10);
 }
@@ -130,10 +138,7 @@ export function normalizeIgdbImageUrl(
   return url.toString();
 }
 
-function imageUrl(
-  image: unknown,
-  size: string,
-): string | null {
+function imageUrl(image: unknown, size: string): string | null {
   if (!isRecord(image)) {
     return null;
   }
@@ -149,10 +154,7 @@ function imageUrl(
     : null;
 }
 
-function firstImageUrl(
-  images: unknown,
-  size: string,
-): string | null {
+function firstImageUrl(images: unknown, size: string): string | null {
   if (!Array.isArray(images)) {
     return null;
   }
@@ -187,7 +189,9 @@ function names(values: unknown): string[] {
   return result;
 }
 
-function namedValue(value: unknown): { id?: number; name?: string; slug?: string } | number | null {
+function namedValue(
+  value: unknown,
+): { id?: number; name?: string; slug?: string } | number | null {
   const id = integerId(value);
   if (id !== null) {
     return id;
@@ -243,14 +247,12 @@ function ageRatings(values: unknown): Array<Record<string, unknown>> {
     const ratingCategory = ratingCategoryValue(
       value.rating_category ?? value.rating,
     );
-    const organization = namedValue(
-      value.organization ?? value.category,
-    );
+    const organization = namedValue(value.organization ?? value.category);
     const item: Record<string, unknown> = {};
     const id = integerId(value.id);
     const synopsis = nonEmptyString(value.synopsis);
-    const providerDescriptions = value.rating_content_descriptions ??
-      value.content_descriptions;
+    const providerDescriptions =
+      value.rating_content_descriptions ?? value.content_descriptions;
     const contentDescriptions = Array.isArray(providerDescriptions)
       ? providerDescriptions
           .map((description) =>
@@ -273,11 +275,15 @@ function ageRatings(values: unknown): Array<Record<string, unknown>> {
   return result;
 }
 
-function optionalRatings(input: RecordValue, metadata: Record<string, unknown>) {
+function optionalRatings(
+  input: RecordValue,
+  metadata: Record<string, unknown>,
+) {
   const fields: Array<[string, string]> = [
     ['rating', 'rating'],
     ['aggregated_rating', 'aggregatedRating'],
     ['total_rating', 'totalRating'],
+    ['total_rating_count', 'totalRatingCount'],
     ['rating_count', 'ratingCount'],
     ['aggregated_rating_count', 'aggregatedRatingCount'],
     ['popularity', 'popularity'],
@@ -287,6 +293,130 @@ function optionalRatings(input: RecordValue, metadata: Record<string, unknown>) 
     const value = finiteNumber(input[inputKey]);
     if (value !== null) metadata[outputKey] = value;
   }
+}
+
+function releaseDates(values: unknown): Array<Record<string, string>> {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  const result: Array<Record<string, string>> = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (!isRecord(value)) {
+      continue;
+    }
+
+    const date = toIsoDate(value.date);
+    const platform = isRecord(value.platform)
+      ? (nonEmptyString(value.platform.name) ??
+        nonEmptyString(value.platform.abbreviation))
+      : null;
+    const region = isRecord(value.release_region)
+      ? nonEmptyString(value.release_region.region)
+      : null;
+    if (!date && !platform) {
+      continue;
+    }
+
+    const item: Record<string, string> = {};
+    if (date) item.date = date;
+    if (platform) item.platform = platform;
+    if (region) item.region = region;
+    const key = `${platform ?? ''}:${date ?? ''}:${region ?? ''}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(item);
+    }
+  }
+
+  return result;
+}
+
+function involvedCompanies(values: unknown) {
+  if (!Array.isArray(values)) {
+    return { developers: [] as string[], publishers: [] as string[] };
+  }
+
+  const developers = new Set<string>();
+  const publishers = new Set<string>();
+  for (const value of values) {
+    if (!isRecord(value) || !isRecord(value.company)) {
+      continue;
+    }
+
+    const name = nonEmptyString(value.company.name);
+    if (!name) {
+      continue;
+    }
+    if (value.developer === true) developers.add(name);
+    if (value.publisher === true) publishers.add(name);
+  }
+
+  return { developers: [...developers], publishers: [...publishers] };
+}
+
+function timeToBeat(value: unknown): Record<string, number> | null {
+  if (!value) {
+    return null;
+  }
+
+  if (!isRecord(value)) return null;
+
+  const result: Record<string, number> = {};
+  for (const [source, key] of [
+    ['hastily', 'hastilySeconds'],
+    ['normally', 'normallySeconds'],
+    ['completely', 'completelySeconds'],
+  ] as const) {
+    const seconds = finiteNumber(value[source]);
+    if (seconds !== null && seconds > 0) {
+      result[key] = seconds;
+    }
+  }
+
+  return Object.keys(result).length > 0 ? result : null;
+}
+
+function youtubeVideo(values: unknown): Record<string, string> | null {
+  if (!Array.isArray(values)) {
+    return null;
+  }
+
+  for (const value of values) {
+    if (!isRecord(value)) continue;
+    const videoId = nonEmptyString(value.video_id);
+    if (!videoId || !/^[A-Za-z0-9_-]{6,64}$/.test(videoId)) continue;
+    const name = nonEmptyString(value.name);
+    return name ? { id: videoId, name } : { id: videoId };
+  }
+
+  return null;
+}
+
+function externalWebsites(values: unknown): Array<Record<string, string>> {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  const websites: Array<Record<string, string>> = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    if (!isRecord(value)) continue;
+    if (value.trusted !== true) continue;
+    const raw = nonEmptyString(value.url);
+    if (!raw) continue;
+    try {
+      const url = new URL(raw);
+      if (url.protocol !== 'https:' || seen.has(url.toString())) continue;
+      seen.add(url.toString());
+      const type = isRecord(value.type) ? nonEmptyString(value.type.type) : null;
+      websites.push(type ? { type, url: url.toString() } : { url: url.toString() });
+    } catch {
+      // Ignore malformed provider links rather than forwarding them to clients.
+    }
+  }
+  return websites;
 }
 
 /**
@@ -300,6 +430,7 @@ function optionalRatings(input: RecordValue, metadata: Record<string, unknown>) 
  */
 export function normalizeIgdbGame(
   game: IgdbGame | null | undefined,
+  options: { timeToBeat?: IgdbTimeToBeat | null } = {},
 ): IgdbNormalizedMediaItem | null {
   if (!isRecord(game)) {
     return null;
@@ -318,6 +449,34 @@ export function normalizeIgdbGame(
 
   const platformNames = names(game.platforms);
   if (platformNames.length > 0) metadata.platforms = platformNames;
+
+  const releases = releaseDates(game.release_dates);
+  if (releases.length > 0) metadata.releaseDates = releases;
+
+  const classifications = {
+    themes: names(game.themes),
+    gameModes: names(game.game_modes),
+    multiplayerModes: names(game.multiplayer_modes),
+    playerPerspectives: names(game.player_perspectives),
+  };
+  for (const [key, values] of Object.entries(classifications)) {
+    if (values.length > 0) metadata[key] = values;
+  }
+
+  const companies = involvedCompanies(game.involved_companies);
+  if (companies.developers.length > 0)
+    metadata.developers = companies.developers;
+  if (companies.publishers.length > 0)
+    metadata.publishers = companies.publishers;
+
+  const completionEstimates = timeToBeat(options.timeToBeat);
+  if (completionEstimates) metadata.timeToBeat = completionEstimates;
+
+  const trailer = youtubeVideo(game.videos);
+  if (trailer) metadata.youtubeVideo = trailer;
+
+  const websites = externalWebsites(game.websites);
+  if (websites.length > 0) metadata.websites = websites;
 
   const ratings = ageRatings(game.age_ratings);
   if (ratings.length > 0) metadata.ageRatings = ratings;
@@ -347,4 +506,9 @@ export function normalizeIgdbGame(
 
 // Keep these imports visible to consumers that use the canonical provider
 // types while ensuring the mapper remains runtime-pure.
-export type { IgdbAgeRating, IgdbGame, IgdbImageReference, IgdbNamedReference } from './igdb-types.ts';
+export type {
+  IgdbAgeRating,
+  IgdbGame,
+  IgdbImageReference,
+  IgdbNamedReference,
+} from './igdb-types.ts';

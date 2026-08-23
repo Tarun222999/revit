@@ -38,6 +38,7 @@ function loadIgdbClient() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('../supabase/functions/_shared/igdb') as {
     IgdbClient: new (dependencies: Record<string, unknown>) => {
+      query: <T>(endpoint: 'game_time_to_beats', query: string) => Promise<T[]>;
       queryGames: <T>(query: string) => Promise<T[]>;
     };
     requestTwitchAppToken: (
@@ -339,6 +340,24 @@ describe('IgdbClient', () => {
           Authorization: 'Bearer token-one',
           'Client-ID': 'fixture-client',
         }),
+      }),
+    );
+    expect(coordination.releaseRequestSlot).toHaveBeenCalledWith('lease-1');
+  });
+
+  it('routes the constrained secondary endpoint through the same slot and auth client', async () => {
+    const { IgdbClient } = loadIgdbClient();
+    const { dependencies, coordination, fetcher } = createDependencies();
+    const client = new IgdbClient(dependencies);
+
+    await client.query('game_time_to_beats',
+      'fields game_id,normally; where game_id = 42; limit 1;',
+    );
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.igdb.com/v4/game_time_to_beats',
+      expect.objectContaining({
+        body: 'fields game_id,normally; where game_id = 42; limit 1;',
       }),
     );
     expect(coordination.releaseRequestSlot).toHaveBeenCalledWith('lease-1');
