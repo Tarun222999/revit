@@ -39,6 +39,7 @@ function loadIgdbClient() {
   return require('../supabase/functions/_shared/igdb') as {
     IgdbClient: new (dependencies: Record<string, unknown>) => {
       queryGames: <T>(query: string) => Promise<T[]>;
+      queryPopularityPrimitives: <T>(query: string) => Promise<T[]>;
     };
     requestTwitchAppToken: (
       credentials: { clientId: string; clientSecret: string },
@@ -335,6 +336,26 @@ describe('IgdbClient', () => {
       expect.objectContaining({
         method: 'POST',
         body: 'fields id,name; limit 10;',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token-one',
+          'Client-ID': 'fixture-client',
+        }),
+      }),
+    );
+    expect(coordination.releaseRequestSlot).toHaveBeenCalledWith('lease-1');
+  });
+
+  it('uses the same protected transport for popularity primitives', async () => {
+    const { IgdbClient } = loadIgdbClient();
+    const { dependencies, coordination, fetcher } = createDependencies();
+    const client = new IgdbClient(dependencies);
+
+    await client.queryPopularityPrimitives('fields game_id,value; limit 10;');
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.igdb.com/v4/popularity_primitives',
+      expect.objectContaining({
+        body: 'fields game_id,value; limit 10;',
         headers: expect.objectContaining({
           Authorization: 'Bearer token-one',
           'Client-ID': 'fixture-client',
