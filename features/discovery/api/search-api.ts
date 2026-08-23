@@ -7,6 +7,7 @@ export type SearchTitlesInput = {
   query: string;
   mediaType?: SearchMediaType;
   page?: number;
+  signal?: AbortSignal;
 };
 
 export type SearchTitlesResult = {
@@ -19,6 +20,7 @@ export async function searchTitles({
   query,
   mediaType = 'all',
   page = 1,
+  signal,
 }: SearchTitlesInput): Promise<SearchTitlesResult> {
   const { data, error } = await supabase.functions.invoke<SearchTitlesResult>(
     'media-search',
@@ -28,6 +30,7 @@ export async function searchTitles({
         mediaType,
         page,
       },
+      signal,
     },
   );
 

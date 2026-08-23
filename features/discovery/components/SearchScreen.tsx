@@ -318,7 +318,7 @@ export function SearchScreen() {
             canSearch={canSearch}
             error={searchQuery.error}
             isError={searchQuery.isError}
-            isLoading={searchQuery.isLoading}
+            isLoading={searchQuery.isLoading || searchQuery.isDebouncing}
             onClearSearch={clearSearch}
             onRetry={() => searchQuery.refetch()}
             onSuggestionPress={setQuery}

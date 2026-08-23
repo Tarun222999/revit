@@ -7,7 +7,7 @@ import {
 import { requireAuth } from '../_shared/auth.ts';
 import { fetchTmdb } from '../_shared/tmdb.ts';
 import {
-  isLikelyAnime,
+  filterTmdbTvSearchResults,
   normalizeTmdbMovie,
   normalizeTmdbTv,
   type NormalizedMediaItem,
@@ -97,7 +97,7 @@ async function searchMovies(
 async function searchTv(
   query: string,
   page: number,
-  postFilter: { animeOnly?: boolean } = {},
+  mediaType: 'all' | 'series' | 'anime' = 'all',
 ): Promise<NormalizedSearchResponse> {
   const response = await fetchTmdb<TmdbSearchResponse<TmdbTvResult>>(
     '/search/tv',
@@ -110,11 +110,9 @@ async function searchTv(
   );
 
   return {
-    results: response.results
-      .filter((result) => !postFilter.animeOnly || isLikelyAnime(result))
-      .map((result) =>
-        normalizeTmdbTv(result, { forceAnime: postFilter.animeOnly }),
-      ),
+    results: filterTmdbTvSearchResults(response.results, mediaType).map(
+      (result) => normalizeTmdbTv(result, { forceAnime: mediaType === 'anime' }),
+    ),
     totalPages: response.total_pages,
   };
 }
@@ -155,11 +153,11 @@ Deno.serve(async (request) => {
       results = response.results;
       totalPages = response.totalPages;
     } else if (mediaType === 'series') {
-      const response = await searchTv(query, page);
+      const response = await searchTv(query, page, 'series');
       results = response.results;
       totalPages = response.totalPages;
     } else if (mediaType === 'anime') {
-      const response = await searchTv(query, page, { animeOnly: true });
+      const response = await searchTv(query, page, 'anime');
       results = response.results;
       totalPages = response.totalPages;
     } else {

@@ -160,6 +160,7 @@ function createWrapper(queryClient: QueryClient) {
 }
 
 afterEach(async () => {
+  jest.useRealTimers();
   await act(async () => {
     testQueryClients.forEach((queryClient) => queryClient.clear());
   });
@@ -182,6 +183,103 @@ describe('data query hooks', () => {
     expect(mockSearchTitles).not.toHaveBeenCalled();
   });
 
+  it('waits 450ms after input settles before starting a search', async () => {
+    jest.useFakeTimers();
+    mockSearchTitles.mockResolvedValue({
+      results: [mediaItem],
+      page: 1,
+      totalPages: 1,
+    });
+    const queryClient = createTestQueryClient();
+
+    const { result, rerender } = await renderHook(
+      ({ query }: { query: string }) => useSearchTitles(query),
+      {
+        initialProps: { query: '' },
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    await act(async () => {
+      rerender({ query: 'du' });
+    });
+
+    expect(result.current.isDebouncing).toBe(true);
+    expect(mockSearchTitles).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(449);
+    });
+    expect(mockSearchTitles).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+    });
+    await waitFor(() => expect(mockSearchTitles).toHaveBeenCalledTimes(1));
+    jest.useRealTimers();
+  });
+
+  it('does not allow an older response to replace a newer query', async () => {
+    jest.useFakeTimers();
+    let resolveOld: ((value: { results: NormalizedMediaItem[]; page: number; totalPages: number }) => void) | undefined;
+    let resolveNew: ((value: { results: NormalizedMediaItem[]; page: number; totalPages: number }) => void) | undefined;
+    let oldSignal: AbortSignal | undefined;
+    let newSignal: AbortSignal | undefined;
+    mockSearchTitles.mockImplementation(({ query, signal }) => {
+      if (query === 'du') {
+        oldSignal = signal;
+        return new Promise((resolve) => {
+          resolveOld = resolve;
+        });
+      }
+
+      newSignal = signal;
+      return new Promise((resolve) => {
+        resolveNew = resolve;
+      });
+    });
+    const queryClient = createTestQueryClient();
+    const { result, rerender } = await renderHook(
+      ({ query }: { query: string }) => useSearchTitles(query),
+      {
+        initialProps: { query: 'du' },
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    expect(mockSearchTitles).toHaveBeenCalledWith({
+      mediaType: 'all',
+      page: 1,
+      query: 'du',
+      signal: expect.anything(),
+    });
+    await act(async () => {
+      rerender({ query: 'dun' });
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(450);
+    });
+    expect(mockSearchTitles).toHaveBeenCalledWith({
+      mediaType: 'all',
+      page: 1,
+      query: 'dun',
+      signal: expect.anything(),
+    });
+    expect(oldSignal?.aborted).toBe(true);
+    expect(newSignal?.aborted).toBe(false);
+
+    await act(async () => {
+      resolveNew?.({ results: [{ ...mediaItem, title: 'Dun' }], page: 1, totalPages: 1 });
+    });
+    await waitFor(() => expect(result.current.data?.results[0]?.title).toBe('Dun'));
+
+    await act(async () => {
+      resolveOld?.({ results: [{ ...mediaItem, title: 'Dune (old)' }], page: 1, totalPages: 1 });
+    });
+    expect(result.current.data?.results[0]?.title).toBe('Dun');
+    jest.useRealTimers();
+  });
+
   it('returns search results and normalizes the query input', async () => {
     mockSearchTitles.mockResolvedValue({
       results: [mediaItem],
@@ -202,6 +300,7 @@ describe('data query hooks', () => {
       mediaType: 'movie',
       page: 1,
       query: 'dune',
+      signal: expect.anything(),
     });
   });
 
