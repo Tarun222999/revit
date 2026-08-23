@@ -14,6 +14,9 @@ export const IGDB_INCLUDED_GAME_TYPES = [
   'remaster',
 ] as const;
 
+/** Stable IGDB relation IDs used for provider-side capacity filtering. */
+export const IGDB_INCLUDED_GAME_TYPE_IDS = [0, 8, 9] as const;
+
 export const IGDB_INCLUDED_GAME_STATUSES = [
   'released',
   'alpha',
@@ -21,6 +24,9 @@ export const IGDB_INCLUDED_GAME_STATUSES = [
   'early_access',
   'offline',
 ] as const;
+
+/** Missing status is also eligible; these are the allowed populated IDs. */
+export const IGDB_INCLUDED_GAME_STATUS_IDS = [0, 2, 3, 4, 5] as const;
 
 const IGDB_EXCLUDED_GAME_STATUSES = ['cancelled', 'rumored', 'delisted'] as const;
 

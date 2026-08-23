@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase/client';
 import type { MediaType, NormalizedMediaItem } from '@/lib/media/types';
 
-export type SearchMediaType = 'all' | Exclude<MediaType, 'game'>;
+export type SearchMediaType = 'all' | MediaType;
 
 export type SearchTitlesInput = {
   query: string;
@@ -14,6 +14,8 @@ export type SearchTitlesResult = {
   results: NormalizedMediaItem[];
   page: number;
   totalPages: number;
+  /** All searches remain useful when the optional Games provider is down. */
+  gamesUnavailable?: boolean;
 };
 
 export async function searchTitles({

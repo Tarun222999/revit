@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { FlatList, Pressable, Text, View } from 'react-native';
 
@@ -14,10 +14,15 @@ import type { SearchMediaType } from '@/features/discovery/api/search-api';
 import { SearchResultCard } from '@/features/discovery/components/SearchResultCard';
 import { useSearchTitles } from '@/features/discovery/hooks/useSearchTitles';
 import {
+  getSearchMediaFilters,
+  getSearchPlaceholder,
+  getSearchResultRoute,
+} from '@/features/discovery/model/search';
+import {
   dedupeMediaItems,
   mediaItemKey,
 } from '@/features/discovery/utils/dedupeMediaItems';
-import { createMediaRouteId } from '@/features/media/api/media-api';
+import { useAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import { getJournalCaptureCancelNavigation } from '@/features/journal/model/journalNavigation';
 import type { NormalizedMediaItem } from '@/types/media';
 
@@ -26,13 +31,6 @@ const SEARCH_INITIAL_RENDER_COUNT = 8;
 const SEARCH_MAX_RENDER_BATCH = 8;
 const SEARCH_UPDATE_BATCH_MS = 80;
 const SEARCH_WINDOW_SIZE = 7;
-
-const SEARCH_MEDIA_FILTERS: Array<{ label: string; value: SearchMediaType }> = [
-  { label: 'All', value: 'all' },
-  { label: 'Movies', value: 'movie' },
-  { label: 'Series', value: 'series' },
-  { label: 'Anime', value: 'anime' },
-];
 
 const SEARCH_SUGGESTIONS = ['Dune', 'Shogun', 'Spirited Away', 'The Bear'];
 
@@ -48,7 +46,7 @@ function openSearchResult(
   item: NormalizedMediaItem,
   journalCapture?: 'log' | 'plan',
 ) {
-  const routeId = createMediaRouteId(item);
+  const routeId = getSearchResultRoute(item);
   if (journalCapture) {
     router.setParams({ journalCapture: undefined, journalReturn: undefined });
     router.push({
@@ -65,6 +63,7 @@ function SearchItemSeparator() {
 }
 
 function SearchHeader({
+  gamesEnabled,
   isSearchSuccess,
   mediaType,
   query,
@@ -73,6 +72,7 @@ function SearchHeader({
   onMediaTypeChange,
   onQueryChange,
 }: {
+  gamesEnabled: boolean;
   isSearchSuccess: boolean;
   mediaType: SearchMediaType;
   query: string;
@@ -88,14 +88,14 @@ function SearchHeader({
           label="Title"
           value={query}
           onChangeText={onQueryChange}
-          placeholder="Search movies, series, or anime"
+          placeholder={getSearchPlaceholder(gamesEnabled)}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
         />
 
         <View className="flex-row flex-wrap gap-2">
-          {SEARCH_MEDIA_FILTERS.map((filter) => (
+          {getSearchMediaFilters(gamesEnabled).map((filter) => (
             <Chip
               key={filter.value}
               label={filter.label}
@@ -123,6 +123,7 @@ function SearchEmptyContent({
   error,
   isError,
   isLoading,
+  gamesEnabled,
   onClearSearch,
   onSuggestionPress,
   onRetry,
@@ -132,6 +133,7 @@ function SearchEmptyContent({
   error: unknown;
   isError: boolean;
   isLoading: boolean;
+  gamesEnabled: boolean;
   onClearSearch: () => void;
   onSuggestionPress: (query: string) => void;
   onRetry: () => void;
@@ -158,8 +160,9 @@ function SearchEmptyContent({
               Search your next entry
             </Text>
             <Text className="text-sm leading-5 text-archive-300">
-              Find a movie, series, or anime, then open the title to add it to
-              your journal or save it to a list.
+              {gamesEnabled
+                ? 'Find a movie, series, anime, or game, then open the title to add it to your journal or save it to a list.'
+                : 'Find a movie, series, or anime, then open the title to add it to your journal or save it to a list.'}
             </Text>
           </View>
         </View>
@@ -226,7 +229,7 @@ function SearchEmptyContent({
 }
 
 /**
- * Renders universal search for normalized movies, series, and anime results.
+ * Renders flat universal search for normalized catalog results.
  *
  * @returns Search input, media filters, and a virtualized result list.
  */
@@ -241,7 +244,17 @@ export function SearchScreen() {
       : undefined;
   const [query, setQuery] = useState('');
   const [mediaType, setMediaType] = useState<SearchMediaType>('all');
-  const searchQuery = useSearchTitles(query, mediaType);
+  const { gamesEnabled } = useAppCapabilities();
+  const effectiveMediaType =
+    mediaType === 'game' && !gamesEnabled ? 'all' : mediaType;
+
+  useEffect(() => {
+    if (mediaType === 'game' && !gamesEnabled) {
+      setMediaType('all');
+    }
+  }, [gamesEnabled, mediaType]);
+
+  const searchQuery = useSearchTitles(query, effectiveMediaType);
   const results = useMemo(
     () => dedupeMediaItems(searchQuery.data?.results ?? []),
     [searchQuery.data?.results],
@@ -304,13 +317,23 @@ export function SearchScreen() {
             ) : null}
             <SearchHeader
               isSearchSuccess={searchQuery.isSuccess}
-              mediaType={mediaType}
+              gamesEnabled={gamesEnabled}
+              mediaType={effectiveMediaType}
               query={query}
               resultCount={results.length}
               onClearSearch={clearSearch}
               onMediaTypeChange={setMediaType}
               onQueryChange={setQuery}
             />
+            {effectiveMediaType === 'all' && searchQuery.data?.gamesUnavailable ? (
+              <View
+                accessibilityLiveRegion="polite"
+                className="rounded-app border border-archive-700 bg-archive-800 px-4 py-3">
+                <Text className="text-sm leading-5 text-archive-300">
+                  Games are temporarily unavailable. Showing movies, series, and anime.
+                </Text>
+              </View>
+            ) : null}
           </View>
         }
         ListEmptyComponent={
@@ -319,6 +342,7 @@ export function SearchScreen() {
             error={searchQuery.error}
             isError={searchQuery.isError}
             isLoading={searchQuery.isLoading || searchQuery.isDebouncing}
+            gamesEnabled={gamesEnabled}
             onClearSearch={clearSearch}
             onRetry={() => searchQuery.refetch()}
             onSuggestionPress={setQuery}

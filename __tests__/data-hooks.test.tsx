@@ -280,6 +280,49 @@ describe('data query hooks', () => {
     jest.useRealTimers();
   });
 
+  it('keeps the Games filter inside the existing debounce and cancellation guard', async () => {
+    jest.useFakeTimers();
+    let oldSignal: AbortSignal | undefined;
+    mockSearchTitles.mockImplementation(({ query, signal }) => {
+      if (query === 'ze') {
+        oldSignal = signal;
+      }
+
+      return new Promise(() => undefined);
+    });
+    const queryClient = createTestQueryClient();
+    const { rerender } = await renderHook(
+      ({ query }: { query: string }) => useSearchTitles(query, 'game'),
+      {
+        initialProps: { query: 'ze' },
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    expect(mockSearchTitles).toHaveBeenCalledWith({
+      mediaType: 'game',
+      page: 1,
+      query: 'ze',
+      signal: expect.anything(),
+    });
+
+    await act(async () => {
+      rerender({ query: 'zel' });
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(450);
+    });
+
+    expect(oldSignal?.aborted).toBe(true);
+    await waitFor(() => expect(mockSearchTitles).toHaveBeenCalledWith({
+      mediaType: 'game',
+      page: 1,
+      query: 'zel',
+      signal: expect.anything(),
+    }));
+    jest.useRealTimers();
+  });
+
   it('returns search results and normalizes the query input', async () => {
     mockSearchTitles.mockResolvedValue({
       results: [mediaItem],
