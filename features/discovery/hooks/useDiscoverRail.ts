@@ -13,8 +13,10 @@ export function useDiscoverRail(
   mode: DiscoveryMode,
   mediaType: DiscoveryMediaType,
   page = 1,
+  enabled = true,
 ) {
   return useQuery({
+    enabled,
     queryKey: discoverRailQueryKey(mode, mediaType, page),
     queryFn: () =>
       getDiscoverRail({
