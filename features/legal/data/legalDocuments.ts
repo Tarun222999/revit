@@ -1,13 +1,13 @@
 import type { LegalSection } from '@/features/legal/components/LegalDocumentScreen';
 
-export const LEGAL_UPDATED_AT = 'June 14, 2026';
+export const LEGAL_UPDATED_AT = 'August 24, 2026';
 
 export const privacySections: LegalSection[] = [
   {
     title: 'Information Revit Stores',
     body: [
       'Revit stores the profile details you create, including your display name, username, optional bio, and avatar path.',
-      'Revit stores your personal journal data, including saved titles, statuses, ratings, short reviews, spoiler flags, completion dates, custom lists, list items, and optional list notes.',
+      'Revit stores your personal journal data, including saved titles, statuses, ratings, short reviews, spoiler flags, completion dates, custom lists, list items, and optional list notes. When you use Games Journal features, this can include private playthrough events, your played-on platform choice, game status, ratings, notes, reviews, and play history.',
     ],
   },
   {
@@ -28,7 +28,8 @@ export const privacySections: LegalSection[] = [
     title: 'Media Metadata',
     body: [
       'Revit uses TMDB-sourced metadata for movies, series, and anime. This includes title names, images, release information, descriptions, genres, and related metadata.',
-      'Your personal activity, ratings, reviews, and lists are stored separately from the external media metadata.',
+      'When Games is available, Revit uses IGDB, operated by Twitch, for public game metadata and imagery. Game search terms and public catalog requests are processed through Revit\'s server-side Supabase Edge Functions and may be sent to IGDB to return matching catalog results.',
+      'Revit does not intentionally send your email address, profile identity, private journal or play history, ratings, notes, reviews, or lists to IGDB. When you use Games Journal features, that also includes your played-on platform choice. Those private records remain in Revit\'s Supabase-backed services; IGDB\'s handling of requests it receives is governed by its own terms and privacy notices.',
     ],
   },
   {
@@ -42,7 +43,8 @@ export const privacySections: LegalSection[] = [
     title: 'Data Deletion',
     body: [
       'Revit supports in-app account deletion from the Profile account surface.',
-      'When account deletion succeeds, Revit removes the authenticated user account and user-owned profile, journal, list, list item, and avatar data.',
+      'When account deletion succeeds, Revit removes the live authenticated user account and connected user-owned profile, journal, play history, lists, and list-item database records, including any private game activity stored by Revit.',
+      'The deletion flow also requests removal of avatar files associated with the account before deleting the account. This policy does not promise immediate removal of every storage object version or any backup copy. Backup retention is managed outside the mobile app and must be confirmed as part of release operations. Revit does not send private game-journal data to IGDB for deletion because it is not sent there as part of normal catalog use.',
     ],
   },
   {
@@ -57,7 +59,7 @@ export const termsSections: LegalSection[] = [
   {
     title: 'Use Of Revit',
     body: [
-      'Revit is a personal entertainment journal for tracking movies, series, anime, and related lists. You are responsible for the profile details, ratings, reviews, and notes you add.',
+      'Revit is a personal entertainment journal for tracking movies, series, anime, games, and related lists. You are responsible for the profile details, ratings, reviews, and notes you add.',
       'Do not use Revit to store unlawful, abusive, or harmful content.',
     ],
   },
@@ -78,8 +80,9 @@ export const termsSections: LegalSection[] = [
   {
     title: 'External Metadata',
     body: [
-      'Revit displays third-party entertainment metadata and images from TMDB-backed integrations.',
-      'External metadata may be incomplete, delayed, inaccurate, or unavailable. Revit does not guarantee the correctness of third-party title metadata.',
+      'Revit displays third-party entertainment metadata and images from TMDB-backed integrations for movies, series, and anime, and from IGDB, operated by Twitch, for games.',
+      'External metadata may be incomplete, delayed, inaccurate, or unavailable. This includes game ratings, release dates, supported platforms, imagery, external links, and availability information. Revit does not guarantee the correctness of third-party title metadata.',
+      'Game platform, storefront, and external-link metadata is informational only. It does not prove that you own a game, have it installed, receive it through a subscription, or can access it in your location.',
     ],
   },
   {
@@ -103,6 +106,17 @@ export const creditsSections: LegalSection[] = [
       'This product uses the TMDB API but is not endorsed or certified by TMDB.',
       'Movie, series, and anime metadata, poster imagery, backdrop imagery, descriptions, ratings, and related title information may be provided through TMDB-backed integrations.',
     ],
+  },
+  {
+    title: 'IGDB',
+    body: [
+      'Game metadata and imagery may be provided by IGDB, operated by Twitch.',
+      'IGDB attribution is displayed here as a permanent, user-visible credit for Revit\'s Games catalog integration.',
+    ],
+    link: {
+      label: 'Visit IGDB.com',
+      url: 'https://www.igdb.com/',
+    },
   },
   {
     title: 'Supabase',
@@ -142,7 +156,8 @@ export const supportSections: LegalSection[] = [
   {
     title: 'Metadata Issues',
     body: [
-      'If a title has incorrect poster art, description, release information, or genre data, the source metadata may need to be corrected through TMDB.',
+      'For movies, series, or anime with incorrect poster art, description, release information, or genre data, the source metadata may need to be corrected through TMDB.',
+      'For games with incorrect metadata or imagery, the source metadata may need to be corrected through IGDB. Revit can report the issue context, but does not control the original IGDB record.',
     ],
   },
 ];
