@@ -1,4 +1,84 @@
-import {
+type IgdbGameFixture = {
+  game_status?: { status: string };
+  game_type?: { type: string };
+  id: number;
+  name: string;
+  rating_count?: number;
+  themes?: number[];
+  total_rating?: number;
+  total_rating_count?: number;
+  version_parent?: number | null;
+};
+
+type NormalizedDiscoverItem = {
+  mediaType: string;
+  source: string;
+  sourceId: string;
+  title: string;
+};
+
+function loadGamesDiscover() {
+  // Runtime loading keeps the app TypeScript project separate from Deno imports.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("../supabase/functions/media-discover/games-discover") as {
+    buildIgdbDiscoverQuery: (mode: "new_releases" | "top_rated", page: number) => string;
+    buildIgdbGamesByIdQuery: (gameIds: number[]) => string | null;
+    buildIgdbPopularityQuery: () => string;
+    getRankedPopularityGameIds: (primitives: Array<{
+      game_id?: number | null;
+      popularity_type?: number | null;
+      value?: number | null;
+    }>) => number[];
+    igdbDiscoverTotalPages: (page: number, providerResultCount: number) => number;
+    IGDB_CATALOG_POLICY_VERSION: string;
+    IGDB_DISCOVER_PAGE_SIZE: number;
+    IGDB_TOP_RATED_MINIMUM_RATING_COUNT: number;
+    normalizeIgdbDiscoverResults: (
+      mode: "trending" | "new_releases" | "top_rated",
+      games: IgdbGameFixture[],
+    ) => NormalizedDiscoverItem[];
+    orderGamesByPopularity: (
+      games: IgdbGameFixture[],
+      rankedGameIds: number[],
+    ) => IgdbGameFixture[];
+    paginateTrendingGames: <T>(
+      items: T[],
+      page: number,
+    ) => { results: T[]; totalPages: number };
+  };
+}
+
+function loadDiscoverCachePolicy() {
+  // Runtime loading keeps the app TypeScript project separate from Deno imports.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("../supabase/functions/media-discover/discover-cache-policy") as {
+    isCachedDiscoverResponse: (value: unknown) => boolean;
+    isUsableDiscoverCache: (
+      mediaType: "movie" | "series" | "anime" | "game",
+      expiresAt: string,
+      response: {
+        cachedAt: string;
+        page: number;
+        policyVersion?: string;
+        results: unknown[];
+        totalPages: number;
+      },
+      now?: number,
+    ) => boolean;
+  };
+}
+
+function loadMediaDiscoverHandler() {
+  // Runtime loading keeps the app TypeScript project separate from Deno imports.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("../supabase/functions/media-discover/media-discover-handler") as {
+    createMediaDiscoverHandler: (
+      dependencies: Record<string, unknown>,
+    ) => (request: Request) => Promise<Response>;
+  };
+}
+
+const {
   buildIgdbDiscoverQuery,
   buildIgdbGamesByIdQuery,
   buildIgdbPopularityQuery,
@@ -10,15 +90,21 @@ import {
   normalizeIgdbDiscoverResults,
   orderGamesByPopularity,
   paginateTrendingGames,
-} from "../supabase/functions/media-discover/games-discover";
-import type { IgdbGame } from "../supabase/functions/_shared/igdb-types";
-import {
-  isCachedDiscoverResponse,
-  isUsableDiscoverCache,
-} from "../supabase/functions/media-discover/discover-cache-policy";
-import { createMediaDiscoverHandler } from "../supabase/functions/media-discover/media-discover-handler";
-import { IgdbProviderError } from "../supabase/functions/_shared/provider-errors";
-import { HttpError } from "../supabase/functions/_shared/cors";
+} = loadGamesDiscover();
+const { isCachedDiscoverResponse, isUsableDiscoverCache } =
+  loadDiscoverCachePolicy();
+const { createMediaDiscoverHandler } = loadMediaDiscoverHandler();
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { IgdbProviderError } = require("../supabase/functions/_shared/provider-errors") as {
+  IgdbProviderError: new (
+    code: "igdb_rate_limited",
+    retryAfterMs?: number,
+  ) => Error;
+};
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { HttpError } = require("../supabase/functions/_shared/cors") as {
+  HttpError: new (status: number, message: string, code?: string) => Error;
+};
 
 const eligibleGame = {
   game_status: { status: "released" },
@@ -30,7 +116,7 @@ const eligibleGame = {
   total_rating: 91,
   total_rating_count: 100,
   version_parent: null,
-} as IgdbGame & { total_rating_count: number };
+} satisfies IgdbGameFixture;
 
 describe("IGDB Discover query mapping", () => {
   it("maps Trending to Revit’s approved popularity ordering", () => {

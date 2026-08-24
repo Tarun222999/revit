@@ -51,7 +51,7 @@ describe('AppCapabilitiesProvider', () => {
       wrapper: createWrapper(queryClient),
     });
 
-    expect(result.current.gamesEnabled).toBe(false);
+    await waitFor(() => expect(result.current.gamesEnabled).toBe(false));
     expect(result.current.isResolved).toBe(false);
 
     unmount();
@@ -159,7 +159,8 @@ describe('AppCapabilitiesProvider', () => {
       await result.current.refresh();
     });
 
-    expect(result.current.gamesEnabled).toBe(false);
+    await waitFor(() => expect(result.current.gamesEnabled).toBe(false));
+    expect(result.current.isResolved).toBe(false);
     unmount();
     queryClient.clear();
   });

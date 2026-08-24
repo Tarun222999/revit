@@ -61,15 +61,22 @@ export function AppCapabilitiesProvider({ children }: PropsWithChildren) {
       // Missing, malformed, loading, and failed capability requests fail closed.
       gamesEnabled:
         query.isSuccess &&
+        !query.isRefetchError &&
         !query.isFetching &&
         query.data.gamesEnabled === true,
-      isResolved: query.isSuccess,
+      isResolved: query.isSuccess && !query.isRefetchError,
       isRefreshing: query.isFetching,
       refresh: async () => {
         await query.refetch();
       },
     }),
-    [query.data, query.isFetching, query.isSuccess, query.refetch],
+    [
+      query.data,
+      query.isFetching,
+      query.isRefetchError,
+      query.isSuccess,
+      query.refetch,
+    ],
   );
 
   return (
