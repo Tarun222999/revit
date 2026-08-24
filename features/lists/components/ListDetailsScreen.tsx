@@ -250,7 +250,7 @@ function EmptyListDetailsState() {
             Start building this list
           </Text>
           <Text className="text-sm leading-5 text-archive-300">
-            Add movies, series, or anime from Search, Discover, or any Title Details screen.
+            Add supported titles from Search, Discover, or any Title Details screen.
           </Text>
         </View>
       </View>

@@ -115,7 +115,19 @@ export function createMediaDetailsHandler(
       }
 
       if (parsedRequest.source === 'igdb') {
-        if (!dependencies.gamesEnabled()) throw gamesDisabledError();
+        // Provider routes are also used by persisted game list items. When
+        // Games is disabled, keep those private snapshots readable while
+        // refusing uncached catalog access. This preserves existing list
+        // management without reopening any new provider-backed affordance.
+        const persistedItem = await dependencies.loadMediaItemBySourceId(
+          parsedRequest.source,
+          parsedRequest.sourceId,
+        );
+        if (!dependencies.gamesEnabled()) {
+          if (persistedItem) return jsonResponse({ item: persistedItem });
+          throw gamesDisabledError();
+        }
+
         const item = await dependencies.fetchIgdbDetails(parsedRequest.sourceId);
         return jsonResponse({ item: await dependencies.upsertMediaItem(item) });
       }

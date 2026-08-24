@@ -35,6 +35,8 @@ import { cn } from '@/lib/utils/cn';
 
 type AddToListPanelProps = {
   mediaItemId: string;
+  mediaSource?: 'tmdb' | 'igdb';
+  mediaSourceId?: string;
   onClose: () => void;
   userId: string;
 };
@@ -261,6 +263,8 @@ function QuickCreateListForm({
 
 export function AddToListPanel({
   mediaItemId,
+  mediaSource,
+  mediaSourceId,
   onClose,
   userId,
 }: AddToListPanelProps) {
@@ -337,6 +341,8 @@ export function AddToListPanel({
     addMutation.mutate({
       listId: list.id,
       mediaItemId,
+      mediaSource,
+      mediaSourceId,
       userId,
     });
   };
@@ -360,6 +366,8 @@ export function AddToListPanel({
       await addMutation.mutateAsync({
         listId: list.id,
         mediaItemId,
+        mediaSource,
+        mediaSourceId,
         userId,
       });
 

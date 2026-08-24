@@ -24,6 +24,8 @@ export type UserListSummary = {
   description: string | null;
   isDefault: boolean;
   itemCount: number;
+  /** Counts include every item, not just the four covers shown in the collage. */
+  mediaTypeCounts?: Record<MediaType, number>;
   coverItems: ListCoverMedia[];
   createdAt: string;
   updatedAt: string;
@@ -117,6 +119,10 @@ export type AddMediaItemToListInput = {
   listId: string;
   mediaItemId: string;
   userId: string;
+  /** Provider identity is supplied for game additions so the Edge Function
+   * can ensure the normalized media row exists before the list mutation. */
+  mediaSource?: MediaSource;
+  mediaSourceId?: string;
 };
 
 export type RemoveListItemInput = {

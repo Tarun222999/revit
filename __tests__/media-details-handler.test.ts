@@ -66,6 +66,7 @@ describe('media-details game fallback handler', () => {
   it('rejects a direct IGDB route while disabled without invoking the provider', async () => {
     const deps = dependencies();
     deps.gamesEnabled.mockReturnValue(false);
+    deps.loadMediaItemBySourceId.mockResolvedValue(null);
     const response = await loadHandler()(deps)(
       request({ source: 'igdb', sourceId: '42' }),
     );
@@ -76,6 +77,21 @@ describe('media-details game fallback handler', () => {
       error: 'Games are temporarily unavailable.',
     });
     expect(deps.fetchIgdbDetails).not.toHaveBeenCalled();
+  });
+
+  it('serves a persisted game snapshot from its provider route while disabled', async () => {
+    const deps = dependencies();
+    deps.gamesEnabled.mockReturnValue(false);
+    deps.loadMediaItemBySourceId.mockResolvedValue(persistedGame);
+
+    const response = await loadHandler()(deps)(
+      request({ source: 'igdb', sourceId: '42' }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ item: persistedGame });
+    expect(deps.fetchIgdbDetails).not.toHaveBeenCalled();
+    expect(deps.upsertMediaItem).not.toHaveBeenCalled();
   });
 
   it.each(['provider outage', 'policy exclusion'])(

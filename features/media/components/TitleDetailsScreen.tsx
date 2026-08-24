@@ -58,6 +58,9 @@ export function TitleDetailsScreen({
   const { gamesEnabled } = useAppCapabilities();
   const detailsQuery = useMediaDetails(titleId);
   const item = detailsQuery.data?.item;
+  const canUseTitleMutations = Boolean(
+    item && (item.mediaType !== 'game' || gamesEnabled),
+  );
   const game = item && isGame(item) ? getGameDetailsModel(item) : null;
   const trailerQuery = useMediaTrailer(
     item?.source === 'tmdb' ? item.sourceId : undefined,
@@ -74,6 +77,12 @@ export function TitleDetailsScreen({
   const [removeTitleConfirmationVisible, setRemoveTitleConfirmationVisible] =
     useState(false);
   const openedCaptureRef = useRef(false);
+
+  useEffect(() => {
+    if (!canUseTitleMutations) {
+      setShowAddToListPanel(false);
+    }
+  }, [canUseTitleMutations]);
 
   const openJournalIntent = useCallback((
     action: JournalTitleAction,
@@ -124,6 +133,7 @@ export function TitleDetailsScreen({
       (journalCapture !== 'log' && journalCapture !== 'plan') ||
       !item ||
       !mediaItemId ||
+      !canUseTitleMutations ||
       !journalQuery.isSuccess
     ) {
       return;
@@ -138,6 +148,7 @@ export function TitleDetailsScreen({
     openedCaptureRef.current = true;
     openJournalIntent(action, true);
   }, [
+    canUseTitleMutations,
     item,
     journalCapture,
     journalQuery.isSuccess,
@@ -200,6 +211,14 @@ export function TitleDetailsScreen({
 
     openRelevantJournalAction();
   };
+
+  const journalSummaryAction = !user?.id
+    ? openJournalSummary
+    : summary?.activityCount
+      ? openHistory
+      : canUseTitleMutations
+        ? openJournalSummary
+        : undefined;
 
   const confirmRemovePlan = () => {
     if (!summary?.titleState.activePlan) return;
@@ -297,12 +316,16 @@ export function TitleDetailsScreen({
           <View className="-mt-8 gap-7 rounded-t-[32px] bg-archive-900 px-5 pb-28 pt-8">
             <TitleDetailsJournalActions
               addToListLoading={membershipsQuery.isLoading}
-              canAddToList={Boolean(user?.id && mediaItemId)}
+              canAddToList={Boolean(
+                user?.id &&
+                  mediaItemId &&
+                  canUseTitleMutations,
+              )}
               canUseJournal={Boolean(
                 user?.id &&
                   mediaItemId &&
                   journalQuery.isSuccess &&
-                  (item.mediaType !== 'game' || gamesEnabled),
+                  canUseTitleMutations,
               )}
               isSignedIn={Boolean(user?.id)}
               mediaType={item.mediaType}
@@ -320,9 +343,14 @@ export function TitleDetailsScreen({
               summary={summary}
             />
 
-            {showAddToListPanel && user?.id && mediaItemId ? (
+            {showAddToListPanel &&
+            user?.id &&
+            mediaItemId &&
+            canUseTitleMutations ? (
               <AddToListPanel
                 mediaItemId={mediaItemId}
+                mediaSource={item.source}
+                mediaSourceId={item.sourceId}
                 userId={user.id}
                 onClose={() => setShowAddToListPanel(false)}
               />
@@ -341,11 +369,12 @@ export function TitleDetailsScreen({
               />
             ) : (
               <YourJournalSummary
-                disabled={Boolean(user?.id && !journalQuery.isSuccess)}
                 mediaType={item.mediaType}
-                onPress={
-                  summary?.activityCount ? openHistory : openJournalSummary
-                }
+                disabled={Boolean(
+                  user?.id &&
+                    (!journalQuery.isSuccess || !journalSummaryAction),
+                )}
+                onPress={journalSummaryAction}
                 summary={summary}
               />
             )}

@@ -2,6 +2,7 @@ import {
   toUserListDetails,
   toUserListSummaries,
 } from '@/features/lists/model/listModels';
+import { getMediaDetails } from '@/features/media/api/media-api';
 import { supabase } from '@/lib/supabase/client';
 import type {
   AddMediaItemToListInput,
@@ -223,9 +224,32 @@ export async function deleteList(input: DeleteListInput) {
 }
 
 export async function addMediaItemToList(input: AddMediaItemToListInput) {
+  let mediaItemId = input.mediaItemId;
+
+  // Game details can arrive from a provider route before a caller has a
+  // durable media row. Resolve through the trusted media-details function
+  // immediately before mutating list_items; this keeps provider credentials
+  // out of the client and makes the list foreign-key mutation deterministic.
+  if (input.mediaSource === 'igdb') {
+    if (!input.mediaSourceId) {
+      throw new Error('Unable to save this game to a list right now.');
+    }
+
+    const result = await getMediaDetails({
+      source: 'igdb',
+      sourceId: input.mediaSourceId,
+    });
+
+    if (!result.item.id) {
+      throw new Error('Unable to save this game to a list right now.');
+    }
+
+    mediaItemId = result.item.id;
+  }
+
   const listItem: ListItemInsert = {
     list_id: input.listId,
-    media_item_id: input.mediaItemId,
+    media_item_id: mediaItemId,
   };
 
   const { data, error } = await supabase

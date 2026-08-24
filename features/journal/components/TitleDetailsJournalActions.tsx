@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -94,8 +94,19 @@ export function TitleDetailsJournalActions({
   const closeMore = () => setShowMore(false);
   const runMoreAction = (action: () => void) => {
     closeMore();
+
+    if (removing) {
+      return;
+    }
+
     action();
   };
+
+  useEffect(() => {
+    if (!canUseJournal || removing) {
+      setShowMore(false);
+    }
+  }, [canUseJournal, removing]);
   const hasHistory = Boolean(summary?.activityCount);
   const moreActions = [
     ...(isSignedIn && canUseJournal && actions.planAction
@@ -187,7 +198,7 @@ export function TitleDetailsJournalActions({
         actions={moreActions}
         onClose={closeMore}
         title="More actions"
-        visible={showMore && moreActions.length > 0}
+        visible={showMore && !removing && moreActions.length > 0}
       />
 
       {!isSignedIn ? (
