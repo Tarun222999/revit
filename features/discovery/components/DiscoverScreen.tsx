@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import PagerView from 'react-native-pager-view';
+import PagerView, { type PagerViewRef } from '@/components/ui/PagerView';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { DiscoverFeaturePresentation } from '@/features/discovery/components/DiscoverFeaturePresentation';
@@ -30,7 +30,7 @@ function DiscoverModePage({ mode, active, onSeeAll }: DiscoverScreenProps & { mo
   </ScrollView>;
 }
 export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
-  const pagerRef = useRef<PagerView>(null); const [mode, setMode] = useState<DiscoveryMode>('trending'); const [visited, setVisited] = useState<DiscoveryMode[]>(['trending']);
+  const pagerRef = useRef<PagerViewRef>(null); const [mode, setMode] = useState<DiscoveryMode>('trending'); const [visited, setVisited] = useState<DiscoveryMode[]>(['trending']);
   const selectMode = (next: DiscoveryMode) => { pagerRef.current?.setPage(modes.indexOf(next)); setMode(next); setVisited((current) => current.includes(next) ? current : [...current, next]); };
   return <View className="flex-1"><View className="gap-5 px-5 pt-6"><Text className="font-serif text-3xl leading-9 text-archive-100">Find something worth your time.</Text><DiscoverModeBar value={mode} onChange={selectMode} /></View><PagerView ref={pagerRef} initialPage={0} style={{ flex: 1 }} onPageSelected={(event) => selectMode(modes[event.nativeEvent.position]!)}>{modes.map((pageMode) => <View key={pageMode} style={{ flex: 1 }}><DiscoverModePage mode={pageMode} active={visited.includes(pageMode)} onSeeAll={onSeeAll} /></View>)}</PagerView></View>;
 }
