@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import PagerView from 'react-native-pager-view';
+import PagerView, { type PagerViewRef } from '@/components/ui/PagerView';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
@@ -196,7 +196,7 @@ export function JournalScreen() {
     getJournalCalendarMonthDate(localToday()),
   );
   const [calendarDate, setCalendarDate] = useState(localToday);
-  const pagerRef = useRef<PagerView>(null);
+  const pagerRef = useRef<PagerViewRef>(null);
   const setView = useCallback((view: JournalView) => {
     pagerRef.current?.setPage(JOURNAL_VIEWS.indexOf(view));
     setActiveView(view);

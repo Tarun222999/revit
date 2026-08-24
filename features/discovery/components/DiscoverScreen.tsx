@@ -1,19 +1,16 @@
-import { router } from "expo-router";
-import PagerView from "react-native-pager-view";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
-import { DiscoverFeaturePresentation } from "@/features/discovery/components/DiscoverFeaturePresentation";
-import { DiscoverModeBar } from "@/features/discovery/components/DiscoverModeBar";
-import { DiscoverRail } from "@/features/discovery/components/DiscoverRail";
-import { useDiscoverRail } from "@/features/discovery/hooks/useDiscoverRail";
-import { useAppCapabilities } from "@/features/capabilities/context/AppCapabilitiesProvider";
-import {
-  dedupeMediaItems,
-  mediaItemKey,
-} from "@/features/discovery/utils/dedupeMediaItems";
-import { createMediaRouteId } from "@/features/media/api/media-api";
-import type { DiscoveryMediaType, DiscoveryMode } from "@/types/discovery";
-import type { NormalizedMediaItem } from "@/types/media";
+import { router } from 'expo-router';
+import PagerView, { type PagerViewRef } from '@/components/ui/PagerView';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollView, Text, View } from 'react-native';
+import { useAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
+import { DiscoverFeaturePresentation } from '@/features/discovery/components/DiscoverFeaturePresentation';
+import { DiscoverModeBar } from '@/features/discovery/components/DiscoverModeBar';
+import { DiscoverRail } from '@/features/discovery/components/DiscoverRail';
+import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
+import { dedupeMediaItems, mediaItemKey } from '@/features/discovery/utils/dedupeMediaItems';
+import { createMediaRouteId } from '@/features/media/api/media-api';
+import type { DiscoveryMediaType, DiscoveryMode } from '@/types/discovery';
+import type { NormalizedMediaItem } from '@/types/media';
 
 type DiscoverScreenProps = {
   onSeeAll?: (mode: DiscoveryMode, mediaType: DiscoveryMediaType) => void;
@@ -110,7 +107,7 @@ function DiscoverModePage({
 }
 export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
   const { gamesEnabled } = useAppCapabilities();
-  const pagerRef = useRef<PagerView>(null);
+  const pagerRef = useRef<PagerViewRef>(null);
   const [mode, setMode] = useState<DiscoveryMode>("trending");
   const [visited, setVisited] = useState<DiscoveryMode[]>(["trending"]);
   const selectMode = (next: DiscoveryMode) => {
