@@ -40,6 +40,7 @@ function loadIgdbClient() {
     IgdbClient: new (dependencies: Record<string, unknown>) => {
       query: <T>(endpoint: 'game_time_to_beats', query: string) => Promise<T[]>;
       queryGames: <T>(query: string) => Promise<T[]>;
+      queryPopularityPrimitives: <T>(query: string) => Promise<T[]>;
     };
     requestTwitchAppToken: (
       credentials: { clientId: string; clientSecret: string },
@@ -358,6 +359,26 @@ describe('IgdbClient', () => {
       'https://api.igdb.com/v4/game_time_to_beats',
       expect.objectContaining({
         body: 'fields game_id,normally; where game_id = 42; limit 1;',
+      }),
+    );
+    expect(coordination.releaseRequestSlot).toHaveBeenCalledWith('lease-1');
+  });
+
+  it('uses the same protected transport for popularity primitives', async () => {
+    const { IgdbClient } = loadIgdbClient();
+    const { dependencies, coordination, fetcher } = createDependencies();
+    const client = new IgdbClient(dependencies);
+
+    await client.queryPopularityPrimitives('fields game_id,value; limit 10;');
+
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.igdb.com/v4/popularity_primitives',
+      expect.objectContaining({
+        body: 'fields game_id,value; limit 10;',
+        headers: expect.objectContaining({
+          Authorization: 'Bearer token-one',
+          'Client-ID': 'fixture-client',
+        }),
       }),
     );
     expect(coordination.releaseRequestSlot).toHaveBeenCalledWith('lease-1');

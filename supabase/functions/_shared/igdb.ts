@@ -17,6 +17,7 @@ const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
 const IGDB_ENDPOINT_URLS = {
   games: 'https://api.igdb.com/v4/games',
   game_time_to_beats: 'https://api.igdb.com/v4/game_time_to_beats',
+  popularity_primitives: 'https://api.igdb.com/v4/popularity_primitives',
 } as const;
 const PROVIDER_TIMEOUT_MS = 10 * 1000;
 const SLOT_WAIT_TIMEOUT_MS = 5 * 1000;
@@ -110,6 +111,10 @@ export class IgdbClient {
 
   async queryGames<T>(query: string): Promise<T[]> {
     return this.query<T>('games', query);
+  }
+
+  async queryPopularityPrimitives<T>(query: string): Promise<T[]> {
+    return this.query<T>('popularity_primitives', query);
   }
 
   async query<T>(endpoint: IgdbEndpoint, query: string): Promise<T[]> {
