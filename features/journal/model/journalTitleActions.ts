@@ -118,17 +118,15 @@ export function getJournalTitleActions(
   return {
     planAction: null,
     primary: {
-      disabled: game,
-      disabledReason: game
-        ? 'Playing updates arrive with the Games Journal flow.'
-        : undefined,
-      intent: game ? 'resume' : 'finish',
+      intent: game ? 'edit_event' : 'finish',
       label: movie ? 'Mark watched' : game ? 'Update playing' : 'Mark finished',
       source: 'title',
     },
     secondary: game
       ? { intent: 'finish', label: 'Finish playing', source: 'title' }
       : { intent: 'stop', label: 'Stop watching', source: 'title' },
-    stopAction: null,
+    stopAction: game
+      ? { intent: 'stop', label: 'Stop playing', source: 'title' }
+      : null,
   };
 }

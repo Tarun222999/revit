@@ -305,7 +305,7 @@ describe("game details presentation", () => {
     );
   });
 
-  it("defers playing updates without creating a false resume event", async () => {
+  it("opens playing updates as an edit action without creating a false resume event", async () => {
     const onIntent = jest.fn();
     await render(
       <TitleDetailsJournalActions
@@ -338,10 +338,9 @@ describe("game details presentation", () => {
     );
 
     const update = screen.getByRole("button", { name: "Update playing" });
-    expect(update.props.accessibilityState).toEqual({ disabled: true });
+    expect(update.props.accessibilityState.disabled).toBe(false);
     await fireEvent.press(update);
-    expect(onIntent).not.toHaveBeenCalled();
-    expect(screen.getByText("Playing updates arrive with the Games Journal flow.")).toBeTruthy();
+    expect(onIntent).toHaveBeenCalledWith(expect.objectContaining({ intent: "edit_event" }));
     expect(screen.getByRole("button", { name: "Finish playing" })).toBeTruthy();
   });
 

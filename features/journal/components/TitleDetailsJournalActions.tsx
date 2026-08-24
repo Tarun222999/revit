@@ -98,10 +98,10 @@ export function TitleDetailsJournalActions({
   };
   const hasHistory = Boolean(summary?.activityCount);
   const moreActions = [
-    ...(isSignedIn && actions.planAction
+    ...(isSignedIn && canUseJournal && actions.planAction
       ? [{ label: actions.planAction.label, onPress: () => runMoreAction(() => onIntent(actions.planAction!)), tone: 'standard' as const }]
       : []),
-    ...(isSignedIn && actions.stopAction
+    ...(isSignedIn && canUseJournal && actions.stopAction
       ? [{ label: actions.stopAction.label, onPress: () => runMoreAction(() => onIntent(actions.stopAction!)), tone: 'standard' as const }]
       : []),
     ...(isSignedIn && summary?.titleState.activePlan
@@ -176,7 +176,7 @@ export function TitleDetailsJournalActions({
         {moreActions.length > 0 ? (
           <CompactAction
             accessibilityLabel={showMore ? 'Close more actions' : 'More actions'}
-            disabled={(isSignedIn && !canUseJournal) || removing}
+            disabled={removing}
             icon="ellipsis-horizontal"
             onPress={() => setShowMore((current) => !current)}
           />
@@ -198,7 +198,9 @@ export function TitleDetailsJournalActions({
         </Text>
       ) : !canUseJournal ? (
         <Text className="text-center text-xs leading-4 text-archive-300">
-          Retry the Journal summary before changing this title.
+          {mediaType === 'game'
+            ? 'Games Journal is currently read-only. You can still remove private history.'
+            : 'Retry the Journal summary before changing this title.'}
         </Text>
       ) : null}
     </View>

@@ -8,6 +8,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import { TitleDetailsJournalActions } from '@/features/journal/components/TitleDetailsJournalActions';
 import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
 import { YourJournalSummary } from '@/features/journal/components/YourJournalSummary';
@@ -54,6 +55,7 @@ export function TitleDetailsScreen({
   titleId,
 }: TitleDetailsScreenProps) {
   const { user } = useAuth();
+  const { gamesEnabled } = useAppCapabilities();
   const detailsQuery = useMediaDetails(titleId);
   const item = detailsQuery.data?.item;
   const game = item && isGame(item) ? getGameDetailsModel(item) : null;
@@ -81,6 +83,29 @@ export function TitleDetailsScreen({
       return;
     }
 
+    // Game updates edit the latest owned play event. Unlike the old generic
+    // resume route, this never fabricates a second `started` event just to
+    // save a rating or note.
+    if (item?.mediaType === 'game' && action.intent === 'edit_event') {
+      const eventId =
+        summary?.titleState.status === 'in_progress'
+          ? summary.latestActivityEvent?.id
+          : summary?.latestCompletedEvent?.id;
+
+      if (eventId) {
+        router.push({
+          pathname: '/modals/journal-entry',
+          params: {
+            eventId,
+            intent: 'edit_event',
+            mediaItemId,
+            source: 'history',
+          },
+        });
+        return;
+      }
+    }
+
     router.push({
       pathname: '/modals/journal-entry',
       params: {
@@ -90,7 +115,7 @@ export function TitleDetailsScreen({
         source: action.source,
       },
     });
-  }, [mediaItemId]);
+  }, [item?.mediaType, mediaItemId, summary]);
 
   useEffect(() => {
     if (
@@ -129,6 +154,23 @@ export function TitleDetailsScreen({
 
   const openRelevantJournalAction = () => {
     if (!item) return;
+    if (
+      item.mediaType === 'game' &&
+      summary?.titleState.status === 'in_progress' &&
+      summary.latestActivityEvent?.type === 'started' &&
+      mediaItemId
+    ) {
+      router.push({
+        pathname: '/modals/journal-entry',
+        params: {
+          eventId: summary.latestActivityEvent.id,
+          intent: 'edit_event',
+          mediaItemId,
+          source: 'history',
+        },
+      });
+      return;
+    }
     openJournalIntent(getJournalTitleActions(item.mediaType, summary).primary);
   };
 
@@ -257,7 +299,10 @@ export function TitleDetailsScreen({
               addToListLoading={membershipsQuery.isLoading}
               canAddToList={Boolean(user?.id && mediaItemId)}
               canUseJournal={Boolean(
-                user?.id && mediaItemId && journalQuery.isSuccess,
+                user?.id &&
+                  mediaItemId &&
+                  journalQuery.isSuccess &&
+                  (item.mediaType !== 'game' || gamesEnabled),
               )}
               isSignedIn={Boolean(user?.id)}
               mediaType={item.mediaType}
@@ -297,6 +342,7 @@ export function TitleDetailsScreen({
             ) : (
               <YourJournalSummary
                 disabled={Boolean(user?.id && !journalQuery.isSuccess)}
+                mediaType={item.mediaType}
                 onPress={
                   summary?.activityCount ? openHistory : openJournalSummary
                 }

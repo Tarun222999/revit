@@ -361,6 +361,8 @@ describe('cinematic title-detail controls', () => {
             activePlan: null,
             id: 'entry-1',
             mediaItemId: 'media-1',
+            rating: 4.5,
+            reviewBody: 'Still excellent.',
             status: 'completed',
             undatedCompletedCount: 0,
           },
@@ -372,6 +374,48 @@ describe('cinematic title-detail controls', () => {
 
     expect(screen.getByText('1 watch')).toBeTruthy();
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('prioritizes an active game replay over a prior completed play', async () => {
+    await render(
+      <YourJournalSummary
+        mediaType="game"
+        summary={{
+          activityCount: 2,
+          completedWatchCount: 1,
+          latestActivityEvent: {
+            eventDate: '2026-08-12',
+            id: 'event-started',
+            journalEntryId: 'entry-game',
+            notes: 'Trying a new build.',
+            rating: 4,
+            type: 'started',
+          },
+          latestCompletedEvent: {
+            eventDate: '2026-08-10',
+            id: 'event-completed',
+            journalEntryId: 'entry-game',
+            notes: 'Old completion note.',
+            rating: 5,
+            type: 'completed',
+          },
+          titleState: {
+            activePlan: null,
+            id: 'entry-game',
+            mediaItemId: 'game-1',
+            rating: 4,
+            reviewBody: 'Trying a new build.',
+            status: 'in_progress',
+            undatedCompletedCount: 0,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Playing now')).toBeTruthy();
+    expect(screen.getByText('4 / 5')).toBeTruthy();
+    expect(screen.getByText('Trying a new build.')).toBeTruthy();
+    expect(screen.getByText('1 play')).toBeTruthy();
   });
 });
 

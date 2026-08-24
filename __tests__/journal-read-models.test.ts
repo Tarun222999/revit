@@ -49,6 +49,7 @@ function makeEventRow(overrides: Partial<JournalEventRow> = {}): JournalEventRow
     legacy_bridge_statement_at: null,
     notes: 'Worth another watch.',
     operation_id: null,
+    played_on_platform: null,
     rating: 4.5,
     resolved_active_plan: false,
     updated_at: '2026-07-30T10:00:00.000Z',
@@ -125,6 +126,7 @@ describe('v1.1 Journal read models', () => {
       id: 'event-1',
       journalEntryId: 'entry-1',
       notes: 'Worth another watch.',
+      playedOnPlatform: null,
       rating: 4.5,
       type: 'completed',
     });

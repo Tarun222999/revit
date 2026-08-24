@@ -90,3 +90,17 @@ export function useAppCapabilities() {
 
   return value;
 }
+
+/**
+ * Modal routes can be rendered independently by native navigation and tests.
+ * They must fail closed for a capability they cannot resolve, rather than
+ * assuming Games is enabled or throwing before their own unavailable state.
+ */
+export function useOptionalAppCapabilities(): AppCapabilitiesContextValue {
+  return useContext(AppCapabilitiesContext) ?? {
+    gamesEnabled: false,
+    isRefreshing: false,
+    isResolved: false,
+    refresh: async () => undefined,
+  };
+}

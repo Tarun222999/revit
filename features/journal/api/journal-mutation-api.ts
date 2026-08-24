@@ -121,7 +121,9 @@ async function executeJournalEvent(
     throw new Error('A previous watch must be added from History.');
   }
 
-  if (eventType !== 'completed' && input.rating != null) {
+  const gameMutation = input.mediaType === 'game';
+  const playedOnPlatform = input.playedOnPlatform?.trim();
+  if (eventType !== 'completed' && input.rating != null && !gameMutation) {
     throw new Error('Only a completed watch can have a rating.');
   }
 
@@ -129,7 +131,7 @@ async function executeJournalEvent(
     input.intent !== 'previous_watch' &&
     (input.source === 'planner' || input.source === 'planned_title');
 
-  const { data, error } = await supabase.rpc('journal_log_event', {
+  const args = {
     p_event_date: input.eventDate,
     p_event_type: eventType,
     p_media_item_id: input.mediaItemId,
@@ -138,7 +140,24 @@ async function executeJournalEvent(
     p_request_id: input.requestId,
     p_resolve_active_plan: resolveActivePlan,
     p_today: input.today,
-  });
+    ...(gameMutation && playedOnPlatform ? { p_played_on_platform: playedOnPlatform } : {}),
+  };
+  const { data, error } = gameMutation
+    ? await supabase.functions.invoke<unknown>('journal-game-lifecycle', {
+      body: {
+        eventDate: input.eventDate,
+        eventType,
+        mediaItemId: input.mediaItemId,
+        notes: input.notes,
+        operation: 'log',
+        playedOnPlatform,
+        rating: input.rating,
+        requestId: input.requestId,
+        resolveActivePlan,
+        today: input.today,
+      },
+    })
+    : await supabase.rpc('journal_log_event', args);
 
   if (error) throw error;
   return toJournalMutationResult(data);
@@ -177,11 +196,20 @@ export async function saveJournalPlan(input: SaveJournalPlanInput) {
     }
   }
 
-  const { data, error } = await supabase.rpc('journal_save_plan', {
-    p_media_item_id: input.mediaItemId,
-    p_planned_for: input.plannedFor,
-    p_today: input.today,
-  });
+  const { data, error } = input.mediaType === 'game'
+    ? await supabase.functions.invoke<unknown>('journal-game-lifecycle', {
+      body: {
+        mediaItemId: input.mediaItemId,
+        operation: 'plan',
+        plannedFor: input.plannedFor,
+        today: input.today,
+      },
+    })
+    : await supabase.rpc('journal_save_plan', {
+      p_media_item_id: input.mediaItemId,
+      p_planned_for: input.plannedFor,
+      p_today: input.today,
+    });
   if (error) throw error;
   return toJournalMutationResult(data);
 }
@@ -196,22 +224,46 @@ export async function removeJournalPlan(input: RemoveJournalPlanInput) {
 
 export async function updateJournalEvent(input: UpdateJournalEventInput) {
   assertActivityDate(input.eventDate, input.today);
-  const { data, error } = await supabase.rpc('journal_update_event', {
+  const gameMutation = input.mediaType === 'game';
+  const playedOnPlatform = input.playedOnPlatform?.trim();
+  const args = {
     p_event_date: input.eventDate,
     p_event_id: input.eventId,
     p_notes: input.notes,
     p_rating: input.rating,
     p_today: input.today,
-  });
+    ...(gameMutation && playedOnPlatform ? { p_played_on_platform: playedOnPlatform } : {}),
+  };
+  const { data, error } = gameMutation
+    ? await supabase.functions.invoke<unknown>('journal-game-lifecycle', {
+      body: {
+        eventDate: input.eventDate,
+        eventId: input.eventId,
+        notes: input.notes,
+        operation: 'update',
+        playedOnPlatform,
+        rating: input.rating,
+        today: input.today,
+      },
+    })
+    : await supabase.rpc('journal_update_event', args);
   if (error) throw error;
   return toJournalMutationResult(data);
 }
 
 export async function deleteJournalEvent(input: DeleteJournalEventInput) {
-  const { data, error } = await supabase.rpc('journal_delete_event', {
-    p_empty_title_action: input.emptyTitleAction ?? null,
-    p_event_id: input.eventId,
-  });
+  const { data, error } = input.mediaType === 'game'
+    ? await supabase.functions.invoke<unknown>('journal-game-lifecycle', {
+      body: {
+        emptyTitleAction: input.emptyTitleAction ?? null,
+        eventId: input.eventId,
+        operation: 'delete',
+      },
+    })
+    : await supabase.rpc('journal_delete_event', {
+      p_empty_title_action: input.emptyTitleAction ?? null,
+      p_event_id: input.eventId,
+    });
   if (error) throw error;
   return toJournalMutationResult(data);
 }

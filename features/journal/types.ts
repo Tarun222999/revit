@@ -32,6 +32,8 @@ export type JournalTitleState = {
   mediaItemId: string;
   status: JournalStatus;
   activePlan: JournalPlan | null;
+  rating?: number | null;
+  reviewBody?: string | null;
   undatedCompletedCount: number;
 };
 
@@ -42,6 +44,7 @@ export type JournalEvent = {
   eventDate: string;
   rating: number | null;
   notes: string | null;
+  playedOnPlatform?: string | null;
 };
 
 export type JournalMediaSummary = {
@@ -59,6 +62,7 @@ export type JournalMediaSummary = {
 export type JournalTitleSummary = {
   titleState: JournalTitleState;
   latestCompletedEvent: JournalEvent | null;
+  latestActivityEvent?: JournalEvent | null;
   completedWatchCount: number;
   activityCount: number;
 };
@@ -153,6 +157,7 @@ export type JournalMutationResult = {
 
 export type SaveJournalPlanInput = {
   mediaItemId: string;
+  mediaType?: MediaType;
   plannedFor: string | null;
   today: string;
 };
@@ -195,6 +200,7 @@ export type JournalIntentFormValues = {
   date: string | null;
   rating: number | null;
   notes: string;
+  playedOnPlatform?: string;
 };
 
 export type JournalIntentFormErrors = Partial<
@@ -208,6 +214,8 @@ export type LogJournalEventInput = {
   eventDate: string;
   rating: number | null;
   notes: string;
+  mediaType?: MediaType;
+  playedOnPlatform?: string;
   requestId: string;
   today: string;
 };
@@ -217,6 +225,8 @@ export type UpdateJournalEventInput = {
   eventDate: string;
   rating: number | null;
   notes: string;
+  mediaType?: MediaType;
+  playedOnPlatform?: string;
   today: string;
 };
 
@@ -225,6 +235,7 @@ export type EmptyJournalTitleAction = 'keep_someday' | 'remove';
 export type DeleteJournalEventInput = {
   eventId: string;
   emptyTitleAction?: EmptyJournalTitleAction;
+  mediaType?: MediaType;
 };
 
 export type RemoveJournalTitleInput = {

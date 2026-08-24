@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import { JournalHistoryPanel } from '@/features/journal/components/JournalHistoryPanel';
 import { useJournalTitleSummary } from '@/features/journal/hooks/useJournalReads';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
@@ -16,6 +17,7 @@ function errorMessage(error: unknown, fallback: string) {
 
 export function JournalHistoryScreen({ titleId }: { titleId?: string }) {
   const { user } = useAuth();
+  const { gamesEnabled } = useAppCapabilities();
   const detailsQuery = useMediaDetails(titleId);
   const mediaItemId = detailsQuery.data?.item.id;
   const journalQuery = useJournalTitleSummary(user?.id, mediaItemId);
@@ -37,7 +39,7 @@ export function JournalHistoryScreen({ titleId }: { titleId?: string }) {
 
   return (
     <Screen padded={false}>
-      <Stack.Screen options={{ title: 'Watch history' }} />
+      <Stack.Screen options={{ title: detailsQuery.data?.item.mediaType === 'game' ? 'Play history' : 'Watch history' }} />
 
       {detailsQuery.isLoading ? (
         <View className="px-5 pt-5">
@@ -71,7 +73,7 @@ export function JournalHistoryScreen({ titleId }: { titleId?: string }) {
         <View className="px-5 pt-5">
           <EmptyState
             actionLabel="Sign in"
-            message="Sign in to view and manage your personal watch history."
+            message={`Sign in to view and manage your personal ${detailsQuery.data.item.mediaType === 'game' ? 'play' : 'watch'} history.`}
             onAction={() => router.push('/welcome')}
             title="Sign in to view history"
           />
@@ -100,7 +102,7 @@ export function JournalHistoryScreen({ titleId }: { titleId?: string }) {
       {detailsQuery.data?.item && user?.id && journalQuery.isSuccess && !summary ? (
         <View className="px-5 pt-5">
           <EmptyState
-            message="History is available after you record a watch for this title."
+            message={`History is available after you record a ${detailsQuery.data.item.mediaType === 'game' ? 'play' : 'watch'} for this title.`}
             title="No history yet"
           />
         </View>
@@ -108,6 +110,7 @@ export function JournalHistoryScreen({ titleId }: { titleId?: string }) {
 
       {detailsQuery.data?.item && summary && user?.id ? (
         <JournalHistoryPanel
+          canRecordActivity={detailsQuery.data.item.mediaType !== 'game' || gamesEnabled}
           media={detailsQuery.data.item}
           onEdit={(event) => openEventEdit(event.id)}
           summary={summary}

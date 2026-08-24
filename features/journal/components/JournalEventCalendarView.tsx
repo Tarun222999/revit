@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/Card';
 import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
 import { JournalActionDrawer } from '@/features/journal/components/JournalActionDrawer';
 import { JournalActionFeedback } from '@/features/journal/components/JournalActionFeedback';
+import { useOptionalAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import {
   useRemoveJournalPlan,
   useSaveJournalPlan,
@@ -119,8 +120,10 @@ function MonthButton({ direction, onPress }: { direction: 'back' | 'forward'; on
 }
 
 function eventLabel(item: JournalCalendarEventItem) {
-  if (item.event.type === 'started') return 'Started watching';
-  if (item.event.type === 'stopped') return 'Stopped watching';
+  const game = item.media.mediaType === 'game';
+  if (item.event.type === 'started') return game ? 'Started playing' : 'Started watching';
+  if (item.event.type === 'stopped') return game ? 'Stopped playing' : 'Stopped watching';
+  if (game) return 'Finished playing';
   return item.media.mediaType === 'movie' ? 'Watched' : 'Finished';
 }
 
@@ -133,6 +136,7 @@ function LoggedCard({ item, onPress }: { item: JournalCalendarEventItem; onPress
           <Text className="text-xs font-bold uppercase text-teal-300">{eventLabel(item)}</Text>
           <Text className="text-base font-bold text-archive-50" numberOfLines={2}>{item.media.title}</Text>
           {item.event.rating != null ? <Text className="text-sm font-bold text-gold-300">{item.event.rating} / 5</Text> : null}
+          {item.event.playedOnPlatform ? <Text className="text-sm text-archive-300">Played on · {item.event.playedOnPlatform}</Text> : null}
           {item.event.notes ? <Text className="text-sm text-archive-300" numberOfLines={2}>{item.event.notes}</Text> : null}
         </View>
       </Card>
@@ -163,9 +167,11 @@ function openPlanIntent(item: JournalCalendarPlanItem, intent: JournalFormIntent
 }
 
 function CalendarPlanActions({
+  gamesEnabled,
   item,
   onClose,
 }: {
+  gamesEnabled: boolean;
   item: JournalCalendarPlanItem | null;
   onClose: () => void;
 }) {
@@ -177,7 +183,8 @@ function CalendarPlanActions({
   const pending = removePlan.isPending || savePlan.isPending;
   const missed = Boolean(item && item.plannedFor < localToday());
   const watchIntent: JournalFormIntent = item?.media.mediaType === 'movie' ? 'log' : 'start';
-  const watchLabel = missed ? 'I watched it' : item?.media.mediaType === 'movie' ? 'Log watch' : 'Start watching';
+  const watchLabel = missed ? item?.media.mediaType === 'game' ? 'I played it' : 'I watched it' : item?.media.mediaType === 'movie' ? 'Log watch' : item?.media.mediaType === 'game' ? 'Start playing' : 'Start watching';
+  const gameReadOnly = item?.media.mediaType === 'game' && !gamesEnabled;
 
   const executeRemovePlan = async () => {
     if (!item) return;
@@ -196,7 +203,7 @@ function CalendarPlanActions({
     if (!item) return;
     onClose();
     try {
-      await savePlan.mutateAsync({ mediaItemId: item.media.id, plannedFor: null, today: localToday() });
+      await savePlan.mutateAsync({ mediaItemId: item.media.id, mediaType: item.media.mediaType, plannedFor: null, today: localToday() });
       setMoveError(null);
     } catch (error) {
       setMoveError(error instanceof Error ? error.message : 'Try again in a moment.');
@@ -209,16 +216,17 @@ function CalendarPlanActions({
         actions={
           item
             ? [
-                {
+                ...(gameReadOnly ? [] : [{
                   label: watchLabel,
                   onPress: () => {
                     onClose();
                     openPlanIntent(item, watchIntent);
                   },
-                  tone: 'primary',
+                  tone: 'primary' as const,
                 },
                 { label: 'Reschedule', onPress: () => { onClose(); openPlanIntent(item, 'edit_plan'); } },
                 { label: 'Move to Someday', disabled: pending, onPress: () => void moveToSomeday() },
+                ]),
                 { label: 'View title details', onPress: () => { onClose(); openMedia(item.media); } },
                 {
                   label: 'Remove plan',
@@ -277,6 +285,7 @@ export function JournalEventCalendarView({
   selectedDate: string;
   userId: string;
 }) {
+  const { gamesEnabled } = useOptionalAppCapabilities();
   const [selectedEvent, setSelectedEvent] = useState<JournalCalendarEventItem | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<JournalCalendarPlanItem | null>(null);
   const range = getJournalEventCalendarRange(monthDate);
@@ -338,7 +347,7 @@ export function JournalEventCalendarView({
         </View>
 
         <Text className="text-center text-sm font-semibold text-archive-300">
-          {monthName} · {month.completedCount} {month.completedCount === 1 ? 'watch' : 'watches'} · {month.planCount} {month.planCount === 1 ? 'plan' : 'plans'}
+          {monthName} · {month.completedCount} completed · {month.planCount} {month.planCount === 1 ? 'plan' : 'plans'}
         </Text>
       </Card>
 
@@ -368,7 +377,7 @@ export function JournalEventCalendarView({
                   },
                   tone: 'primary',
                 },
-                {
+                ...((selectedEvent.media.mediaType !== 'game' || gamesEnabled) ? [{
                   label: 'Edit activity',
                   onPress: () => {
                     const item = selectedEvent;
@@ -378,11 +387,12 @@ export function JournalEventCalendarView({
                       params: { eventId: item.event.id, intent: 'edit_event', mediaItemId: item.media.id, source: 'history' },
                     });
                   },
-                },
-                ...(selectedEvent.event.type === 'completed'
+                }] : []),
+                ...(selectedEvent.event.type === 'completed' &&
+                (selectedEvent.media.mediaType !== 'game' || gamesEnabled)
                   ? [
                       {
-                        label: 'Log a rewatch',
+                        label: selectedEvent.media.mediaType === 'game' ? 'Play again' : 'Log a rewatch',
                         onPress: () => {
                           const item = selectedEvent;
                           setSelectedEvent(null);
@@ -402,7 +412,7 @@ export function JournalEventCalendarView({
         title={selectedEvent?.media.title ?? ''}
         visible={selectedEvent !== null}
       />
-      <CalendarPlanActions item={selectedPlan} onClose={() => setSelectedPlan(null)} />
+      <CalendarPlanActions gamesEnabled={gamesEnabled} item={selectedPlan} onClose={() => setSelectedPlan(null)} />
     </View>
   );
 }

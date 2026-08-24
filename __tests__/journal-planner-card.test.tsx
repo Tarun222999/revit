@@ -135,6 +135,7 @@ describe('Planner row action drawers', () => {
 
     expect(mockSavePlan).toHaveBeenCalledWith({
       mediaItemId: 'media-upcoming',
+      mediaType: 'movie',
       plannedFor: null,
       today: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
     });
