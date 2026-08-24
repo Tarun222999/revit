@@ -1,4 +1,11 @@
-import { Children, forwardRef, useImperativeHandle, useState, type ReactNode } from 'react';
+import {
+  Children,
+  forwardRef,
+  useCallback,
+  useImperativeHandle,
+  useState,
+  type ReactNode,
+} from 'react';
 import { View, type StyleProp, type ViewStyle } from 'react-native';
 
 export type PagerViewRef = { setPage: (page: number) => void };
@@ -17,13 +24,13 @@ const PagerView = forwardRef<PagerViewRef, Props>(function PagerView(
 ) {
   const pages = Children.toArray(children);
   const [page, setPage] = useState(initialPage);
-  const selectPage = (nextPage: number) => {
+  const selectPage = useCallback((nextPage: number) => {
     const clamped = Math.max(0, Math.min(nextPage, pages.length - 1));
     setPage(clamped);
     onPageSelected?.({ nativeEvent: { position: clamped } });
-  };
+  }, [onPageSelected, pages.length]);
 
-  useImperativeHandle(ref, () => ({ setPage: selectPage }), [pages.length]);
+  useImperativeHandle(ref, () => ({ setPage: selectPage }), [selectPage]);
 
   return <View style={style}>{pages[page] ?? null}</View>;
 });
