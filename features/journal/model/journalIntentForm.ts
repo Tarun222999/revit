@@ -6,6 +6,7 @@ import type {
   JournalIntentFormValues,
   JournalLifecycleIntent,
 } from '@/features/journal/types';
+import type { MediaType } from '@/constants/media';
 
 const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const ISO_DATE_INPUT_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -87,6 +88,27 @@ export const JOURNAL_INTENT_COPY: Record<
   },
 };
 
+/** Keeps the event schema neutral while making the existing form language media-aware. */
+export function getJournalIntentCopy(intent: JournalFormIntent, mediaType?: MediaType) {
+  const copy = JOURNAL_INTENT_COPY[intent];
+  if (mediaType !== 'game') return copy;
+
+  const replacements: Record<JournalFormIntent, Partial<typeof copy>> = {
+    edit_event: { description: 'Update only this item in your play history.', title: 'Edit play' },
+    edit_plan: { title: 'Edit plan to play' },
+    finish: { description: 'Add this finish to your play history.', submitLabel: 'Finish playing', title: 'Finish playing' },
+    log: { dateLabel: 'Played on', description: 'Record when you played it.', submitLabel: 'Log play', title: 'Log a play' },
+    log_finished: { description: 'Record when you finished playing.', submitLabel: 'Log as finished', title: 'Log as finished' },
+    plan: { description: 'Choose a date or leave it open for Someday.', submitLabel: 'Save plan', title: 'Plan to play' },
+    previous_watch: { dateLabel: 'Played on', description: 'Add an earlier play without changing a future plan.', submitLabel: 'Log another play', title: 'Log another play' },
+    resume: { description: 'Add a fresh start without erasing the earlier stop.', submitLabel: 'Resume playing', title: 'Resume playing' },
+    rewatch: { dateLabel: 'Played on', description: 'Add a new play while keeping the earlier ones.', submitLabel: 'Play again', title: 'Play again' },
+    start: { description: 'Record when you started playing.', submitLabel: 'Start playing', title: 'Start playing' },
+    stop: { description: 'Record when you stopped. You can resume later.', submitLabel: 'Stop playing', title: 'Stop playing' },
+  };
+  return { ...copy, ...replacements[intent] };
+}
+
 export function isJournalFormIntent(value?: string): value is JournalFormIntent {
   return Boolean(
     value && Object.prototype.hasOwnProperty.call(JOURNAL_INTENT_COPY, value),
@@ -122,8 +144,15 @@ export function isCompletedIntent(intent: JournalFormIntent) {
   );
 }
 
-export function allowsRating(intent: JournalFormIntent, event?: JournalEvent) {
-  return isCompletedIntent(intent) || (intent === 'edit_event' && event?.type === 'completed');
+export function allowsRating(
+  intent: JournalFormIntent,
+  event?: JournalEvent,
+  mediaType?: MediaType,
+) {
+  return isCompletedIntent(intent) ||
+    (intent === 'edit_event' &&
+      (event?.type === 'completed' ||
+        (event?.type === 'started' && mediaType === 'game')));
 }
 
 export function createJournalIntentFormValues(
@@ -134,17 +163,19 @@ export function createJournalIntentFormValues(
     return {
       date: options.event.eventDate,
       notes: options.event.notes ?? '',
+      playedOnPlatform: options.event.playedOnPlatform ?? '',
       rating: options.event.rating,
     };
   }
 
   if (intent === 'edit_plan') {
-    return { date: options?.plannedFor ?? null, notes: '', rating: null };
+    return { date: options?.plannedFor ?? null, notes: '', playedOnPlatform: '', rating: null };
   }
 
   return {
     date: isPlanningIntent(intent) ? null : localToday(),
     notes: '',
+    playedOnPlatform: '',
     rating: null,
   };
 }
@@ -199,6 +230,7 @@ export function hasJournalIntentFormChanged(
   return (
     initial.date !== current.date ||
     initial.notes !== current.notes ||
+    (initial.playedOnPlatform ?? '') !== (current.playedOnPlatform ?? '') ||
     initial.rating !== current.rating
   );
 }

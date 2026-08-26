@@ -15,6 +15,7 @@ import {
   allowsRating,
   isCompletedIntent,
   isPlanningIntent,
+  getJournalIntentCopy,
   JOURNAL_INTENT_COPY,
 } from '@/features/journal/model/journalIntentForm';
 import type {
@@ -150,10 +151,11 @@ export function JournalIntentForm({
   submitError,
   values,
 }: JournalIntentFormProps) {
-  const copy = JOURNAL_INTENT_COPY[intent];
+  const copy = getJournalIntentCopy(intent, item?.mediaType);
   const planning = isPlanningIntent(intent);
-  const ratingAllowed = allowsRating(intent, event ?? undefined);
+  const ratingAllowed = allowsRating(intent, event ?? undefined, item?.mediaType);
   const showNotes = !planning;
+  const showPlatform = !planning && item?.mediaType === 'game';
   const releaseWarning =
     ratingAllowed &&
     values.date &&
@@ -181,7 +183,7 @@ export function JournalIntentForm({
 
       {releaseWarning ? (
         <Card className="gap-1 border-gold-700 bg-archive-800">
-          <Text className="font-semibold text-gold-300">This movie is yet to release</Text>
+          <Text className="font-semibold text-gold-300">This {item?.mediaType === 'game' ? 'game' : 'title'} is yet to release</Text>
           <Text className="text-sm leading-5 text-archive-300">
             You can still log it if the date is right for you.
           </Text>
@@ -192,6 +194,16 @@ export function JournalIntentForm({
         <RatingInput
           value={values.rating}
           onChange={(rating) => onChange('rating', rating)}
+        />
+      ) : null}
+
+      {showPlatform ? (
+        <TextField
+          label="Played on (optional)"
+          maxLength={120}
+          onChangeText={(playedOnPlatform) => onChange('playedOnPlatform', playedOnPlatform)}
+          placeholder="e.g. PC, PlayStation 5"
+          value={values.playedOnPlatform ?? ''}
         />
       ) : null}
 

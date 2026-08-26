@@ -8,6 +8,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import { TitleDetailsJournalActions } from '@/features/journal/components/TitleDetailsJournalActions';
 import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
 import { YourJournalSummary } from '@/features/journal/components/YourJournalSummary';
@@ -29,8 +30,13 @@ import {
 } from '@/features/media/components/TitleDetailsHero';
 import { TitleDetailsMetadataCard } from '@/features/media/components/TitleDetailsMetadataCard';
 import { TitleDetailsSummaryCard } from '@/features/media/components/TitleDetailsSummaryCard';
+import { GameTitleDetailsContent } from '@/features/media/components/GameTitleDetailsContent';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
 import { useMediaTrailer } from '@/features/media/hooks/useMediaTrailer';
+import {
+  getGameDetailsModel,
+  isGame,
+} from '@/features/media/model/gameDetails';
 import { getTitleDetailMetrics } from '@/features/media/model/titleDetails';
 
 type TitleDetailsScreenProps = {
@@ -49,8 +55,13 @@ export function TitleDetailsScreen({
   titleId,
 }: TitleDetailsScreenProps) {
   const { user } = useAuth();
+  const { gamesEnabled } = useAppCapabilities();
   const detailsQuery = useMediaDetails(titleId);
   const item = detailsQuery.data?.item;
+  const canUseTitleMutations = Boolean(
+    item && (item.mediaType !== 'game' || gamesEnabled),
+  );
+  const game = item && isGame(item) ? getGameDetailsModel(item) : null;
   const trailerQuery = useMediaTrailer(
     item?.source === 'tmdb' ? item.sourceId : undefined,
   );
@@ -67,12 +78,41 @@ export function TitleDetailsScreen({
     useState(false);
   const openedCaptureRef = useRef(false);
 
+  useEffect(() => {
+    if (!canUseTitleMutations) {
+      setShowAddToListPanel(false);
+    }
+  }, [canUseTitleMutations]);
+
   const openJournalIntent = useCallback((
     action: JournalTitleAction,
     returnToJournal = false,
   ) => {
     if (!mediaItemId) {
       return;
+    }
+
+    // Game updates edit the latest owned play event. Unlike the old generic
+    // resume route, this never fabricates a second `started` event just to
+    // save a rating or note.
+    if (item?.mediaType === 'game' && action.intent === 'edit_event') {
+      const eventId =
+        summary?.titleState.status === 'in_progress'
+          ? summary.latestActivityEvent?.id
+          : summary?.latestCompletedEvent?.id;
+
+      if (eventId) {
+        router.push({
+          pathname: '/modals/journal-entry',
+          params: {
+            eventId,
+            intent: 'edit_event',
+            mediaItemId,
+            source: 'history',
+          },
+        });
+        return;
+      }
     }
 
     router.push({
@@ -84,7 +124,7 @@ export function TitleDetailsScreen({
         source: action.source,
       },
     });
-  }, [mediaItemId]);
+  }, [item?.mediaType, mediaItemId, summary]);
 
   useEffect(() => {
     if (
@@ -93,6 +133,7 @@ export function TitleDetailsScreen({
       (journalCapture !== 'log' && journalCapture !== 'plan') ||
       !item ||
       !mediaItemId ||
+      !canUseTitleMutations ||
       !journalQuery.isSuccess
     ) {
       return;
@@ -107,6 +148,7 @@ export function TitleDetailsScreen({
     openedCaptureRef.current = true;
     openJournalIntent(action, true);
   }, [
+    canUseTitleMutations,
     item,
     journalCapture,
     journalQuery.isSuccess,
@@ -123,7 +165,42 @@ export function TitleDetailsScreen({
 
   const openRelevantJournalAction = () => {
     if (!item) return;
+    if (
+      item.mediaType === 'game' &&
+      summary?.titleState.status === 'in_progress' &&
+      summary.latestActivityEvent?.type === 'started' &&
+      mediaItemId
+    ) {
+      router.push({
+        pathname: '/modals/journal-entry',
+        params: {
+          eventId: summary.latestActivityEvent.id,
+          intent: 'edit_event',
+          mediaItemId,
+          source: 'history',
+        },
+      });
+      return;
+    }
     openJournalIntent(getJournalTitleActions(item.mediaType, summary).primary);
+  };
+
+  const openEditCompletedPlay = () => {
+    const eventId = summary?.latestCompletedEvent?.id;
+    if (!mediaItemId || !eventId) {
+      openHistory();
+      return;
+    }
+
+    router.push({
+      pathname: '/modals/journal-entry',
+      params: {
+        eventId,
+        intent: 'edit_event',
+        mediaItemId,
+        source: 'history',
+      },
+    });
   };
 
   const openJournalSummary = () => {
@@ -134,6 +211,14 @@ export function TitleDetailsScreen({
 
     openRelevantJournalAction();
   };
+
+  const journalSummaryAction = !user?.id
+    ? openJournalSummary
+    : summary?.activityCount
+      ? openHistory
+      : canUseTitleMutations
+        ? openJournalSummary
+        : undefined;
 
   const confirmRemovePlan = () => {
     if (!summary?.titleState.activePlan) return;
@@ -172,13 +257,13 @@ export function TitleDetailsScreen({
   };
 
   const openTrailer = async () => {
-    const trailer = trailerQuery.data?.trailer;
+    const trailerKey = game?.trailerKey ?? trailerQuery.data?.trailer?.key;
 
-    if (!trailer) {
+    if (!trailerKey) {
       return;
     }
 
-    const url = `https://www.youtube.com/watch?v=${encodeURIComponent(trailer.key)}`;
+    const url = `https://www.youtube.com/watch?v=${encodeURIComponent(trailerKey)}`;
 
     try {
       await Linking.openURL(url);
@@ -231,26 +316,41 @@ export function TitleDetailsScreen({
           <View className="-mt-8 gap-7 rounded-t-[32px] bg-archive-900 px-5 pb-28 pt-8">
             <TitleDetailsJournalActions
               addToListLoading={membershipsQuery.isLoading}
-              canAddToList={Boolean(user?.id && mediaItemId)}
+              canAddToList={Boolean(
+                user?.id &&
+                  mediaItemId &&
+                  canUseTitleMutations,
+              )}
               canUseJournal={Boolean(
-                user?.id && mediaItemId && journalQuery.isSuccess,
+                user?.id &&
+                  mediaItemId &&
+                  journalQuery.isSuccess &&
+                  canUseTitleMutations,
               )}
               isSignedIn={Boolean(user?.id)}
               mediaType={item.mediaType}
               onAddToList={() => setShowAddToListPanel(true)}
+              onEditCompletedPlay={openEditCompletedPlay}
               onIntent={openJournalIntent}
               onRemovePlan={confirmRemovePlan}
               onRemoveTitle={confirmRemoveTitle}
               onSignIn={() => router.push('/welcome')}
               onWatchTrailer={openTrailer}
               removing={removePlan.isPending || removeTitle.isPending}
-              showTrailer={Boolean(trailerQuery.data?.trailer)}
+              showTrailer={Boolean(
+                game?.trailerKey ?? trailerQuery.data?.trailer,
+              )}
               summary={summary}
             />
 
-            {showAddToListPanel && user?.id && mediaItemId ? (
+            {showAddToListPanel &&
+            user?.id &&
+            mediaItemId &&
+            canUseTitleMutations ? (
               <AddToListPanel
                 mediaItemId={mediaItemId}
+                mediaSource={item.source}
+                mediaSourceId={item.sourceId}
                 userId={user.id}
                 onClose={() => setShowAddToListPanel(false)}
               />
@@ -269,14 +369,22 @@ export function TitleDetailsScreen({
               />
             ) : (
               <YourJournalSummary
-                disabled={Boolean(user?.id && !journalQuery.isSuccess)}
-                onPress={summary?.activityCount ? openHistory : openJournalSummary}
+                mediaType={item.mediaType}
+                disabled={Boolean(
+                  user?.id &&
+                    (!journalQuery.isSuccess || !journalSummaryAction),
+                )}
+                onPress={journalSummaryAction}
                 summary={summary}
               />
             )}
 
             <TitleDetailsSummaryCard description={item.description} />
-            <TitleDetailsMetadataCard details={getTitleDetailMetrics(item)} />
+            {game ? (
+              <GameTitleDetailsContent item={item} />
+            ) : (
+              <TitleDetailsMetadataCard details={getTitleDetailMetrics(item)} />
+            )}
           </View>
         </>
       ) : null}

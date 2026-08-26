@@ -161,16 +161,36 @@ describe('auth route boundaries', () => {
     await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/welcome'));
   });
 
-  it('keeps public legal and support routes available without a session', async () => {
-    mockUsePathname.mockReturnValue('/legal/privacy');
+  it.each([
+    '/legal/privacy',
+    '/legal/terms',
+    '/legal/credits',
+    '/support',
+  ])('keeps the public route %s available without a session', async (pathname) => {
+    mockUsePathname.mockReturnValue(pathname);
 
     await render(
       <AuthGate>
-        <Text>Privacy policy</Text>
+        <Text>Public information</Text>
       </AuthGate>,
     );
 
-    expect(screen.getByText('Privacy policy')).toBeTruthy();
+    expect(screen.getByText('Public information')).toBeTruthy();
+    expect(mockRouterReplace).not.toHaveBeenCalled();
+  });
+
+  it('keeps public legal content available for a signed-in user with a profile', async () => {
+    mockUsePathname.mockReturnValue('/legal/credits');
+    setAuthState({ user: authUser });
+    setProfileState({ id: 'profile-1' });
+
+    await render(
+      <AuthGate>
+        <Text>Signed-in legal content</Text>
+      </AuthGate>,
+    );
+
+    expect(screen.getByText('Signed-in legal content')).toBeTruthy();
     expect(mockRouterReplace).not.toHaveBeenCalled();
   });
 

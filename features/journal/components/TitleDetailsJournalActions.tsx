@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -19,6 +19,7 @@ type Props = {
   isSignedIn: boolean;
   mediaType: MediaType;
   onAddToList: () => void;
+  onEditCompletedPlay?: () => void;
   onIntent: (action: JournalTitleAction) => void;
   onRemovePlan: () => void;
   onRemoveTitle: () => void;
@@ -63,6 +64,7 @@ export function TitleDetailsJournalActions({
   isSignedIn,
   mediaType,
   onAddToList,
+  onEditCompletedPlay,
   onIntent,
   onRemovePlan,
   onRemoveTitle,
@@ -75,21 +77,42 @@ export function TitleDetailsJournalActions({
   const [showMore, setShowMore] = useState(false);
   const actions = getJournalTitleActions(mediaType, summary);
   const secondaryDisabled = !canUseJournal || removing;
+  const secondaryNeedsFullWidth =
+    mediaType === 'game' && actions.secondary.intent === 'log_finished';
   const runSecondary = () => {
+    if (
+      mediaType === 'game' &&
+      summary?.titleState.status === 'completed' &&
+      onEditCompletedPlay
+    ) {
+      onEditCompletedPlay();
+      return;
+    }
     onIntent(actions.secondary);
   };
 
   const closeMore = () => setShowMore(false);
   const runMoreAction = (action: () => void) => {
     closeMore();
+
+    if (removing) {
+      return;
+    }
+
     action();
   };
+
+  useEffect(() => {
+    if (!canUseJournal || removing) {
+      setShowMore(false);
+    }
+  }, [canUseJournal, removing]);
   const hasHistory = Boolean(summary?.activityCount);
   const moreActions = [
-    ...(isSignedIn && actions.planAction
+    ...(isSignedIn && canUseJournal && actions.planAction
       ? [{ label: actions.planAction.label, onPress: () => runMoreAction(() => onIntent(actions.planAction!)), tone: 'standard' as const }]
       : []),
-    ...(isSignedIn && actions.stopAction
+    ...(isSignedIn && canUseJournal && actions.stopAction
       ? [{ label: actions.stopAction.label, onPress: () => runMoreAction(() => onIntent(actions.stopAction!)), tone: 'standard' as const }]
       : []),
     ...(isSignedIn && summary?.titleState.activePlan
@@ -103,14 +126,37 @@ export function TitleDetailsJournalActions({
   return (
     <View className="gap-3">
       <Button
+        accessibilityState={{
+          disabled: Boolean((isSignedIn && !canUseJournal) || removing || actions.primary.disabled),
+        }}
         className="min-h-14"
-        disabled={(isSignedIn && !canUseJournal) || removing}
+        disabled={(isSignedIn && !canUseJournal) || removing || actions.primary.disabled}
         onPress={isSignedIn ? () => onIntent(actions.primary) : onSignIn}
         title={isSignedIn ? actions.primary.label : 'Sign in to use Journal'}
       />
 
+      {actions.primary.disabledReason ? (
+        <Text className="text-center text-xs leading-4 text-archive-300">
+          {actions.primary.disabledReason}
+        </Text>
+      ) : null}
+
+      {isSignedIn && secondaryNeedsFullWidth ? (
+        <Pressable
+          accessibilityLabel={actions.secondary.label}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: secondaryDisabled }}
+          className="min-h-12 w-full items-center justify-center px-3"
+          disabled={secondaryDisabled}
+          onPress={runSecondary}>
+          <Text className="text-center text-sm font-semibold leading-5 text-gold-300">
+            {actions.secondary.label}
+          </Text>
+        </Pressable>
+      ) : null}
+
       <View className="flex-row items-center gap-2">
-        {isSignedIn ? (
+        {isSignedIn && !secondaryNeedsFullWidth ? (
           <Pressable
             accessibilityLabel={actions.secondary.label}
             accessibilityRole="button"
@@ -122,9 +168,9 @@ export function TitleDetailsJournalActions({
               {actions.secondary.label}
             </Text>
           </Pressable>
-        ) : (
+        ) : !secondaryNeedsFullWidth ? (
           <View className="min-w-0 flex-1" />
-        )}
+        ) : null}
         {showTrailer ? (
           <CompactAction
             accessibilityLabel="Watch trailer"
@@ -141,7 +187,7 @@ export function TitleDetailsJournalActions({
         {moreActions.length > 0 ? (
           <CompactAction
             accessibilityLabel={showMore ? 'Close more actions' : 'More actions'}
-            disabled={(isSignedIn && !canUseJournal) || removing}
+            disabled={removing}
             icon="ellipsis-horizontal"
             onPress={() => setShowMore((current) => !current)}
           />
@@ -152,16 +198,20 @@ export function TitleDetailsJournalActions({
         actions={moreActions}
         onClose={closeMore}
         title="More actions"
-        visible={showMore && moreActions.length > 0}
+        visible={showMore && !removing && moreActions.length > 0}
       />
 
       {!isSignedIn ? (
         <Text className="text-center text-xs leading-4 text-archive-300">
-          Sign in to plan, log watches, and keep history for this title.
+          {mediaType === 'game'
+            ? 'Sign in to plan, log plays, and keep history for this title.'
+            : 'Sign in to plan, log watches, and keep history for this title.'}
         </Text>
       ) : !canUseJournal ? (
         <Text className="text-center text-xs leading-4 text-archive-300">
-          Retry the Journal summary before changing this title.
+          {mediaType === 'game'
+            ? 'Games Journal is currently read-only. You can still remove private history.'
+            : 'Retry the Journal summary before changing this title.'}
         </Text>
       ) : null}
     </View>

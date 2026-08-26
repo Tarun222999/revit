@@ -9,6 +9,7 @@ import '../global.css';
 
 import { AuthGate } from '@/features/auth/AuthGate';
 import { AuthProvider } from '@/features/auth/context/AuthProvider';
+import { AppCapabilitiesProvider } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import { QueryProvider } from '@/lib/query/QueryProvider';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -40,36 +41,38 @@ export default function RootLayout() {
 
   return (
     <QueryProvider>
-      <AuthProvider>
-        <ThemeProvider value={APP_NAVIGATION_THEME}>
-          <AuthGate>
-            <Stack screenOptions={{ contentStyle: { backgroundColor: APP_BACKGROUND_COLOR } }}>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-              <Stack.Screen name="title/[id]" options={{ title: 'Title Details' }} />
-              <Stack.Screen name="title/[id]/history" options={{ title: 'Watch history' }} />
-              <Stack.Screen name="discover/[mode]/[mediaType]" options={{ title: 'Discovery' }} />
-              <Stack.Screen name="lists/[id]" options={{ title: 'List Details' }} />
-              <Stack.Screen name="profile" options={{ title: 'Profile' }} />
-              <Stack.Screen name="settings" options={{ title: 'Settings' }} />
-              <Stack.Screen name="legal/privacy" options={{ title: 'Privacy Policy' }} />
-              <Stack.Screen name="legal/terms" options={{ title: 'Terms of Use' }} />
-              <Stack.Screen name="legal/credits" options={{ title: 'Credits' }} />
-              <Stack.Screen name="support" options={{ title: 'Support' }} />
-              <Stack.Screen
-                name="modals/journal-entry"
-                options={{
-                  animation: 'fade',
-                  contentStyle: { backgroundColor: 'transparent' },
-                  headerShown: false,
-                  presentation: 'transparentModal',
-                }}
-              />
-            </Stack>
-          </AuthGate>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </AuthProvider>
+      <AppCapabilitiesProvider>
+        <AuthProvider>
+          <ThemeProvider value={APP_NAVIGATION_THEME}>
+            <AuthGate>
+              <Stack screenOptions={{ contentStyle: { backgroundColor: APP_BACKGROUND_COLOR } }}>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="title/[id]" options={{ title: 'Title Details' }} />
+                <Stack.Screen name="title/[id]/history" options={{ title: 'Watch history' }} />
+                <Stack.Screen name="discover/[mode]/[mediaType]" options={{ title: 'Discovery' }} />
+                <Stack.Screen name="lists/[id]" options={{ title: 'List Details' }} />
+                <Stack.Screen name="profile" options={{ title: 'Profile' }} />
+                <Stack.Screen name="settings" options={{ title: 'Settings' }} />
+                <Stack.Screen name="legal/privacy" options={{ title: 'Privacy Policy' }} />
+                <Stack.Screen name="legal/terms" options={{ title: 'Terms of Use' }} />
+                <Stack.Screen name="legal/credits" options={{ title: 'Credits' }} />
+                <Stack.Screen name="support" options={{ title: 'Support' }} />
+                <Stack.Screen
+                  name="modals/journal-entry"
+                  options={{
+                    animation: 'fade',
+                    contentStyle: { backgroundColor: 'transparent' },
+                    headerShown: false,
+                    presentation: 'transparentModal',
+                  }}
+                />
+              </Stack>
+            </AuthGate>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </AuthProvider>
+      </AppCapabilitiesProvider>
     </QueryProvider>
   );
 }

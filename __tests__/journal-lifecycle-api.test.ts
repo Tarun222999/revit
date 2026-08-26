@@ -1,4 +1,5 @@
 import {
+  deleteJournalEvent,
   logJournalEvent,
   saveJournalPlan,
   toJournalMutationResult,
@@ -10,10 +11,11 @@ import type {
 import { supabase } from '@/lib/supabase/client';
 
 jest.mock('@/lib/supabase/client', () => ({
-  supabase: { rpc: jest.fn() },
+  supabase: { functions: { invoke: jest.fn() }, rpc: jest.fn() },
 }));
 
 const mockRpc = supabase.rpc as jest.Mock;
+const mockInvoke = supabase.functions.invoke as jest.Mock;
 
 function rawResult(overrides: Record<string, unknown> = {}) {
   return {
@@ -145,6 +147,32 @@ describe('Journal lifecycle API', () => {
     );
   });
 
+  it('uses the game lifecycle RPC for an in-progress game rating and optional platform', async () => {
+    mockInvoke.mockResolvedValueOnce({ data: rawResult(), error: null });
+
+    await logJournalEvent({
+      eventDate: '2026-08-02',
+      intent: 'start',
+      mediaItemId: 'game-1',
+      mediaType: 'game',
+      notes: 'Great with friends',
+      playedOnPlatform: 'PC',
+      rating: 4,
+      requestId: '30000000-0000-4000-8000-000000000022',
+      source: 'title',
+      today: '2026-08-02',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith('journal-game-lifecycle', {
+      body: expect.objectContaining({
+        eventType: 'started',
+        operation: 'log',
+        playedOnPlatform: 'PC',
+        rating: 4,
+      }),
+    });
+  });
+
   it('rejects invalid dates before calling the database', async () => {
     await expect(
       saveJournalPlan({
@@ -154,6 +182,44 @@ describe('Journal lifecycle API', () => {
       }),
     ).rejects.toThrow('cannot be in the past');
     expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it('sends the minimal game-plan body expected by the secure Edge boundary', async () => {
+    mockInvoke.mockResolvedValueOnce({ data: rawResult(), error: null });
+
+    await saveJournalPlan({
+      mediaItemId: 'game-1',
+      mediaType: 'game',
+      plannedFor: null,
+      today: '2026-07-29',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith('journal-game-lifecycle', {
+      body: {
+        mediaItemId: 'game-1',
+        operation: 'plan',
+        plannedFor: null,
+        today: '2026-07-29',
+      },
+    });
+  });
+
+  it('uses the secure Games boundary for private game-event deletion', async () => {
+    mockInvoke.mockResolvedValueOnce({ data: rawResult(), error: null });
+
+    await deleteJournalEvent({
+      emptyTitleAction: 'keep_someday',
+      eventId: 'event-1',
+      mediaType: 'game',
+    });
+
+    expect(mockInvoke).toHaveBeenCalledWith('journal-game-lifecycle', {
+      body: {
+        emptyTitleAction: 'keep_someday',
+        eventId: 'event-1',
+        operation: 'delete',
+      },
+    });
   });
 
   it('normalizes and validates the database mutation result', () => {

@@ -101,6 +101,7 @@ export type Database = {
           legacy_bridge_statement_at: string | null
           notes: string | null
           operation_id: string | null
+          played_on_platform: string | null
           rating: number | null
           resolved_active_plan: boolean
           updated_at: string
@@ -116,6 +117,7 @@ export type Database = {
           legacy_bridge_statement_at?: string | null
           notes?: string | null
           operation_id?: string | null
+          played_on_platform?: string | null
           rating?: number | null
           resolved_active_plan?: boolean
           updated_at?: string
@@ -131,6 +133,7 @@ export type Database = {
           legacy_bridge_statement_at?: string | null
           notes?: string | null
           operation_id?: string | null
+          played_on_platform?: string | null
           rating?: number | null
           resolved_active_plan?: boolean
           updated_at?: string
@@ -367,6 +370,20 @@ export type Database = {
         }
         Returns: Json
       }
+      journal_log_game_event: {
+        Args: {
+          p_event_date: string
+          p_event_type: string
+          p_media_item_id: string
+          p_notes: string | null
+          p_played_on_platform?: string | null
+          p_rating: number | null
+          p_request_id: string
+          p_resolve_active_plan: boolean
+          p_today: string
+        }
+        Returns: Json
+      }
       journal_remove_plan: {
         Args: { p_journal_entry_id: string }
         Returns: Json
@@ -383,11 +400,66 @@ export type Database = {
         }
         Returns: Json
       }
+      journal_server_delete_game_event: {
+        Args: {
+          p_empty_title_action?: string | null
+          p_event_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      journal_server_log_game_event: {
+        Args: {
+          p_event_date: string
+          p_event_type: string
+          p_media_item_id: string
+          p_notes: string | null
+          p_played_on_platform?: string | null
+          p_rating: number | null
+          p_request_id: string
+          p_resolve_active_plan: boolean
+          p_today: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      journal_server_save_game_plan: {
+        Args: {
+          p_media_item_id: string
+          p_planned_for: string | null
+          p_today: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      journal_server_update_game_event: {
+        Args: {
+          p_event_date: string
+          p_event_id: string
+          p_notes: string | null
+          p_played_on_platform?: string | null
+          p_rating: number | null
+          p_today: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       journal_update_event: {
         Args: {
           p_event_date: string
           p_event_id: string
           p_notes: string | null
+          p_rating: number | null
+          p_today: string
+        }
+        Returns: Json
+      }
+      journal_update_game_event: {
+        Args: {
+          p_event_date: string
+          p_event_id: string
+          p_notes: string | null
+          p_played_on_platform?: string | null
           p_rating: number | null
           p_today: string
         }

@@ -10,6 +10,7 @@ import { MediaPoster } from '@/components/media/MediaPoster';
 import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
 import { JournalActionDrawer } from '@/features/journal/components/JournalActionDrawer';
 import { JournalActionFeedback } from '@/features/journal/components/JournalActionFeedback';
+import { useOptionalAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import {
   useRemoveJournalPlan,
   useSaveJournalPlan,
@@ -65,7 +66,7 @@ function openTitle(item: JournalPlannerItem) {
   router.push(`/title/${encodeURIComponent(routeId)}`);
 }
 
-function PlannerRow({ item }: { item: JournalPlannerItem }) {
+function PlannerRow({ item, gamesEnabled }: { item: JournalPlannerItem; gamesEnabled: boolean }) {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [removeConfirmationVisible, setRemoveConfirmationVisible] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
@@ -76,6 +77,7 @@ function PlannerRow({ item }: { item: JournalPlannerItem }) {
   const managementActions = getPlannerManagementActions(item.section);
   const pending = removePlan.isPending || savePlan.isPending;
   const plannedFor = item.titleState.activePlan?.plannedFor ?? null;
+  const gameReadOnly = item.media.mediaType === 'game' && !gamesEnabled;
 
   const executeRemovePlan = async () => {
     try {
@@ -93,6 +95,7 @@ function PlannerRow({ item }: { item: JournalPlannerItem }) {
     try {
       await savePlan.mutateAsync({
         mediaItemId: item.media.id,
+        mediaType: item.media.mediaType,
         plannedFor: null,
         today: localToday(),
       });
@@ -118,8 +121,11 @@ function PlannerRow({ item }: { item: JournalPlannerItem }) {
     setRemoveConfirmationVisible(true);
   };
 
-  const primaryLabel = item.section === 'missed' ? 'I watched it' : watchAction.label;
+  const primaryLabel = item.section === 'missed'
+    ? item.media.mediaType === 'game' ? 'I played it' : 'I watched it'
+    : watchAction.label;
   const drawerActions = [
+    ...(gameReadOnly ? [] : [
     {
       label: primaryLabel,
       onPress: () => {
@@ -133,6 +139,7 @@ function PlannerRow({ item }: { item: JournalPlannerItem }) {
       onPress: () => runManagementAction(action),
       tone: 'standard' as const,
     })),
+    ]),
     {
       label: 'View title details',
       onPress: () => {
@@ -165,9 +172,11 @@ function PlannerRow({ item }: { item: JournalPlannerItem }) {
           <Text className="text-sm text-archive-300">{formatDate(plannedFor)}</Text>
           <Text className="text-xs font-semibold text-teal-300" numberOfLines={1}>
             {item.titleState.status === 'completed'
-              ? 'Previously completed · Rewatch plan'
+              ? item.media.mediaType === 'game' ? 'Previously completed · Play again' : 'Previously completed · Rewatch plan'
               : item.media.mediaType === 'movie'
                 ? 'Plan to watch'
+                : item.media.mediaType === 'game'
+                  ? 'Plan to play'
                 : 'Plan to start'}
           </Text>
         </View>
@@ -212,6 +221,7 @@ function PlannerRow({ item }: { item: JournalPlannerItem }) {
 }
 
 export function JournalPlannerView({ userId }: { userId: string }) {
+  const { gamesEnabled } = useOptionalAppCapabilities();
   const today = localToday();
   const query = useJournalPlanner(userId, today);
   const items = query.data ?? [];
@@ -253,7 +263,7 @@ export function JournalPlannerView({ userId }: { userId: string }) {
       className="flex-1"
       contentContainerClassName="px-5 pb-28 pt-2"
       keyExtractor={(item) => item.titleState.id}
-      renderItem={({ item }) => <PlannerRow item={item} />}
+      renderItem={({ item }) => <PlannerRow gamesEnabled={gamesEnabled} item={item} />}
       renderSectionHeader={({ section }) => (
         <View className="bg-archive-900 pb-2 pt-6">
           <Text className="text-xl font-bold text-archive-50">{section.title}</Text>

@@ -43,6 +43,8 @@ const TITLE_WITH_MEDIA_SELECT = `
   has_active_plan,
   planned_for,
   undated_completed_count,
+  rating,
+  review_body,
   media_items!journal_entries_media_item_id_fkey (
     ${MEDIA_SUMMARY_SELECT}
   )
@@ -57,6 +59,8 @@ const EVENT_WITH_TITLE_SELECT = `
     has_active_plan,
     planned_for,
     undated_completed_count,
+    rating,
+    review_body,
     media_items!journal_entries_media_item_id_fkey!inner (
       ${MEDIA_SUMMARY_SELECT}
     )
@@ -105,7 +109,8 @@ export async function getJournalTitleSummary({
   const { data: titleRow, error: titleError } = await supabase
     .from('journal_entries')
     .select(
-      'id, media_item_id, effective_status, has_active_plan, planned_for, undated_completed_count',
+      `id, media_item_id, effective_status, has_active_plan, planned_for, undated_completed_count, rating, review_body,
+       media_items!journal_entries_media_item_id_fkey!inner (media_type)`,
     )
     .eq('user_id', userId)
     .eq('media_item_id', mediaItemId)
@@ -114,7 +119,8 @@ export async function getJournalTitleSummary({
   if (titleError) throw titleError;
   if (!titleRow) return null;
 
-  const [completedResult, activityResult] = await Promise.all([
+  const isGame = (titleRow.media_items as { media_type?: string } | null)?.media_type === 'game';
+  const [completedResult, activityResult, latestActivityResult] = await Promise.all([
     supabase
       .from('journal_events')
       .select('*', { count: 'exact' })
@@ -130,10 +136,22 @@ export async function getJournalTitleSummary({
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('journal_entry_id', titleRow.id),
+    isGame
+      ? supabase
+      .from('journal_events')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('journal_entry_id', titleRow.id)
+      .order('event_date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
+      .limit(1)
+      : Promise.resolve({ data: null, error: null }),
   ]);
 
   if (completedResult.error) throw completedResult.error;
   if (activityResult.error) throw activityResult.error;
+  if (latestActivityResult.error) throw latestActivityResult.error;
 
   return {
     activityCount:
@@ -142,6 +160,9 @@ export async function getJournalTitleSummary({
       (completedResult.count ?? 0) + titleRow.undated_completed_count,
     latestCompletedEvent: completedResult.data?.[0]
       ? toJournalEvent(completedResult.data[0])
+      : null,
+    latestActivityEvent: latestActivityResult.data?.[0]
+      ? toJournalEvent(latestActivityResult.data[0])
       : null,
     titleState: toJournalTitleState(titleRow),
   };

@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 
 import { JOURNAL_STATUS_LABELS } from '@/constants/journal';
+import type { MediaType } from '@/constants/media';
 import type { JournalTitleSummary } from '@/features/journal/types';
 
 function formatJournalDate(value: string | null) {
@@ -15,16 +16,45 @@ function formatJournalDate(value: string | null) {
 
 type Props = {
   disabled?: boolean;
+  mediaType?: MediaType;
   onPress?: () => void;
   summary: JournalTitleSummary | null;
 };
 
+function getJournalCopy({
+  isGame,
+  latestCompletedEvent,
+  planLabel,
+  status,
+}: {
+  isGame: boolean;
+  latestCompletedEvent: JournalTitleSummary['latestCompletedEvent'];
+  planLabel: string | null;
+  status: JournalTitleSummary['titleState']['status'];
+}) {
+  if (latestCompletedEvent) {
+    return `Latest ${isGame ? 'play' : 'watch'} · ${formatJournalDate(latestCompletedEvent.eventDate)}`;
+  }
+  if (planLabel) return `Planned for ${planLabel}`;
+  if (status === 'in_progress') return isGame ? 'Playing now' : 'Watching now';
+  return JOURNAL_STATUS_LABELS[status];
+}
+
+function getActivityLabel(count: number, isGame: boolean, status: JournalTitleSummary['titleState']['status']) {
+  if (!count) return JOURNAL_STATUS_LABELS[status];
+  const singular = isGame ? 'play' : 'watch';
+  const plural = isGame ? 'plays' : 'watches';
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
 export function YourJournalSummary({
   disabled = false,
+  mediaType,
   onPress,
   summary,
 }: Props) {
   const isInteractive = Boolean(onPress && !disabled);
+  const isGame = mediaType === 'game';
 
   if (!summary) {
     return (
@@ -46,29 +76,35 @@ export function YourJournalSummary({
     );
   }
 
-  const { latestCompletedEvent, titleState } = summary;
+  const { latestActivityEvent, latestCompletedEvent, titleState } = summary;
+  const activeGameEvent =
+    isGame && titleState.status === 'in_progress' ? latestActivityEvent : null;
   const planLabel = titleState.activePlan
     ? titleState.activePlan.plannedFor
       ? formatJournalDate(titleState.activePlan.plannedFor)
       : 'Someday'
     : null;
-  const journalCopy = latestCompletedEvent
-    ? `Latest watch · ${formatJournalDate(latestCompletedEvent.eventDate)}`
-    : planLabel
-      ? `Planned for ${planLabel}`
-      : titleState.status === 'in_progress'
-        ? 'Watching now'
-        : JOURNAL_STATUS_LABELS[titleState.status];
-  const activityLabel = summary.completedWatchCount
-    ? `${summary.completedWatchCount} ${summary.completedWatchCount === 1 ? 'watch' : 'watches'}`
-    : JOURNAL_STATUS_LABELS[titleState.status];
-  const ratingLabel = latestCompletedEvent?.rating == null
+  const journalCopy = activeGameEvent
+    ? 'Playing now'
+    : getJournalCopy({
+        isGame,
+        latestCompletedEvent,
+        planLabel,
+        status: titleState.status,
+      });
+  const activityLabel = getActivityLabel(
+    summary.completedWatchCount,
+    isGame,
+    titleState.status,
+  );
+  const activeRating = activeGameEvent ? titleState.rating : latestCompletedEvent?.rating;
+  const ratingLabel = activeRating == null
     ? null
-    : `${latestCompletedEvent.rating} / 5`;
+    : `${activeRating} / 5`;
 
   return (
     <Pressable
-      accessibilityHint={isInteractive ? 'Opens this title’s watch history.' : undefined}
+      accessibilityHint={isInteractive ? `Opens this title’s ${isGame ? 'play' : 'watch'} history.` : undefined}
       accessibilityLabel={`Your Journal. ${journalCopy}. ${activityLabel}.`}
       accessibilityRole={isInteractive ? 'button' : undefined}
       className="min-h-20 flex-row items-center gap-4 border-y border-archive-700 py-4"
@@ -79,9 +115,9 @@ export function YourJournalSummary({
         <Text className="text-sm leading-5 text-archive-300" numberOfLines={1}>
           {journalCopy}
         </Text>
-        {latestCompletedEvent?.notes ? (
+        {(activeGameEvent?.notes ?? latestCompletedEvent?.notes ?? titleState.reviewBody) ? (
           <Text className="text-xs leading-4 text-archive-400" numberOfLines={1}>
-            {latestCompletedEvent.notes}
+            {activeGameEvent?.notes ?? latestCompletedEvent?.notes ?? titleState.reviewBody}
           </Text>
         ) : null}
       </View>

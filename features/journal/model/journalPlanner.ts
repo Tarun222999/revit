@@ -34,6 +34,11 @@ export function getPlannerWatchAction(
       ? { intent: 'rewatch', label: 'Log rewatch' }
       : { intent: 'log', label: 'Log watch' };
   }
+  if (item.media.mediaType === 'game') {
+    return item.titleState.status === 'completed'
+      ? { intent: 'start', label: 'Play again' }
+      : { intent: 'start', label: 'Start playing' };
+  }
   return item.titleState.status === 'completed'
     ? { intent: 'start', label: 'Start rewatch' }
     : { intent: 'start', label: 'Start watching' };
