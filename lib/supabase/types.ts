@@ -27,8 +27,8 @@ export type Database = {
           review_headline: string | null
           started_on: string | null
           status: string
-          updated_at: string
           undated_completed_count: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -48,8 +48,8 @@ export type Database = {
           review_headline?: string | null
           started_on?: string | null
           status: string
-          updated_at?: string
           undated_completed_count?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -69,8 +69,8 @@ export type Database = {
           review_headline?: string | null
           started_on?: string | null
           status?: string
-          updated_at?: string
           undated_completed_count?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -342,6 +342,47 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      igdb_acquire_request_slot: {
+        Args: never
+        Returns: {
+          lease_id: string
+          retry_after_ms: number
+        }[]
+      }
+      igdb_claim_token_refresh: {
+        Args: never
+        Returns: {
+          access_token: string
+          action: string
+          expires_at: string
+          refresh_lease_id: string
+          retry_after_ms: number
+        }[]
+      }
+      igdb_invalidate_token: {
+        Args: { p_access_token: string }
+        Returns: undefined
+      }
+      igdb_release_request_slot: {
+        Args: { p_lease_id: string }
+        Returns: undefined
+      }
+      igdb_release_token_refresh: {
+        Args: { p_refresh_lease_id: string }
+        Returns: undefined
+      }
+      igdb_store_token: {
+        Args: {
+          p_access_token: string
+          p_expires_in_seconds: number
+          p_refresh_lease_id: string
+        }
+        Returns: boolean
+      }
+      journal_delete_event: {
+        Args: { p_empty_title_action?: string | null; p_event_id: string }
+        Returns: Json
+      }
       journal_get_completion_origins: {
         Args: { p_journal_entry_ids: string[] }
         Returns: {
@@ -349,13 +390,6 @@ export type Database = {
           has_undated_completion: boolean
           journal_entry_id: string
         }[]
-      }
-      journal_delete_event: {
-        Args: {
-          p_empty_title_action?: string | null
-          p_event_id: string
-        }
-        Returns: Json
       }
       journal_log_event: {
         Args: {
