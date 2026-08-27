@@ -1,4 +1,4 @@
-import { IGDB_CATALOG_POLICY_VERSION } from './games-discover';
+import { IGDB_CATALOG_POLICY_VERSION } from './games-discover.ts';
 
 export type CachedDiscoverResponse = {
   results: unknown[];
