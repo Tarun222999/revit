@@ -1,9 +1,9 @@
 import {
   evaluateIgdbCatalogEligibility,
   IGDB_CATALOG_POLICY_VERSION,
-} from '../_shared/igdb-catalog-policy';
-import { normalizeIgdbGame } from '../_shared/igdb-normalizer';
-import type { IgdbGame } from '../_shared/igdb-types';
+} from '../_shared/igdb-catalog-policy.ts';
+import { normalizeIgdbGame } from '../_shared/igdb-normalizer.ts';
+import type { IgdbGame } from '../_shared/igdb-types.ts';
 
 export const IGDB_DISCOVER_PAGE_SIZE = 20;
 export const IGDB_TOP_RATED_MINIMUM_RATING_COUNT = 50;

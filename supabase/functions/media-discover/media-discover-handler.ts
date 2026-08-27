@@ -3,17 +3,17 @@ import {
   handleOptions,
   HttpError,
   jsonResponse,
-} from "../_shared/cors";
-import type { NormalizedMediaItem } from "../_shared/media-normalizers";
+} from "../_shared/cors.ts";
+import type { NormalizedMediaItem } from "../_shared/media-normalizers.ts";
 import {
   IgdbProviderError,
   toProviderHttpError,
-} from "../_shared/provider-errors";
+} from "../_shared/provider-errors.ts";
 import {
   isCachedDiscoverResponse,
   isUsableDiscoverCache,
-} from "./discover-cache-policy";
-import { IGDB_CATALOG_POLICY_VERSION } from "./games-discover";
+} from "./discover-cache-policy.ts";
+import { IGDB_CATALOG_POLICY_VERSION } from "./games-discover.ts";
 
 export type DiscoverMode = "trending" | "new_releases" | "top_rated";
 export type DiscoverMediaType = "movie" | "series" | "anime" | "game";
