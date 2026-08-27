@@ -52,14 +52,14 @@ const mediaChapters: Record<MediaChapterId, MediaChapter> = {
   anime: {
     caption: 'Anime · Discover · Revisit',
     id: 'anime',
-    image: require('@/assets/images/animie-vinland.jpeg'),
+    image: require('@/assets/images/animie-ippo.jpg'),
     imageScale: 1.04,
     label: 'Anime',
   },
   games: {
     caption: 'Games · Play · Complete',
     id: 'games',
-    image: require('@/assets/images/game-world-journal.jpg'),
+    image: require('@/assets/images/game-gta.jpg'),
     imageScale: 1.04,
     label: 'Games',
   },

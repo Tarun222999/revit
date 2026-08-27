@@ -103,8 +103,11 @@ describe('WelcomeAuthScreen', () => {
     setGamesCapability(true);
     await renderWelcome();
 
+    expect(getWelcomeMediaChapters(true)[2].image).toEqual(
+      require('@/assets/images/animie-ippo.jpg'),
+    );
     expect(getWelcomeMediaChapters(true)[3].image).toEqual(
-      require('@/assets/images/game-world-journal.jpg'),
+      require('@/assets/images/game-gta.jpg'),
     );
     expect(screen.getByLabelText('Media types: Movies, Series, Anime, Games')).toBeTruthy();
     expect(screen.getByTestId('welcome-hero-image-games', { includeHiddenElements: true })).toBeTruthy();
