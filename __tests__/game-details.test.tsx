@@ -97,6 +97,10 @@ describe("IGDB game-details provider boundary", () => {
     expect(query).toContain("release_dates.release_region.region");
     expect(query).toContain("total_rating_count");
     expect(query).toContain("version_parent = null");
+    expect(query).toContain("game_type = (0,8,9)");
+    expect(query).toContain("game_status = (0,2,3,4,5)");
+    expect(query).not.toContain("game_type.type =");
+    expect(query).not.toContain("game_status.status =");
     expect(query).not.toContain("multiplayer_modes.name");
     expect(query).not.toContain("time_to_beats");
     expect(item).toMatchObject({

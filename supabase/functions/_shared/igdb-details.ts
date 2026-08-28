@@ -2,6 +2,9 @@ import { HttpError } from "./cors.ts";
 import {
   evaluateIgdbCatalogEligibility,
   IGDB_CATALOG_POLICY_VERSION,
+  IGDB_EROTIC_THEME_ID,
+  IGDB_INCLUDED_GAME_STATUS_IDS,
+  IGDB_INCLUDED_GAME_TYPE_IDS,
 } from "./igdb-catalog-policy.ts";
 import {
   normalizeIgdbGame,
@@ -77,7 +80,9 @@ export function parseIgdbDetailsSourceId(sourceId: string) {
 
 export function createIgdbDetailsQuery(sourceId: string) {
   const id = parseIgdbDetailsSourceId(sourceId);
-  return `fields ${IGDB_DETAILS_FIELDS}; where id = ${id} & version_parent = null & themes != (42) & game_type.type = ("main_game","remake","remaster") & (game_status = null | game_status.status = ("released","alpha","beta","early_access","offline")); limit 1;`;
+  const allowedTypes = IGDB_INCLUDED_GAME_TYPE_IDS.join(",");
+  const allowedStatuses = IGDB_INCLUDED_GAME_STATUS_IDS.join(",");
+  return `fields ${IGDB_DETAILS_FIELDS}; where id = ${id} & version_parent = null & themes != (${IGDB_EROTIC_THEME_ID}) & game_type = (${allowedTypes}) & (game_status = null | game_status = (${allowedStatuses})); limit 1;`;
 }
 
 export function createIgdbTimeToBeatQuery(sourceId: string) {
