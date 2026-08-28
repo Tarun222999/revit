@@ -33,7 +33,6 @@ export const IGDB_DETAILS_FIELDS = [
   "themes.id",
   "themes.name",
   "game_modes.name",
-  "multiplayer_modes.name",
   "player_perspectives.name",
   "platforms.name",
   "platforms.abbreviation",

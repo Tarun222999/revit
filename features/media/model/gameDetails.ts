@@ -125,7 +125,6 @@ export function getGameDetailsModel(
     classifications: [
       ...item.genres,
       ...strings(metadata.gameModes),
-      ...strings(metadata.multiplayerModes),
       ...strings(metadata.playerPerspectives),
       ...strings(metadata.themes),
     ].filter((value, index, values) => values.indexOf(value) === index),

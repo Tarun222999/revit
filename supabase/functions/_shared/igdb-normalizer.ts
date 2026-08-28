@@ -456,7 +456,6 @@ export function normalizeIgdbGame(
   const classifications = {
     themes: names(game.themes),
     gameModes: names(game.game_modes),
-    multiplayerModes: names(game.multiplayer_modes),
     playerPerspectives: names(game.player_perspectives),
   };
   for (const [key, values] of Object.entries(classifications)) {

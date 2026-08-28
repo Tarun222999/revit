@@ -51,7 +51,6 @@ const gameRecord = {
   first_release_date: 1_704_067_200,
   genres: [{ name: "Adventure" }],
   game_modes: [{ name: "Single player" }],
-  multiplayer_modes: [{ name: "Co-op" }],
   player_perspectives: [{ name: "Third person" }],
   themes: [{ name: "Fantasy" }],
   platforms: [{ name: "PC" }, { name: "PlayStation 5" }],
@@ -98,6 +97,7 @@ describe("IGDB game-details provider boundary", () => {
     expect(query).toContain("release_dates.release_region.region");
     expect(query).toContain("total_rating_count");
     expect(query).toContain("version_parent = null");
+    expect(query).not.toContain("multiplayer_modes.name");
     expect(query).not.toContain("time_to_beats");
     expect(item).toMatchObject({
       source: "igdb",

@@ -113,7 +113,6 @@ export type IgdbGame = {
   screenshots?: IgdbImageReference[] | null;
   genres?: IgdbNamedReference[] | null;
   game_modes?: IgdbNamedReference[] | null;
-  multiplayer_modes?: IgdbNamedReference[] | null;
   player_perspectives?: IgdbNamedReference[] | null;
   platforms?: IgdbPlatform[] | null;
   release_dates?: IgdbReleaseDate[] | null;
