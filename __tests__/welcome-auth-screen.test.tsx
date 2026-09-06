@@ -13,7 +13,6 @@ import {
   HeroArtwork,
   isWelcomePageVisible,
   shouldAutoplayWelcomeMedia,
-  shouldStackWelcomeHeader,
   WELCOME_ROTATION_MS,
   WelcomeAuthScreen,
 } from '@/features/auth/components/WelcomeAuthScreen';
@@ -80,8 +79,9 @@ describe('WelcomeAuthScreen', () => {
     await renderWelcome();
 
     expect(screen.getByText('Revit')).toBeTruthy();
-    expect(screen.getByText('Private by default')).toBeTruthy();
-    expect(screen.getByText('Your entertainment journal')).toBeTruthy();
+    expect(screen.queryByText('Private by default')).toBeNull();
+    expect(screen.queryByText('Your entertainment journal')).toBeNull();
+    expect(screen.queryByText('Start your private journal')).toBeNull();
     expect(screen.getByText(/Every story. Every world./)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();
     expect(screen.queryByText('Continue with Apple')).toBeNull();
@@ -92,14 +92,11 @@ describe('WelcomeAuthScreen', () => {
     await renderWelcome();
 
     expect(screen.getByLabelText('Media types: Movies, Series, Anime')).toBeTruthy();
-    expect(screen.getByTestId('welcome-progress-movies', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByTestId('welcome-progress-series', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByTestId('welcome-progress-anime', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.queryByTestId('welcome-progress-games', { includeHiddenElements: true })).toBeNull();
-    expect(screen.queryByText(/Games · Play · Complete/)).toBeNull();
+    expect(screen.queryByLabelText(/Media types: .*Games/)).toBeNull();
+    expect(screen.queryByText(/Watch · Remember/)).toBeNull();
   });
 
-  it('adds Games artwork, taxonomy, caption, and a fourth progress mark only when enabled', async () => {
+  it('adds Games artwork and taxonomy only when enabled', async () => {
     setGamesCapability(true);
     await renderWelcome();
 
@@ -111,7 +108,7 @@ describe('WelcomeAuthScreen', () => {
     );
     expect(screen.getByLabelText('Media types: Movies, Series, Anime, Games')).toBeTruthy();
     expect(screen.getByTestId('welcome-hero-image-games', { includeHiddenElements: true })).toBeTruthy();
-    expect(screen.getByTestId('welcome-progress-games', { includeHiddenElements: true })).toBeTruthy();
+    expect(screen.queryByText(/Games · Play · Complete/)).toBeNull();
   });
 
   it('keeps automatic rotation paused for hover, reduced motion, and hidden pages', () => {
@@ -146,15 +143,8 @@ describe('WelcomeAuthScreen', () => {
   });
 
   it('gives the stationary foreground additional room for large text', () => {
-    expect(getWelcomeHeroMinHeight(844, 1)).toBe(530);
-    expect(getWelcomeHeroMinHeight(844, 2)).toBe(720);
-  });
-
-  it('stacks the brand header at narrow widths and accessibility font scales', () => {
-    expect(shouldStackWelcomeHeader(320, 1)).toBe(true);
-    expect(shouldStackWelcomeHeader(390, 1)).toBe(true);
-    expect(shouldStackWelcomeHeader(620, 1.4)).toBe(true);
-    expect(shouldStackWelcomeHeader(620, 1)).toBe(false);
+    expect(getWelcomeHeroMinHeight(844, 1)).toBe(523);
+    expect(getWelcomeHeroMinHeight(844, 2)).toBe(703);
   });
 
   it('normalizes an active Games chapter synchronously when Games becomes unavailable', async () => {
@@ -170,7 +160,10 @@ describe('WelcomeAuthScreen', () => {
         await jest.advanceTimersByTimeAsync(WELCOME_ROTATION_MS);
       });
     }
-    expect(screen.getByText('Games · Play · Complete')).toBeTruthy();
+    expect(
+      screen.getByTestId('welcome-hero-layer-games', { includeHiddenElements: true }).props
+        .accessibilityState,
+    ).toEqual({ selected: true });
 
     setGamesCapability(false);
     await act(async () => {
@@ -181,7 +174,7 @@ describe('WelcomeAuthScreen', () => {
       );
     });
 
-    expect(screen.getByText('Movies · Watch · Remember')).toBeTruthy();
+    expect(screen.getByLabelText('Media types: Movies, Series, Anime')).toBeTruthy();
     expect(getHeroOpacity('welcome-hero-layer-movies')).toBe(1);
     expect(
       screen.getByTestId('welcome-hero-layer-movies', { includeHiddenElements: true }).props

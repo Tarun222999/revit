@@ -10,6 +10,7 @@ import {
   type AppStateStatus,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   View,
   useWindowDimensions,
@@ -27,7 +28,6 @@ const HERO_CROSSFADE_MS = 900;
 type MediaChapterId = 'movies' | 'series' | 'anime' | 'games';
 
 type MediaChapter = {
-  caption: string;
   id: MediaChapterId;
   image: ImageSource;
   imageScale?: number;
@@ -36,28 +36,24 @@ type MediaChapter = {
 
 const mediaChapters: Record<MediaChapterId, MediaChapter> = {
   movies: {
-    caption: 'Movies · Watch · Remember',
     id: 'movies',
     image: require('@/assets/images/movie-heat.jpg'),
     imageScale: 1.04,
     label: 'Movies',
   },
   series: {
-    caption: 'Series · Follow · Finish',
     id: 'series',
     image: require('@/assets/images/series-bear.jpg'),
     imageScale: 1.04,
     label: 'Series',
   },
   anime: {
-    caption: 'Anime · Discover · Revisit',
     id: 'anime',
     image: require('@/assets/images/animie-ippo.jpg'),
     imageScale: 1.04,
     label: 'Anime',
   },
   games: {
-    caption: 'Games · Play · Complete',
     id: 'games',
     image: require('@/assets/images/game-gta.jpg'),
     imageScale: 1.04,
@@ -104,14 +100,10 @@ export function getRenderedWelcomeMediaIndex(activeIndex: number, chapterCount: 
 }
 
 export function getWelcomeHeroMinHeight(height: number, fontScale: number) {
-  const baseHeight = Math.min(Math.max(height * 0.58, 530), 680);
-  const largeTextAllowance = Math.max(fontScale - 1, 0) * 190;
+  const baseHeight = Math.min(Math.max(height * 0.62, 500), 650);
+  const largeTextAllowance = Math.max(fontScale - 1, 0) * 180;
 
   return Math.round(baseHeight + largeTextAllowance);
-}
-
-export function shouldStackWelcomeHeader(width: number, fontScale: number) {
-  return width <= 390 || fontScale > 1.3;
 }
 
 export function HeroArtwork({
@@ -228,7 +220,7 @@ export function GoogleSignInError({ error }: { error: string | null }) {
 export function WelcomeAuthScreen() {
   const { gamesEnabled } = useAppCapabilities();
   const chapters = useMemo(() => getWelcomeMediaChapters(gamesEnabled), [gamesEnabled]);
-  const { fontScale, height, width } = useWindowDimensions();
+  const { fontScale, height } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -242,7 +234,6 @@ export function WelcomeAuthScreen() {
   const [reducedMotion, setReducedMotion] = useState(false);
 
   const renderedActiveIndex = getRenderedWelcomeMediaIndex(activeIndex, chapters.length);
-  const activeChapter = chapters[renderedActiveIndex];
   const shouldShowActiveImmediately = activeIndex !== renderedActiveIndex;
   const autoplay = shouldAutoplayWelcomeMedia({
     isHovered,
@@ -250,7 +241,6 @@ export function WelcomeAuthScreen() {
     reducedMotion,
   });
   const heroMinHeight = getWelcomeHeroMinHeight(height, fontScale);
-  const stackHeader = shouldStackWelcomeHeader(width, fontScale);
 
   useEffect(() => {
     void AccessibilityInfo.isReduceMotionEnabled().then(setReducedMotion).catch(() => {
@@ -348,36 +338,40 @@ export function WelcomeAuthScreen() {
   }
 
   return (
-    <Screen scroll className="pb-10" padded={false} safeAreaEdges={['right', 'bottom', 'left']}>
-      <View className="w-full self-center bg-archive-900" style={{ maxWidth: 620 }}>
-        <Pressable
-          accessible={false}
-          className="relative overflow-hidden bg-archive-800"
-          onHoverIn={() => setIsHovered(true)}
-          onHoverOut={() => setIsHovered(false)}
-          testID="welcome-hero-stage"
-          style={{ minHeight: heroMinHeight }}>
-          {chapters.map((chapter, index) => (
-            <HeroArtwork
-              chapter={chapter}
-              forceImmediate={shouldShowActiveImmediately}
-              isActive={index === renderedActiveIndex}
-              key={chapter.id}
-              reducedMotion={reducedMotion}
-            />
-          ))}
-          <View className="absolute inset-0 bg-archive-900/35" />
-          <View className="absolute inset-x-0 bottom-0 h-80 bg-archive-900/80" />
-          <View className="absolute inset-0 bg-archive-900/15" />
+    <Screen padded={false} safeAreaEdges={['right', 'bottom', 'left']}>
+      <ScrollView
+        automaticallyAdjustContentInsets={false}
+        contentContainerClassName="flex-grow items-center bg-archive-900"
+        contentInsetAdjustmentBehavior="never"
+        showsVerticalScrollIndicator={false}>
+        <View className="w-full flex-1 self-center bg-archive-900" style={{ maxWidth: 620 }}>
+          <Pressable
+            accessible={false}
+            className="relative flex-1 overflow-hidden bg-archive-800"
+            onHoverIn={() => setIsHovered(true)}
+            onHoverOut={() => setIsHovered(false)}
+            testID="welcome-hero-stage"
+            style={{ minHeight: heroMinHeight }}>
+            {chapters.map((chapter, index) => (
+              <HeroArtwork
+                chapter={chapter}
+                forceImmediate={shouldShowActiveImmediately}
+                isActive={index === renderedActiveIndex}
+                key={chapter.id}
+                reducedMotion={reducedMotion}
+              />
+            ))}
+            <View className="absolute inset-0 bg-archive-900/30" />
+            <View className="absolute inset-x-0 top-0 h-36 bg-archive-900/40" />
+            <View className="absolute inset-x-0 bottom-0 h-64 bg-archive-900/30" />
+            <View className="absolute inset-x-0 bottom-0 h-44 bg-archive-900/50" />
+            <View className="absolute inset-x-0 bottom-0 h-28 bg-archive-900/70" />
+            <View className="absolute inset-x-0 bottom-0 h-14 bg-archive-900" />
 
-          <View className="flex-1 px-6 pb-8 pt-14">
-            <View
-              className={cn(
-                'gap-3',
-                stackHeader ? 'items-start' : 'flex-row items-center justify-between',
-              )}
-              testID="welcome-brand-header">
-              <View className="max-w-full min-w-0 flex-shrink flex-row items-center gap-3">
+            <View className="flex-1 px-6 pb-5 pt-14">
+              <View
+                className="max-w-full min-w-0 flex-row items-center gap-3"
+                testID="welcome-brand-header">
                 <View className="h-9 w-9 flex-shrink-0 items-center justify-center rounded-app border border-gold-300/70 bg-archive-900/70">
                   <Ionicons color="#edcd88" name="book-outline" size={21} />
                 </View>
@@ -385,81 +379,48 @@ export function WelcomeAuthScreen() {
                   Revit
                 </Text>
               </View>
-              <View className="max-w-full min-w-0 flex-shrink flex-row items-start gap-2">
-                <View className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-teal-300" />
-                <Text className="min-w-0 flex-shrink text-[10px] font-extrabold uppercase tracking-[1.8px] text-archive-100">
-                  Private by default
+
+              <View className="mt-auto max-w-[430px] gap-3">
+                <Text className="font-serif text-5xl leading-[48px] text-archive-50">
+                  Every story. Every world. <Text className="text-gold-300">One journal.</Text>
+                </Text>
+                <Text className="max-w-[380px] text-base leading-6 text-archive-100">
+                  Plan what is next, log what you finish, and keep the moments that stayed with you.
+                </Text>
+                <Text
+                  accessibilityLabel={`Media types: ${chapters.map((chapter) => chapter.label).join(', ')}`}
+                  className="pt-1 font-serif text-sm text-archive-200">
+                  {chapters.map((chapter) => chapter.label).join(' · ')}
                 </Text>
               </View>
             </View>
+          </Pressable>
 
-            <View className="mt-auto max-w-[430px] gap-3">
-              <Text className="text-[11px] font-black uppercase tracking-[2.4px] text-gold-300">
-                Your entertainment journal
-              </Text>
-              <Text className="font-serif text-5xl leading-[48px] text-archive-50">
-                Every story. Every world. <Text className="text-gold-300">One journal.</Text>
-              </Text>
-              <Text className="max-w-[380px] text-base leading-6 text-archive-200">
-                Plan what is next, log what you finish, and keep the moments that stayed with you.
-              </Text>
+          <View className="gap-3 bg-archive-900 px-6 pb-5 pt-1">
+            <GoogleSignInButton loading={loadingGoogle} onPress={handleGoogleSignIn} />
+
+            <GoogleSignInError error={error} />
+
+            <Text className="text-center text-xs leading-5 text-archive-200">
+              By continuing, you agree to Revit&apos;s{' '}
               <Text
-                accessibilityLabel={`Media types: ${chapters.map((chapter) => chapter.label).join(', ')}`}
-                className="pt-2 text-[11px] font-extrabold uppercase tracking-[1.4px] text-archive-100">
-                {chapters.map((chapter) => chapter.label).join(' · ')}
+                accessibilityRole="link"
+                className="font-semibold text-gold-200"
+                onPress={() => router.push('/legal/terms')}>
+                Terms
+              </Text>{' '}
+              and{' '}
+              <Text
+                accessibilityRole="link"
+                className="font-semibold text-gold-200"
+                onPress={() => router.push('/legal/privacy')}>
+                Privacy Policy
               </Text>
-            </View>
-            <View className="mt-5 items-end gap-3">
-              <Text className="border-l-2 border-gold-400 bg-archive-900/80 px-3 py-2 text-[10px] font-black uppercase tracking-[1.4px] text-gold-300">
-                {activeChapter.caption}
-              </Text>
-              <View accessibilityElementsHidden className="flex-row gap-1.5">
-                {chapters.map((chapter, index) => (
-                  <View
-                    className={cn(
-                      'h-0.5 w-6 bg-archive-50/30',
-                      index === activeIndex && 'bg-gold-300',
-                    )}
-                    key={chapter.id}
-                    testID={`welcome-progress-${chapter.id}`}
-                  />
-                ))}
-              </View>
-            </View>
-          </View>
-        </Pressable>
-
-        <View className="gap-4 border-t border-gold-400/30 bg-archive-900 px-6 py-7">
-          <View className="gap-2">
-            <Text className="font-serif text-3xl text-archive-50">Start your private journal</Text>
-            <Text className="text-base leading-6 text-archive-300">
-              Sign in securely. Your plans, ratings, notes, and history stay connected to your account.
+              .
             </Text>
           </View>
-
-          <GoogleSignInButton loading={loadingGoogle} onPress={handleGoogleSignIn} />
-
-          <GoogleSignInError error={error} />
-
-          <Text className="pt-1 text-center text-sm leading-5 text-archive-400">
-            By continuing, you agree to Revit&apos;s{' '}
-            <Text
-              accessibilityRole="link"
-              className="font-semibold text-gold-300"
-              onPress={() => router.push('/legal/terms')}>
-              Terms
-            </Text>{' '}
-            and{' '}
-            <Text
-              accessibilityRole="link"
-              className="font-semibold text-gold-300"
-              onPress={() => router.push('/legal/privacy')}>
-              Privacy Policy
-            </Text>
-            .
-          </Text>
         </View>
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
