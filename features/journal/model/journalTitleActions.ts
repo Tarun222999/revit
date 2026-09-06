@@ -55,7 +55,7 @@ export function getJournalTitleActions(
         ? { intent: 'plan', label: 'Plan to watch', source: 'title' }
         : {
             intent: 'log_finished',
-            label: game ? 'Already played? Log as finished' : 'Log as finished',
+            label: 'Log as finished',
             source: 'title',
           },
       stopAction: null,

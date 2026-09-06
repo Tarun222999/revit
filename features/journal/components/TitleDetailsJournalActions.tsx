@@ -77,8 +77,6 @@ export function TitleDetailsJournalActions({
   const [showMore, setShowMore] = useState(false);
   const actions = getJournalTitleActions(mediaType, summary);
   const secondaryDisabled = !canUseJournal || removing;
-  const secondaryNeedsFullWidth =
-    mediaType === 'game' && actions.secondary.intent === 'log_finished';
   const runSecondary = () => {
     if (
       mediaType === 'game' &&
@@ -141,22 +139,8 @@ export function TitleDetailsJournalActions({
         </Text>
       ) : null}
 
-      {isSignedIn && secondaryNeedsFullWidth ? (
-        <Pressable
-          accessibilityLabel={actions.secondary.label}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: secondaryDisabled }}
-          className="min-h-12 w-full items-center justify-center px-3"
-          disabled={secondaryDisabled}
-          onPress={runSecondary}>
-          <Text className="text-center text-sm font-semibold leading-5 text-gold-300">
-            {actions.secondary.label}
-          </Text>
-        </Pressable>
-      ) : null}
-
       <View className="flex-row items-center gap-2">
-        {isSignedIn && !secondaryNeedsFullWidth ? (
+        {isSignedIn ? (
           <Pressable
             accessibilityLabel={actions.secondary.label}
             accessibilityRole="button"
@@ -168,9 +152,9 @@ export function TitleDetailsJournalActions({
               {actions.secondary.label}
             </Text>
           </Pressable>
-        ) : !secondaryNeedsFullWidth ? (
+        ) : (
           <View className="min-w-0 flex-1" />
-        ) : null}
+        )}
         {showTrailer ? (
           <CompactAction
             accessibilityLabel="Watch trailer"

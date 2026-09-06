@@ -299,11 +299,9 @@ describe("game details presentation", () => {
     );
 
     await fireEvent.press(
-      screen.getByRole("button", { name: "Already played? Log as finished" }),
+      screen.getByRole("button", { name: "Log as finished" }),
     );
-    expect(
-      screen.getByText("Already played? Log as finished").props.numberOfLines,
-    ).toBeUndefined();
+    expect(screen.getByText("Log as finished").props.numberOfLines).toBe(1);
     expect(onIntent).toHaveBeenCalledWith(
       expect.objectContaining({ intent: "log_finished" }),
     );
