@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, type ImageSource } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import {
@@ -361,12 +362,21 @@ export function WelcomeAuthScreen() {
                 reducedMotion={reducedMotion}
               />
             ))}
-            <View className="absolute inset-0 bg-archive-900/30" />
-            <View className="absolute inset-x-0 top-0 h-36 bg-archive-900/40" />
-            <View className="absolute inset-x-0 bottom-0 h-64 bg-archive-900/30" />
-            <View className="absolute inset-x-0 bottom-0 h-44 bg-archive-900/50" />
-            <View className="absolute inset-x-0 bottom-0 h-28 bg-archive-900/70" />
-            <View className="absolute inset-x-0 bottom-0 h-14 bg-archive-900" />
+            <LinearGradient
+              colors={[
+                'rgba(13, 11, 9, 0.58)',
+                'rgba(13, 11, 9, 0.12)',
+                'rgba(13, 11, 9, 0.08)',
+                'rgba(13, 11, 9, 0.68)',
+                '#0d0b09',
+              ]}
+              dither
+              end={{ x: 0.5, y: 1 }}
+              locations={[0, 0.2, 0.43, 0.76, 1]}
+              pointerEvents="none"
+              start={{ x: 0.5, y: 0 }}
+              style={{ position: 'absolute', inset: 0 }}
+            />
 
             <View className="flex-1 px-6 pb-5 pt-14">
               <View
