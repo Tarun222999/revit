@@ -128,6 +128,8 @@ function setAuthState({
   loading?: boolean;
 } = {}) {
   mockAuth.mockReturnValue({
+    error: null,
+    retrySession: jest.fn(),
     session: null,
     signOut: jest.fn(),
     user,
@@ -135,11 +137,16 @@ function setAuthState({
   });
 }
 
-function setProfileState(data?: object, isLoading = false) {
+function setProfileState(data: object | null = null, isLoading = false) {
   mockCurrentProfile.mockReturnValue({
     data,
+    error: null,
+    isError: false,
     isLoading,
-  } as ReturnType<typeof useCurrentProfile>);
+    isPending: isLoading,
+    isSuccess: !isLoading,
+    refetch: jest.fn(),
+  } as unknown as ReturnType<typeof useCurrentProfile>);
 }
 
 describe('auth route boundaries', () => {

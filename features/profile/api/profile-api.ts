@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase/client';
+import { withRequestTimeout } from '@/lib/query/requestTimeout';
 import type { Tables, TablesInsert, TablesUpdate } from '@/lib/supabase/types';
 
 export type Profile = Tables<'profiles'>;
@@ -136,7 +137,19 @@ export function getProfileAvatarUrl(avatarPath?: string | null, version?: string
 }
 
 export async function getCurrentProfile(userId: string) {
-  const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+  const controller = new AbortController();
+  const request = supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .abortSignal(controller.signal)
+    .maybeSingle();
+  const { data, error } = await withRequestTimeout(
+    request,
+    'Profile request timed out.',
+    undefined,
+    () => controller.abort(),
+  );
 
   if (error) {
     throw error;
