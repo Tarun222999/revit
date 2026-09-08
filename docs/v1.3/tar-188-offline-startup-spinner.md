@@ -1,6 +1,6 @@
 # TAR-188 — Offline startup spinner
 
-Status: Investigation complete; fix proposal not implemented
+Status: Implementation complete; physical-device QA pending
 
 ## Reported behavior
 
@@ -94,7 +94,7 @@ The failure sequence is:
 Depending on the persisted token's expiry, the request can stall during either
 session restoration or profile resolution. Both paths need bounded behavior.
 
-## Proposed fix
+## Implemented fix
 
 ### Startup state model
 
@@ -182,7 +182,7 @@ queries:
 - show the full error/retry component only when no usable content exists
 - do not leave a skeleton or spinner visible indefinitely
 
-## Proposed implementation sequence
+## Implementation sequence
 
 Implementation must proceed one step at a time with explicit approval before
 starting each next step.
@@ -223,11 +223,34 @@ starting each next step.
 
 ## Verification notes
 
-The existing focused auth-boundary and data-hook suites pass: 2 suites and 36
-tests. They cover successful and rejected requests but do not cover offline
-connectivity, a never-settling request, an auth/profile timeout, or retrying the
-global gate. Those missing cases are the required regression coverage for this
-fix.
+Before implementation, the focused auth-boundary and data-hook suites covered
+successful and rejected requests but did not cover offline connectivity, a
+never-settling request, an auth/profile timeout, or retrying the global gate.
+Those missing cases are now included in the TAR-188 regression coverage.
 
-No application code or Linear issue state was changed as part of this
-investigation document.
+## Implementation outcome
+
+The approved implementation now:
+
+- bounds session restoration and current-profile requests at ten seconds
+- aborts a timed-out profile request
+- separates auth/profile errors from a successful missing-profile result
+- replaces the global indefinite spinner with an accessible retry state
+- preserves the persisted session after timeout or network failure
+- reports known offline or timed-out startup failures with offline-specific copy
+- reports other startup failures with a generic account-verification message
+- retries explicitly through `Try again`
+- automatically retries a failed startup after connectivity returns
+- connects React Native NetInfo to TanStack Query's `onlineManager`
+- preserves existing public legal and support route behavior
+
+Automated verification covers stalled session and profile requests, manual
+retry recovery, missing-profile routing, profile-error routing, online recovery,
+and native connectivity propagation. Application TypeScript, Edge Function
+TypeScript, lint, Expo dependency validation, and the 29-route web export pass.
+
+The clean PR worktree passes the full repository verification gate: 45 Jest
+suites and 362 tests, application TypeScript, Edge Function TypeScript, and
+lint. Android and iOS airplane-mode testing remains a release QA action because
+this Windows implementation pass does not provide a physical mobile-device
+environment.
