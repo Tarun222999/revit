@@ -25,6 +25,8 @@ import { cn } from '@/lib/utils/cn';
 
 export const WELCOME_ROTATION_MS = 5_600;
 const HERO_CROSSFADE_MS = 900;
+const REVIT_APP_ICON = require('@/assets/images/revit-ribbon-app-icon.png');
+const REVIT_BRAND_MARK = require('@/assets/images/revit-ribbon-android-foreground.png');
 
 type MediaChapterId = 'movies' | 'series' | 'anime' | 'games';
 
@@ -151,7 +153,13 @@ export function HeroArtwork({
         <View
           testID={`welcome-hero-fallback-${chapter.id}`}
           className="h-full w-full items-center justify-center bg-archive-800">
-          <Ionicons color="#d7a94d" name="book-outline" size={72} />
+          <Image
+            accessibilityLabel=""
+            contentFit="contain"
+            source={REVIT_BRAND_MARK}
+            style={{ height: 128, width: 128 }}
+            testID={`welcome-hero-brand-mark-${chapter.id}`}
+          />
           <Text className="mt-4 text-sm font-bold uppercase tracking-[4px] text-gold-300">
             Revit
           </Text>
@@ -382,8 +390,14 @@ export function WelcomeAuthScreen() {
               <View
                 className="max-w-full min-w-0 flex-row items-center gap-3"
                 testID="welcome-brand-header">
-                <View className="h-9 w-9 flex-shrink-0 items-center justify-center rounded-app border border-gold-300/70 bg-archive-900/70">
-                  <Ionicons color="#edcd88" name="book-outline" size={21} />
+                <View className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-app border border-gold-300/70 bg-archive-900/70">
+                  <Image
+                    accessibilityLabel=""
+                    contentFit="cover"
+                    source={REVIT_APP_ICON}
+                    style={{ height: '100%', width: '100%' }}
+                    testID="welcome-brand-icon"
+                  />
                 </View>
                 <Text className="min-w-0 flex-shrink font-serif text-3xl font-bold text-archive-50">
                   Revit

@@ -83,6 +83,7 @@ describe('WelcomeAuthScreen', () => {
     expect(screen.queryByText('Your entertainment journal')).toBeNull();
     expect(screen.queryByText('Start your private journal')).toBeNull();
     expect(screen.getByText(/Every story. Every world./)).toBeTruthy();
+    expect(screen.getByTestId('welcome-brand-icon')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Continue with Google' })).toBeTruthy();
     expect(screen.queryByText('Continue with Apple')).toBeNull();
     expect(screen.queryByText('Continue with Email')).toBeNull();
@@ -210,6 +211,9 @@ describe('WelcomeAuthScreen', () => {
 
     expect(
       await screen.findByTestId('welcome-hero-fallback-movies', { includeHiddenElements: true }),
+    ).toBeTruthy();
+    expect(
+      screen.getByTestId('welcome-hero-brand-mark-movies', { includeHiddenElements: true }),
     ).toBeTruthy();
     expect(screen.getByText('Revit')).toBeTruthy();
   });
