@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import * as Application from 'expo-application';
 import { Platform } from 'react-native';
 
 import {
@@ -83,14 +84,22 @@ export function collectFeedbackContext({
   errorCode?: FeedbackErrorCode | null;
   sourceScreen: FeedbackSource;
 }): FeedbackContext {
-  const buildNumber = Platform.select({
+  const configBuildNumber = Platform.select({
     android: optionalString(Constants.expoConfig?.android?.versionCode, 40),
     ios: Constants.expoConfig?.ios?.buildNumber,
     default: null,
   });
+  const usesHostAppMetadata =
+    Platform.OS === 'web' || Constants.executionEnvironment === 'storeClient';
+  const appVersion = usesHostAppMetadata
+    ? Constants.expoConfig?.version
+    : Application.nativeApplicationVersion ?? Constants.expoConfig?.version;
+  const buildNumber = usesHostAppMetadata
+    ? configBuildNumber
+    : Application.nativeBuildVersion ?? configBuildNumber;
 
   return {
-    appVersion: optionalString(Constants.expoConfig?.version, 40),
+    appVersion: optionalString(appVersion, 40),
     buildNumber: optionalString(buildNumber, 40),
     errorCode: errorCode ?? null,
     osVersion: optionalString(Platform.Version, 80),

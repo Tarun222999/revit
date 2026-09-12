@@ -82,8 +82,8 @@ export function FeedbackModalScreen({
       });
       setReportId(result.id);
       AccessibilityInfo.announceForAccessibility('Feedback sent successfully.');
-    } catch {
-      setSubmitError(getFeedbackErrorMessage());
+    } catch (error) {
+      setSubmitError(getFeedbackErrorMessage(error));
       AccessibilityInfo.announceForAccessibility('Could not send feedback.');
     }
   };

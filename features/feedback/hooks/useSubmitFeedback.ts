@@ -1,10 +1,17 @@
-import { useMutation } from '@tanstack/react-query';
+import { onlineManager, useMutation } from '@tanstack/react-query';
 
-import { submitFeedback } from '@/features/feedback/api/feedback-api';
+import {
+  FeedbackOfflineError,
+  submitFeedback,
+} from '@/features/feedback/api/feedback-api';
 import type { SubmitFeedbackInput } from '@/features/feedback/types';
 
 export function useSubmitFeedback() {
   return useMutation({
-    mutationFn: (input: SubmitFeedbackInput) => submitFeedback(input),
+    mutationFn: (input: SubmitFeedbackInput) => {
+      if (!onlineManager.isOnline()) throw new FeedbackOfflineError();
+      return submitFeedback(input);
+    },
+    networkMode: 'always',
   });
 }

@@ -5,6 +5,13 @@ import type {
 import { validateFeedbackMessage } from '@/features/feedback/model/feedbackForm';
 import { supabase } from '@/lib/supabase/client';
 
+export class FeedbackOfflineError extends Error {
+  constructor() {
+    super('Feedback cannot be sent while offline.');
+    this.name = 'FeedbackOfflineError';
+  }
+}
+
 export async function submitFeedback(input: SubmitFeedbackInput) {
   const messageError = validateFeedbackMessage(input.message);
   if (messageError) throw new Error(messageError);
@@ -32,6 +39,10 @@ export async function submitFeedback(input: SubmitFeedbackInput) {
   return data;
 }
 
-export function getFeedbackErrorMessage() {
+export function getFeedbackErrorMessage(error?: unknown) {
+  if (error instanceof FeedbackOfflineError) {
+    return 'You’re offline. Your message is still here—reconnect and try again.';
+  }
+
   return 'Could not send feedback. Your message is still here—try again.';
 }

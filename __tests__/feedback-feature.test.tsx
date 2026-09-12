@@ -15,6 +15,11 @@ const mockSingle = jest.fn();
 const mockSelect = jest.fn(() => ({ single: mockSingle }));
 const mockInsert = jest.fn(() => ({ select: mockSelect }));
 
+jest.mock('expo-application', () => ({
+  nativeApplicationVersion: '9.8.7',
+  nativeBuildVersion: '451',
+}));
+
 jest.mock('expo-router', () => ({
   router: {
     back: jest.fn(),
@@ -63,7 +68,7 @@ describe('feedback model', () => {
     expect(validateFeedbackMessage('The Planner did not save.')).toBeNull();
   });
 
-  it('formats a short receipt and allowlists safe context', () => {
+  it('formats a short receipt and prefers installed binary metadata', () => {
     expect(formatFeedbackReference('12ab34cd-5678-4000-8000-000000000000')).toBe(
       'RV-12AB34CD',
     );
@@ -74,6 +79,8 @@ describe('feedback model', () => {
         sourceScreen: 'journal_planner',
       }),
     ).toMatchObject({
+      appVersion: '9.8.7',
+      buildNumber: '451',
       errorCode: 'remove_plan_failed',
       sourceScreen: 'journal_planner',
     });
