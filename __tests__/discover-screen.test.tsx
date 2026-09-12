@@ -147,6 +147,31 @@ describe("Discover interactions", () => {
     expect(onChange).toHaveBeenCalledWith("top_rated");
   });
 
+  it("includes Games in the trending description only when Games is enabled", async () => {
+    const onChange = jest.fn();
+    const rendered = await render(
+      <DiscoverModeBar gamesEnabled value="trending" onChange={onChange} />,
+    );
+
+    expect(
+      screen.getByText(
+        "Popular right now across movies, series, anime, and games.",
+      ),
+    ).toBeTruthy();
+
+    await rendered.rerender(
+      <DiscoverModeBar
+        gamesEnabled={false}
+        value="trending"
+        onChange={onChange}
+      />,
+    );
+
+    expect(
+      screen.getByText("Popular right now across movies, series, and anime."),
+    ).toBeTruthy();
+  });
+
   it("opens the selected feature through one accessible control", async () => {
     const onPress = jest.fn();
 

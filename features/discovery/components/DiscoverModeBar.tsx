@@ -10,22 +10,39 @@ const modeLabels: Record<DiscoveryMode, string> = {
   top_rated: 'Top Rated',
 };
 
-const modeDescriptions: Record<DiscoveryMode, string> = {
-  trending: 'Popular right now across movies, series, and anime.',
+const modeDescriptions: Record<Exclude<DiscoveryMode, 'trending'>, string> = {
   new_releases: 'Recently released and newly airing titles.',
   top_rated: 'Highly rated picks from the catalog.',
 };
 
+export function getDiscoverModeDescription(
+  mode: DiscoveryMode,
+  gamesEnabled: boolean,
+) {
+  if (mode === 'trending') {
+    return gamesEnabled
+      ? 'Popular right now across movies, series, anime, & games.'
+      : 'Popular right now across movies, series, and anime.';
+  }
+
+  return modeDescriptions[mode];
+}
+
 type DiscoverModeBarProps = {
+  gamesEnabled?: boolean;
   value: DiscoveryMode;
   onChange: (mode: DiscoveryMode) => void;
 };
 
-export function DiscoverModeBar({ value, onChange }: DiscoverModeBarProps) {
+export function DiscoverModeBar({
+  gamesEnabled = false,
+  value,
+  onChange,
+}: DiscoverModeBarProps) {
   return (
     <View className="gap-3">
       <Text className="text-sm leading-5 text-archive-300">
-        {modeDescriptions[value]}
+        {getDiscoverModeDescription(value, gamesEnabled)}
       </Text>
 
       <View accessibilityRole="tablist" className="flex-row border-b border-archive-700">

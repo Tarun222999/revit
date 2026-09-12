@@ -123,7 +123,11 @@ export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
         <Text className="font-serif text-3xl leading-9 text-archive-100">
           Find something worth your time.
         </Text>
-        <DiscoverModeBar value={mode} onChange={selectMode} />
+        <DiscoverModeBar
+          gamesEnabled={gamesEnabled}
+          value={mode}
+          onChange={selectMode}
+        />
       </View>
       <PagerView
         ref={pagerRef}
