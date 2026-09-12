@@ -9,6 +9,62 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      feedback_reports: {
+        Row: {
+          app_version: string | null
+          build_number: string | null
+          category: string
+          contact_allowed: boolean
+          created_at: string
+          error_code: string | null
+          id: string
+          message: string
+          os_version: string | null
+          platform: string | null
+          source_screen: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          build_number?: string | null
+          category: string
+          contact_allowed?: boolean
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          message: string
+          os_version?: string | null
+          platform?: string | null
+          source_screen?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          app_version?: string | null
+          build_number?: string | null
+          category?: string
+          contact_allowed?: boolean
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          message?: string
+          os_version?: string | null
+          platform?: string | null
+          source_screen?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           completed_on: string | null

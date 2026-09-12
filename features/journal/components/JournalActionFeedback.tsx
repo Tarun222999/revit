@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 type JournalActionFeedbackProps = {
   body: string;
   onClose: () => void;
+  onReport?: () => void;
   onRetry: () => void;
   pending?: boolean;
   title: string;
@@ -22,6 +23,7 @@ type JournalActionFeedbackProps = {
 export function JournalActionFeedback({
   body,
   onClose,
+  onReport,
   onRetry,
   pending = false,
   title,
@@ -82,6 +84,15 @@ export function JournalActionFeedback({
               title="Try again"
               variant="primary"
             />
+            {onReport ? (
+              <Button
+                className="min-h-12"
+                disabled={pending}
+                onPress={onReport}
+                title="Report this problem"
+                variant="secondary"
+              />
+            ) : null}
             <Button
               className="min-h-12"
               disabled={pending}
