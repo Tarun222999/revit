@@ -21,7 +21,7 @@ export function getDiscoverModeDescription(
 ) {
   if (mode === 'trending') {
     return gamesEnabled
-      ? 'Popular right now across movies, series, anime, & games.'
+      ? 'Popular right now across movies, series, anime, and games.'
       : 'Popular right now across movies, series, and anime.';
   }
 
