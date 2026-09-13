@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
 
@@ -203,6 +203,12 @@ function PlannerRow({ item, gamesEnabled }: { item: JournalPlannerItem; gamesEna
       <JournalActionFeedback
         body={removeError ?? 'Try again in a moment.'}
         onClose={() => setRemoveError(null)}
+        onReport={() => {
+          setRemoveError(null);
+          router.push(
+            '/modals/feedback?category=bug&errorCode=remove_plan_failed&source=journal_planner' as Href,
+          );
+        }}
         onRetry={() => void executeRemovePlan()}
         pending={removePlan.isPending}
         title="Could not remove plan"

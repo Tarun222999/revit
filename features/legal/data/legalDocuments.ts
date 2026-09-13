@@ -140,6 +140,13 @@ export const creditsSections: LegalSection[] = [
 
 export const supportSections: LegalSection[] = [
   {
+    title: 'Product Feedback',
+    body: [
+      'Signed-in users can report a problem or suggest an idea through Help & Feedback in Profile.',
+      'A feedback report includes only the message you enter and limited app, platform, and source-screen context. Revit does not attach journal text, logs, screenshots, passwords, one-time codes, or access tokens.',
+    ],
+  },
+  {
     title: 'Getting Help',
     body: [
       'Use the official support contact listed in Revit\'s store listing or distribution page.',
