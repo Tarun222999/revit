@@ -18,6 +18,7 @@ const mediaTypeLabels: Record<DiscoveryMediaType, string> = {
   movie: 'Movies',
   series: 'Series',
   anime: 'Anime',
+  game: 'Games',
 };
 
 export default function DiscoverListingRoute() {

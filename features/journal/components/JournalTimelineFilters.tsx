@@ -104,7 +104,7 @@ export function JournalTimelineFilters({
             <Text className="text-xs font-bold uppercase text-archive-300">Media</Text>
             <View className="flex-row flex-wrap gap-2">
               <Pill label="All" selected={draftFilters.mediaType === 'all'} onPress={() => setDraftFilters({ ...draftFilters, mediaType: 'all' })} />
-              {(['movie', 'series', 'anime'] as const).map((mediaType) => (
+              {(['movie', 'series', 'anime', 'game'] as const).map((mediaType) => (
                 <Pill key={mediaType} label={MEDIA_TYPE_LABELS[mediaType]} selected={draftFilters.mediaType === mediaType} onPress={() => setDraftFilters({ ...draftFilters, mediaType })} />
               ))}
             </View>

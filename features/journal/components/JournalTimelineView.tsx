@@ -6,6 +6,7 @@ import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { JournalActionDrawer } from '@/features/journal/components/JournalActionDrawer';
+import { useOptionalAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import type { JournalTimelineItem } from '@/features/journal/types';
 
 function localDate(value: string) {
@@ -28,8 +29,10 @@ function dayParts(value: string) {
 }
 
 function eventLabel(item: JournalTimelineItem) {
-  if (item.event.type === 'started') return 'Started watching';
-  if (item.event.type === 'stopped') return 'Stopped watching';
+  const game = item.media.mediaType === 'game';
+  if (item.event.type === 'started') return game ? 'Started playing' : 'Started watching';
+  if (item.event.type === 'stopped') return game ? 'Stopped playing' : 'Stopped watching';
+  if (game) return 'Finished playing';
   if (item.isRewatch) return 'Rewatched';
   return item.media.mediaType === 'movie' ? 'Watched' : 'Finished';
 }
@@ -52,6 +55,11 @@ function TimelineCard({ item, onPress }: { item: JournalTimelineItem; onPress: (
             </Text>
             {item.event.rating != null ? (
               <Text className="font-bold text-gold-300">{item.event.rating} / 5</Text>
+            ) : null}
+            {item.event.playedOnPlatform ? (
+              <Text className="text-xs text-archive-300">
+                Played on · {item.event.playedOnPlatform}
+              </Text>
             ) : null}
           </View>
         </View>
@@ -84,6 +92,7 @@ export function JournalTimelineView({
   onItemPress: (item: JournalTimelineItem) => void;
   onLoadMore: () => void;
 }) {
+  const { gamesEnabled } = useOptionalAppCapabilities();
   const [selectedItem, setSelectedItem] = useState<JournalTimelineItem | null>(null);
 
   const openEdit = (item: JournalTimelineItem) => {
@@ -176,9 +185,12 @@ export function JournalTimelineView({
                   },
                   tone: 'primary',
                 },
-                { label: 'Edit activity', onPress: () => openEdit(selectedItem) },
-                ...(selectedItem.event.type === 'completed'
-                  ? [{ label: 'Log a rewatch', onPress: () => openRewatch(selectedItem) }]
+                ...((selectedItem.media.mediaType !== 'game' || gamesEnabled)
+                  ? [{ label: 'Edit activity', onPress: () => openEdit(selectedItem) }]
+                  : []),
+                ...(selectedItem.event.type === 'completed' &&
+                (selectedItem.media.mediaType !== 'game' || gamesEnabled)
+                  ? [{ label: selectedItem.media.mediaType === 'game' ? 'Play again' : 'Log a rewatch', onPress: () => openRewatch(selectedItem) }]
                   : []),
               ]
             : []

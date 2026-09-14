@@ -7,174 +7,508 @@
     <style>
       :root {
         color-scheme: dark;
-        --ink: #0d0b09;
-        --ink-raised: #171310;
-        --ink-soft: #221b15;
+        --ink: #090806;
         --paper: #fbf6ec;
-        --muted: #aa9473;
-        --faint: #7f7468;
-        --gold: #d7a94d;
-        --gold-soft: #e8c77d;
-        --teal: #8bc6bd;
-        --danger: #e48672;
-        --line: rgba(251, 246, 236, 0.11);
-        --line-strong: rgba(251, 246, 236, 0.2);
-        --shadow: 0 32px 88px rgba(0, 0, 0, 0.56);
+        --muted: #c8bba9;
+        --gold: #ddb253;
+        --gold-soft: #edcf89;
+        --danger: #efaa99;
+        --line: rgba(251, 246, 236, 0.16);
+        --shadow: 0 32px 88px rgba(0, 0, 0, 0.58);
       }
-
-      * { box-sizing: border-box; }
-      html { min-width: 320px; background: #080706; }
-
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        min-width: 320px;
+        background: #070604;
+      }
       body {
         min-height: 100vh;
         margin: 0;
         background:
-          radial-gradient(circle at 14% 18%, rgba(215, 169, 77, 0.09), transparent 25rem),
-          radial-gradient(circle at 84% 82%, rgba(77, 145, 136, 0.06), transparent 28rem),
-          #080706;
+          radial-gradient(
+            circle at 15% 18%,
+            rgba(221, 178, 83, 0.1),
+            transparent 28rem
+          ),
+          #070604;
         color: var(--paper);
-        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
       }
-
-      button, input { color: inherit; font: inherit; }
-      button { cursor: pointer; }
-      button:focus-visible, input:focus-visible { outline: 3px solid rgba(232, 199, 125, 0.34); outline-offset: 3px; }
-
-      .concept-shell { width: min(1180px, calc(100% - 36px)); margin: 0 auto; padding: 54px 0 72px; }
-      .concept-grid { display: grid; grid-template-columns: minmax(0, 0.88fr) minmax(390px, 1.12fr); align-items: center; gap: 72px; }
-      .eyebrow { margin: 0 0 16px; color: var(--gold-soft); font-size: 12px; font-weight: 800; letter-spacing: 0.17em; text-transform: uppercase; }
-
+      button {
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 3px solid rgba(237, 207, 137, 0.5);
+        outline-offset: 3px;
+      }
+      .concept-shell {
+        width: min(1120px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 54px 0 72px;
+      }
+      .concept-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(390px, 1.1fr);
+        align-items: center;
+        gap: 72px;
+      }
+      .eyebrow {
+        margin: 0 0 16px;
+        color: var(--gold-soft);
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+      }
       h1 {
-        max-width: 630px;
+        max-width: 620px;
         margin: 0;
         font-family: Georgia, "Times New Roman", serif;
-        font-size: clamp(44px, 6vw, 76px);
+        font-size: clamp(44px, 6vw, 74px);
         font-weight: 500;
-        letter-spacing: -0.055em;
+        letter-spacing: -0.05em;
+        line-height: 0.99;
+      }
+      h1 em {
+        color: var(--gold-soft);
+        font-style: normal;
+      }
+      .lede {
+        max-width: 550px;
+        margin: 24px 0 0;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.65;
+      }
+      .principles {
+        display: grid;
+        margin-top: 34px;
+        border-top: 1px solid var(--line);
+      }
+      .principle {
+        display: grid;
+        grid-template-columns: 34px 1fr;
+        gap: 12px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .principle-number {
+        color: var(--gold-soft);
+        font-family: Georgia, serif;
+        font-size: 18px;
+      }
+      .principle strong {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 14px;
+      }
+      .principle span:last-child {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .prototype-controls {
+        display: flex;
+        gap: 9px;
+        margin-top: 25px;
+      }
+      .prototype-control {
+        min-height: 44px;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: transparent;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 750;
+      }
+      .prototype-control:hover {
+        border-color: rgba(237, 207, 137, 0.55);
+        color: var(--paper);
+      }
+      .demo-label {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-align: center;
+      }
+      .phone {
+        width: min(100%, 430px);
+        min-height: 810px;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 36px;
+        background: var(--ink);
+        box-shadow: var(--shadow);
+      }
+      .phone-screen {
+        position: relative;
+        display: grid;
+        min-height: 810px;
+        grid-template-rows: minmax(0, 1fr) auto;
+        overflow: hidden;
+        background: var(--ink);
+      }
+      .visual-stage {
+        position: relative;
+        min-height: 610px;
+        overflow: hidden;
+        background: #17130f;
+      }
+      .hero-frame {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 1.1s ease;
+      }
+      .hero-frame.active {
+        opacity: 1;
+      }
+      .hero-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        filter: saturate(0.72) contrast(1.04) brightness(0.84);
+        transform: scale(1.015);
+      }
+      .hero-frame[data-media="movie"] img {
+        object-position: 50% 38%;
+      }
+      .hero-frame[data-media="series"] img {
+        object-position: 48% 36%;
+      }
+      .hero-frame[data-media="anime"] img {
+        object-position: 50% 33%;
+      }
+      .hero-frame[data-media="game"] img {
+        object-position: 52% 34%;
+      }
+      .visual-stage::before {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        background:
+          linear-gradient(
+            180deg,
+            rgba(9, 8, 6, 0.62) 0,
+            rgba(9, 8, 6, 0.12) 21%,
+            transparent 42%
+          ),
+          linear-gradient(
+            180deg,
+            transparent 42%,
+            rgba(9, 8, 6, 0.48) 67%,
+            var(--ink) 100%
+          );
+        content: "";
+        pointer-events: none;
+      }
+      .stage-chrome {
+        position: relative;
+        z-index: 3;
+        padding: 20px 22px 0;
+      }
+      .statusbar,
+      .brand {
+        display: flex;
+        align-items: center;
+      }
+      .statusbar {
+        justify-content: space-between;
+        margin-bottom: 21px;
+        color: #f5eee4;
+        font-size: 11px;
+        font-weight: 750;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.92);
+      }
+      .brand {
+        gap: 10px;
+      }
+      .brand-mark {
+        position: relative;
+        width: 31px;
+        height: 31px;
+        border: 1px solid rgba(237, 207, 137, 0.9);
+        border-radius: 9px;
+        background: rgba(9, 8, 6, 0.48);
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(8px);
+      }
+      .brand-mark::before,
+      .brand-mark::after {
+        position: absolute;
+        top: 8px;
+        width: 8px;
+        height: 13px;
+        border: 1px solid var(--gold-soft);
+        content: "";
+      }
+      .brand-mark::before {
+        left: 6px;
+        border-right: 0;
+        border-radius: 6px 0 0 2px;
+        transform: skewY(7deg);
+      }
+      .brand-mark::after {
+        right: 6px;
+        border-left: 0;
+        border-radius: 0 6px 2px 0;
+        transform: skewY(-7deg);
+      }
+      .brand-name {
+        font-family: Georgia, serif;
+        font-size: 25px;
+        font-weight: 700;
+        text-shadow: 0 3px 14px rgba(0, 0, 0, 0.9);
+      }
+      .hero-copy {
+        position: absolute;
+        right: 25px;
+        bottom: 24px;
+        left: 25px;
+        z-index: 3;
+        text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+      }
+      .hero-copy h2 {
+        max-width: 365px;
+        margin: 0;
+        font-family: Georgia, serif;
+        font-size: clamp(39px, 10vw, 49px);
+        font-weight: 500;
+        letter-spacing: -0.045em;
         line-height: 0.98;
       }
-
-      h1 em { color: var(--gold-soft); font-style: normal; }
-      .lede { max-width: 560px; margin: 24px 0 0; color: var(--muted); font-size: 18px; line-height: 1.65; }
-      .principles { display: grid; margin-top: 34px; border-top: 1px solid var(--line); }
-      .principle { display: grid; grid-template-columns: 36px 1fr; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
-      .principle-number { color: var(--gold-soft); font-family: Georgia, serif; font-size: 18px; }
-      .principle strong { display: block; margin-bottom: 4px; font-size: 14px; }
-      .principle span:last-child { color: var(--muted); font-size: 13px; line-height: 1.5; }
-
-      .prototype-controls { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 25px; }
-      .prototype-control { min-height: 44px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 10px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 750; }
-      .prototype-control[aria-pressed="true"] { border-color: var(--gold); background: rgba(215, 169, 77, 0.08); color: var(--paper); }
-      .prototype-control:hover { border-color: rgba(232, 199, 125, 0.5); color: var(--paper); }
-
-      .demo-label { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 14px; color: var(--muted); font-size: 11px; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
-      .demo-label::before { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 14px rgba(139, 198, 189, 0.55); content: ""; }
-
-      .phone { position: relative; width: min(100%, 430px); min-height: 810px; margin: 0 auto; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 36px; background: var(--ink); box-shadow: var(--shadow); }
-      .phone-screen { position: relative; min-height: 810px; overflow: hidden; background: var(--ink); }
-      .statusbar, .brand-row, .brand, .provider-button, .email-action, .sheet-head { display: flex; align-items: center; }
-      .statusbar, .brand-row, .sheet-head { justify-content: space-between; }
-
-      .visual-stage { position: relative; min-height: 385px; overflow: hidden; }
-      .visual-grid { position: absolute; inset: 0; display: grid; grid-template-columns: 1.08fr 0.92fr; gap: 3px; background: #171310; }
-      .visual-tile { position: relative; overflow: hidden; background: var(--ink-soft); }
-      .visual-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 3px; }
-      .visual-tile img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.76) contrast(1.06); }
-      .visual-tile.heat img { transform: scale(1.08); }
-      .visual-stage::after { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13, 11, 9, 0.18), rgba(13, 11, 9, 0.04) 38%, rgba(13, 11, 9, 0.9) 85%, var(--ink)); content: ""; }
-      .visual-stage::before { position: absolute; inset: 0; z-index: 2; background: linear-gradient(120deg, rgba(215, 169, 77, 0.08), transparent 45%); content: ""; pointer-events: none; }
-
-      .stage-chrome { position: relative; z-index: 3; padding: 22px 22px 0; }
-      .statusbar { margin-bottom: 20px; color: #ded5c9; font-size: 11px; font-weight: 750; }
-      .brand-row { gap: 16px; }
-      .brand { gap: 9px; }
-      .brand-mark { position: relative; width: 28px; height: 28px; border: 1px solid rgba(232, 199, 125, 0.82); border-radius: 50%; background: rgba(13, 11, 9, 0.45); backdrop-filter: blur(8px); }
-      .brand-mark::after { position: absolute; inset: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 18px rgba(215, 169, 77, 0.35); content: ""; }
-      .brand-name { font-family: Georgia, serif; font-size: 22px; font-weight: 700; text-shadow: 0 3px 12px rgba(0, 0, 0, 0.7); }
-      .private-label { display: flex; align-items: center; gap: 6px; color: rgba(251, 246, 236, 0.78); font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
-      .private-label::before { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); content: ""; }
-
-      .hero-copy { position: absolute; right: 22px; bottom: 20px; left: 22px; z-index: 3; text-shadow: 0 4px 18px rgba(0, 0, 0, 0.78); }
-      .hero-copy .kicker { margin: 0 0 8px; color: var(--gold-soft); font-size: 9px; font-weight: 850; letter-spacing: 0.13em; text-transform: uppercase; }
-      .hero-copy h2 { max-width: 340px; margin: 0; font-family: Georgia, serif; font-size: 38px; font-weight: 500; letter-spacing: -0.04em; line-height: 0.98; }
-      .hero-copy p { max-width: 340px; margin: 12px 0 0; color: #d8cbbb; font-size: 12px; line-height: 1.5; }
-
-      .auth-panel { position: relative; z-index: 4; margin-top: -2px; padding: 15px 22px 25px; background: var(--ink); }
-      .auth-panel h3 { margin: 0 0 6px; font-size: 17px; font-weight: 780; }
-      .auth-panel > p { margin: 0 0 17px; color: var(--muted); font-size: 11px; line-height: 1.5; }
-      .provider-list { display: grid; gap: 10px; }
-
-      .provider-button { position: relative; width: 100%; min-height: 52px; justify-content: center; gap: 11px; border: 1px solid var(--line-strong); border-radius: 11px; background: var(--ink-raised); color: var(--paper); font-size: 12px; font-weight: 820; }
-      .provider-button.primary { border-color: transparent; background: var(--gold); color: #2c1f0d; box-shadow: 0 12px 28px rgba(215, 169, 77, 0.14); }
-      .provider-button:hover { border-color: rgba(232, 199, 125, 0.48); }
-      .provider-button.primary:hover { background: var(--gold-soft); }
-      .provider-button[disabled] { cursor: wait; opacity: 0.65; }
-      .provider-mark { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 900; }
-      .primary .provider-mark { background: #fbf6ec; color: #3468c0; }
-      .apple-mark { background: #fbf6ec; color: #0d0b09; }
-      .spinner { width: 17px; height: 17px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 700ms linear infinite; }
-
-      .divider { display: flex; align-items: center; gap: 12px; margin: 14px 0 5px; color: var(--faint); font-size: 9px; font-weight: 750; text-transform: uppercase; }
-      .divider::before, .divider::after { height: 1px; flex: 1; background: var(--line); content: ""; }
-      .email-action { width: 100%; min-height: 46px; justify-content: space-between; padding: 0 2px; border: 0; background: transparent; color: var(--paper); font-size: 11px; font-weight: 760; text-align: left; }
-      .email-copy { display: flex; align-items: center; gap: 10px; }
-      .email-icon { position: relative; width: 19px; height: 14px; border: 1px solid var(--gold-soft); border-radius: 3px; }
-      .email-icon::after { position: absolute; top: 1px; right: 3px; left: 3px; height: 7px; border-bottom: 1px solid var(--gold-soft); transform: rotate(0deg) skewY(-28deg); content: ""; }
-      .arrow { color: var(--gold-soft); font-size: 18px; }
-
-      .provider-error { display: none; margin: 11px 0 0; padding: 10px 11px; border-left: 2px solid var(--danger); background: rgba(212, 106, 85, 0.08); color: #f0b4a8; font-size: 10px; line-height: 1.45; }
-      .provider-error.visible { display: block; }
-      .legal { margin: 13px 0 0 !important; color: var(--faint) !important; text-align: center; font-size: 9px !important; }
-      .legal button { min-height: 44px; padding: 0 3px; border: 0; background: transparent; color: var(--muted); font-size: inherit; font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
-
-      .scrim { position: absolute; inset: 0; z-index: 8; display: none; background: rgba(0, 0, 0, 0.67); backdrop-filter: blur(3px); }
-      .scrim.visible { display: block; }
-      .email-sheet { position: absolute; right: 0; bottom: 0; left: 0; z-index: 9; display: none; padding: 10px 22px 27px; border-top: 1px solid var(--line-strong); border-radius: 22px 22px 0 0; background: #191512; box-shadow: 0 -22px 54px rgba(0, 0, 0, 0.56); }
-      .email-sheet.visible { display: block; animation: rise 180ms ease-out; }
-      .grabber { width: 38px; height: 4px; margin: 0 auto 18px; border-radius: 999px; background: #5d5349; }
-      .sheet-head { gap: 12px; margin-bottom: 7px; }
-      .sheet-head h4 { margin: 0; font-family: Georgia, serif; font-size: 25px; font-weight: 500; }
-      .sheet-close { width: 44px; height: 44px; border: 0; background: transparent; color: var(--muted); font-size: 23px; }
-      .sheet-copy { margin: 0 0 18px; color: var(--muted); font-size: 11px; line-height: 1.5; }
-      .email-label { display: block; margin-bottom: 8px; font-size: 11px; font-weight: 800; }
-      .email-field { width: 100%; min-height: 52px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 11px; background: #100d0b; font-size: 13px; }
-      .email-field[aria-invalid="true"] { border-color: var(--danger); }
-      .email-note { min-height: 16px; margin: 7px 0 15px; color: var(--faint); font-size: 10px; }
-      .email-note.error { color: var(--danger); }
-
-      .toast { position: absolute; right: 18px; bottom: 18px; left: 18px; z-index: 12; display: flex; min-height: 48px; align-items: center; gap: 10px; padding: 11px 13px; border: 1px solid rgba(139, 198, 189, 0.35); border-radius: 12px; background: rgba(23, 19, 16, 0.97); font-size: 11px; font-weight: 750; opacity: 0; pointer-events: none; transform: translateY(10px); transition: 180ms ease; }
-      .toast.visible { opacity: 1; transform: translateY(0); }
-      .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
-
-      .audit-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 72px; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--line); }
-      .audit-step { min-height: 184px; padding: 24px; background: rgba(23, 19, 16, 0.86); }
-      .audit-step > span { color: var(--gold-soft); font-family: Georgia, serif; font-size: 18px; }
-      .audit-step h3 { margin: 27px 0 8px; font-size: 15px; }
-      .audit-step p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
-
-      @keyframes spin { to { transform: rotate(360deg); } }
-      @keyframes rise { from { opacity: 0; transform: translateY(12px); } }
-
+      .hero-copy h2 em {
+        color: var(--gold-soft);
+        font-style: normal;
+      }
+      .hero-copy p {
+        max-width: 350px;
+        margin: 16px 0 0;
+        color: #eee4d7;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+      .taxonomy {
+        display: block;
+        margin-top: 18px;
+        color: rgba(251, 246, 236, 0.78);
+        font-family: Georgia, serif;
+        font-size: 12px;
+        letter-spacing: 0.035em;
+      }
+      .auth-panel {
+        position: relative;
+        z-index: 4;
+        display: grid;
+        gap: 13px;
+        padding: 10px 24px 27px;
+        background: var(--ink);
+      }
+      .auth-panel::before {
+        position: absolute;
+        right: 0;
+        bottom: 100%;
+        left: 0;
+        height: 56px;
+        background: linear-gradient(180deg, transparent, var(--ink));
+        content: "";
+        pointer-events: none;
+      }
+      .provider-button {
+        display: flex;
+        width: 100%;
+        min-height: 56px;
+        align-items: center;
+        justify-content: center;
+        gap: 11px;
+        border: 0;
+        border-radius: 11px;
+        background: var(--gold);
+        color: #281c0b;
+        box-shadow: 0 12px 28px rgba(221, 178, 83, 0.16);
+        font-size: 13px;
+        font-weight: 820;
+      }
+      .provider-button:hover {
+        background: var(--gold-soft);
+      }
+      .provider-button[disabled] {
+        cursor: wait;
+        opacity: 0.7;
+      }
+      .provider-mark {
+        display: grid;
+        width: 23px;
+        height: 23px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--paper);
+        color: #3468c0;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .spinner {
+        width: 17px;
+        height: 17px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: spin 700ms linear infinite;
+      }
+      .provider-error {
+        display: none;
+        margin: 0;
+        padding: 10px 11px;
+        border-left: 2px solid var(--danger);
+        background: rgba(239, 170, 153, 0.09);
+        color: #ffd0c5;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+      .provider-error.visible {
+        display: block;
+      }
+      .legal {
+        margin: 0;
+        color: #b9ac9d;
+        text-align: center;
+        font-size: 10px;
+        line-height: 1.45;
+      }
+      .legal button {
+        min-height: 36px;
+        padding: 0 2px;
+        border: 0;
+        background: transparent;
+        color: #e9d8bf;
+        font-size: inherit;
+        font-weight: 750;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      .toast {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        left: 18px;
+        z-index: 12;
+        display: flex;
+        min-height: 48px;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border: 1px solid rgba(237, 207, 137, 0.32);
+        border-radius: 12px;
+        background: rgba(23, 19, 16, 0.98);
+        font-size: 11px;
+        font-weight: 750;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(10px);
+        transition: 180ms ease;
+      }
+      .toast.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .toast-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--gold);
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
       @media (max-width: 940px) {
-        .concept-grid { grid-template-columns: 1fr; gap: 50px; }
-        .intro { max-width: 720px; margin: 0 auto; }
-        .audit-strip { grid-template-columns: repeat(2, 1fr); }
+        .concept-grid {
+          grid-template-columns: 1fr;
+          gap: 50px;
+        }
+        .intro {
+          max-width: 720px;
+          margin: 0 auto;
+        }
       }
-
       @media (max-width: 520px) {
-        .concept-shell { width: 100%; padding: 34px 0 0; }
-        .intro, .audit-strip { margin-right: 18px; margin-left: 18px; }
-        h1 { font-size: 46px; }
-        .lede { font-size: 16px; }
-        .demo-label { padding: 0 18px; }
-        .phone { width: 100%; border-right: 0; border-left: 0; border-radius: 0; }
-        .audit-strip { grid-template-columns: 1fr; margin-top: 44px; margin-bottom: 36px; }
-        .audit-step { min-height: auto; }
-        .audit-step h3 { margin-top: 15px; }
+        .concept-shell {
+          width: 100%;
+          padding: 0;
+        }
+        .intro,
+        .demo-label {
+          display: none;
+        }
+        .concept-grid {
+          display: block;
+        }
+        .phone {
+          width: 100%;
+          min-height: 100svh;
+          border: 0;
+          border-radius: 0;
+        }
+        .phone-screen {
+          min-height: 100svh;
+        }
+        .visual-stage {
+          min-height: 0;
+        }
+        .hero-copy h2 {
+          font-size: clamp(38px, 11.5vw, 50px);
+        }
       }
-
+      @media (max-height: 690px) and (max-width: 520px) {
+        .stage-chrome {
+          padding-top: 14px;
+        }
+        .statusbar {
+          margin-bottom: 14px;
+        }
+        .hero-copy {
+          bottom: 12px;
+        }
+        .hero-copy h2 {
+          font-size: 36px;
+        }
+        .hero-copy p {
+          margin-top: 10px;
+          line-height: 1.4;
+        }
+        .taxonomy {
+          margin-top: 10px;
+        }
+        .auth-panel {
+          padding-bottom: 16px;
+        }
+      }
       @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+        .hero-frame:not(:first-child) {
+          display: none;
+        }
       }
     </style>
   </head>
@@ -182,212 +516,183 @@
     <main class="concept-shell">
       <div class="concept-grid">
         <section class="intro" aria-labelledby="concept-title">
-          <p class="eyebrow">Sign-in redesign · Companion concept</p>
-          <h1 id="concept-title">Enter through the <em>story,</em> not a login box.</h1>
-          <p class="lede">The welcome screen should establish Revit’s purpose before asking for credentials, then make every available sign-in path unmistakable.</p>
-
+          <p class="eyebrow">Revit sign-in · Simplified direction</p>
+          <h1 id="concept-title">
+            One entrance. <em>No unnecessary ceremony.</em>
+          </h1>
+          <p class="lede">
+            The product story and the sign-in action now share one continuous
+            composition. Authentication stays obvious without repeating what the
+            button already communicates.
+          </p>
           <div class="principles">
-            <div class="principle"><span class="principle-number">01</span><span><strong>One cinematic composition</strong><span>Movies, series, and anime become one authored backdrop instead of three competing dashboard tiles.</span></span></div>
-            <div class="principle"><span class="principle-number">02</span><span><strong>Provider actions stay literal</strong><span>Google, Apple, and email retain exact labels, clear loading states, and familiar behavior.</span></span></div>
-            <div class="principle"><span class="principle-number">03</span><span><strong>Auth stays quieter than the product</strong><span>The Personal Screening Room appears in atmosphere and hierarchy—not extra onboarding questions or decorative controls.</span></span></div>
+            <div class="principle">
+              <span class="principle-number">01</span
+              ><span
+                ><strong>Let the hero carry the meaning</strong
+                ><span
+                  >The headline, short explanation, and quiet media taxonomy are
+                  the only product copy.</span
+                ></span
+              >
+            </div>
+            <div class="principle">
+              <span class="principle-number">02</span
+              ><span
+                ><strong>One literal action</strong
+                ><span
+                  >Google is the only supported provider, so it is the only
+                  authentication control shown.</span
+                ></span
+              >
+            </div>
+            <div class="principle">
+              <span class="principle-number">03</span
+              ><span
+                ><strong>Use the entire screen</strong
+                ><span
+                  >The artwork expands naturally while the action and legal copy
+                  stay anchored to the bottom safe area.</span
+                ></span
+              >
+            </div>
           </div>
-
           <div class="prototype-controls" aria-label="Prototype controls">
-            <button class="prototype-control" data-platform="ios" type="button" aria-pressed="true">iOS</button>
-            <button class="prototype-control" data-platform="android" type="button" aria-pressed="false">Android</button>
-            <button class="prototype-control" id="showError" type="button">Show provider error</button>
-            <button class="prototype-control" id="resetPrototype" type="button">Reset</button>
+            <button class="prototype-control" id="showError" type="button">
+              Show provider error
+            </button>
+            <button class="prototype-control" id="resetPrototype" type="button">
+              Reset
+            </button>
           </div>
         </section>
-
         <section aria-label="Interactive redesigned sign-in prototype">
           <p class="demo-label">Interactive prototype</p>
           <article class="phone">
             <div class="phone-screen">
-              <section class="visual-stage" aria-label="Revit entertainment collage">
-                <div class="visual-grid" aria-hidden="true">
-                  <div class="visual-tile heat"><img src="../../assets/images/movie-heat.jpg" alt="" /></div>
-                  <div class="visual-stack">
-                    <div class="visual-tile"><img src="../../assets/images/series-bear.jpg" alt="" /></div>
-                    <div class="visual-tile"><img src="../../assets/images/animie-vinland.jpeg" alt="" /></div>
-                  </div>
+              <section
+                class="visual-stage"
+                id="visualStage"
+                aria-label="Movies, series, anime, and games artwork"
+              >
+                <div
+                  class="hero-frame active"
+                  data-media="movie"
+                  aria-hidden="true"
+                >
+                  <img src="../../assets/images/movie-heat.jpg" alt="" />
                 </div>
-
+                <div class="hero-frame" data-media="series" aria-hidden="true">
+                  <img src="../../assets/images/series-bear.jpg" alt="" />
+                </div>
+                <div class="hero-frame" data-media="anime" aria-hidden="true">
+                  <img src="../../assets/images/animie-ippo.jpg" alt="" />
+                </div>
+                <div class="hero-frame" data-media="game" aria-hidden="true">
+                  <img src="../../assets/images/game-gta.jpg" alt="" />
+                </div>
                 <div class="stage-chrome">
-                  <div class="statusbar" aria-hidden="true"><span>9:41</span><span>● ● ●</span></div>
-                  <div class="brand-row">
-                    <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">Revit</span></div>
-                    <span class="private-label">Private by default</span>
+                  <div class="statusbar" aria-hidden="true">
+                    <span>9:41</span><span>● ● ●</span>
+                  </div>
+                  <div class="brand">
+                    <span class="brand-mark" aria-hidden="true"></span
+                    ><span class="brand-name">Revit</span>
                   </div>
                 </div>
-
                 <div class="hero-copy">
-                  <p class="kicker">Your entertainment journal</p>
-                  <h2>Keep what you watch.</h2>
-                  <p>Plan the next story, log the last one, and remember what stayed with you.</p>
+                  <h2>Every story. Every world. <em>One journal.</em></h2>
+                  <p>
+                    Plan what is next, log what you finish, and keep the moments
+                    that stayed with you.
+                  </p>
+                  <span class="taxonomy">Movies · Series · Anime · Games</span>
                 </div>
               </section>
-
-              <section class="auth-panel" aria-labelledby="welcome-title">
-                <h3 id="welcome-title">Welcome to Revit</h3>
-                <p>Sign in once. Your journal stays with your account.</p>
-
-                <div class="provider-list">
-                  <button class="provider-button primary" id="googleButton" type="button">
-                    <span class="provider-mark" aria-hidden="true">G</span><span>Continue with Google</span>
-                  </button>
-                  <button class="provider-button" id="appleButton" type="button">
-                    <span class="provider-mark apple-mark" aria-hidden="true">A</span><span>Continue with Apple</span>
-                  </button>
-                </div>
-
-                <div class="divider">or</div>
-                <button class="email-action" id="emailAction" type="button" aria-haspopup="dialog">
-                  <span class="email-copy"><span class="email-icon" aria-hidden="true"></span><span>Continue with email</span></span><span class="arrow" aria-hidden="true">›</span>
+              <section class="auth-panel" aria-label="Sign in">
+                <button class="provider-button" id="googleButton" type="button">
+                  <span class="provider-mark" aria-hidden="true">G</span
+                  ><span>Continue with Google</span>
                 </button>
-
-                <div class="provider-error" id="providerError" role="alert">Google sign-in could not finish. Check your connection and try again.</div>
-
-                <p class="legal">By continuing, you agree to Revit’s <button type="button">Terms</button> and <button type="button">Privacy Policy</button>.</p>
+                <p class="provider-error" id="providerError" role="alert">
+                  Google sign-in could not finish. Check your connection and try
+                  again.
+                </p>
+                <p class="legal">
+                  By continuing, you agree to Revit’s
+                  <button type="button">Terms</button> and
+                  <button type="button">Privacy Policy</button>.
+                </p>
               </section>
-
-              <div class="scrim" id="scrim" aria-hidden="true"></div>
-              <section class="email-sheet" id="emailSheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="email-title">
-                <div class="grabber" aria-hidden="true"></div>
-                <div class="sheet-head"><h4 id="email-title">Continue with email</h4><button class="sheet-close" id="closeEmail" type="button" aria-label="Close email sign in">×</button></div>
-                <p class="sheet-copy">We’ll send a one-time code. No password to remember.</p>
-                <form id="emailForm" novalidate>
-                  <label class="email-label" for="email">Email address</label>
-                  <input class="email-field" id="email" type="email" autocomplete="email" placeholder="you@example.com" aria-describedby="emailNote" />
-                  <p class="email-note" id="emailNote">Use the address you want attached to your journal.</p>
-                  <button class="provider-button primary" id="sendCode" type="submit"><span>Send my code</span></button>
-                </form>
-              </section>
-
-              <div class="toast" id="toast" role="status" aria-live="polite"><span class="toast-dot" aria-hidden="true"></span><span id="toastMessage"></span></div>
+              <div class="toast" id="toast" role="status" aria-live="polite">
+                <span class="toast-dot" aria-hidden="true"></span
+                ><span id="toastMessage"></span>
+              </div>
             </div>
           </article>
         </section>
       </div>
-
-      <section class="audit-strip" aria-label="Impeccable design interventions">
-        <article class="audit-step"><span>/bolder</span><h3>Lead with the product</h3><p>A single cinematic image field gives Revit a memorable entrance without pretending the content is personalized.</p></article>
-        <article class="audit-step"><span>/distill</span><h3>Remove the auth card</h3><p>Provider actions sit directly in the page flow, eliminating the nested-card and tile-heavy feeling.</p></article>
-        <article class="audit-step"><span>/clarify</span><h3>Keep labels explicit</h3><p>Every button names the provider or next outcome. Email explains the one-time-code flow before submission.</p></article>
-        <article class="audit-step"><span>/harden</span><h3>Design the failure path</h3><p>Provider errors remain calm and retryable; email validation stays inline and preserves what the user typed.</p></article>
-      </section>
     </main>
-
     <script>
-      const googleButton = document.querySelector('#googleButton');
-      const appleButton = document.querySelector('#appleButton');
-      const providerError = document.querySelector('#providerError');
-      const emailAction = document.querySelector('#emailAction');
-      const visualStage = document.querySelector('.visual-stage');
-      const authPanel = document.querySelector('.auth-panel');
-      const emailSheet = document.querySelector('#emailSheet');
-      const closeEmail = document.querySelector('#closeEmail');
-      const scrim = document.querySelector('#scrim');
-      const emailForm = document.querySelector('#emailForm');
-      const email = document.querySelector('#email');
-      const emailNote = document.querySelector('#emailNote');
-      const sendCode = document.querySelector('#sendCode');
-      const toast = document.querySelector('#toast');
-      const toastMessage = document.querySelector('#toastMessage');
+      const googleButton = document.querySelector("#googleButton");
+      const providerError = document.querySelector("#providerError");
+      const visualStage = document.querySelector("#visualStage");
+      const frames = [...document.querySelectorAll(".hero-frame")];
+      const toast = document.querySelector("#toast");
+      const toastMessage = document.querySelector("#toastMessage");
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      let activeFrame = 0;
+      let rotationTimer;
       let toastTimer;
-
       function showToast(message) {
         toastMessage.textContent = message;
-        toast.classList.add('visible');
+        toast.classList.add("visible");
         window.clearTimeout(toastTimer);
-        toastTimer = window.setTimeout(() => toast.classList.remove('visible'), 2300);
+        toastTimer = window.setTimeout(
+          () => toast.classList.remove("visible"),
+          2300,
+        );
       }
-
-      function setLoading(button, provider) {
-        providerError.classList.remove('visible');
-        button.disabled = true;
-        button.innerHTML = `<span class="spinner" aria-hidden="true"></span><span>Opening ${provider}…</span>`;
+      function scheduleRotation() {
+        window.clearTimeout(rotationTimer);
+        if (reduceMotion || document.hidden) return;
+        rotationTimer = window.setTimeout(() => {
+          frames[activeFrame].classList.remove("active");
+          activeFrame = (activeFrame + 1) % frames.length;
+          frames[activeFrame].classList.add("active");
+          scheduleRotation();
+        }, 5600);
+      }
+      visualStage.addEventListener("mouseenter", () =>
+        window.clearTimeout(rotationTimer),
+      );
+      visualStage.addEventListener("mouseleave", scheduleRotation);
+      document.addEventListener("visibilitychange", scheduleRotation);
+      scheduleRotation();
+      googleButton.addEventListener("click", () => {
+        providerError.classList.remove("visible");
+        googleButton.disabled = true;
+        googleButton.innerHTML =
+          '<span class="spinner" aria-hidden="true"></span><span>Opening Google…</span>';
         window.setTimeout(() => {
-          button.disabled = false;
-          button.innerHTML = `<span class="provider-mark ${provider === 'Apple' ? 'apple-mark' : ''}" aria-hidden="true">${provider[0]}</span><span>Continue with ${provider}</span>`;
-          showToast(`${provider} sign-in would open securely.`);
+          googleButton.disabled = false;
+          googleButton.innerHTML =
+            '<span class="provider-mark" aria-hidden="true">G</span><span>Continue with Google</span>';
+          showToast("Google sign-in would open securely.");
         }, 850);
-      }
-
-      googleButton.addEventListener('click', () => setLoading(googleButton, 'Google'));
-      appleButton.addEventListener('click', () => setLoading(appleButton, 'Apple'));
-
-      function openEmailSheet() {
-        scrim.classList.add('visible');
-        scrim.setAttribute('aria-hidden', 'false');
-        emailSheet.classList.add('visible');
-        emailSheet.setAttribute('aria-hidden', 'false');
-        visualStage.inert = true;
-        authPanel.inert = true;
-        email.focus();
-      }
-
-      function hideEmailSheet() {
-        scrim.classList.remove('visible');
-        scrim.setAttribute('aria-hidden', 'true');
-        emailSheet.classList.remove('visible');
-        emailSheet.setAttribute('aria-hidden', 'true');
-        visualStage.inert = false;
-        authPanel.inert = false;
-        emailAction.focus();
-      }
-
-      emailAction.addEventListener('click', openEmailSheet);
-      closeEmail.addEventListener('click', hideEmailSheet);
-      scrim.addEventListener('click', hideEmailSheet);
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && emailSheet.classList.contains('visible')) hideEmailSheet();
       });
-
-      emailForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
-        email.setAttribute('aria-invalid', String(!valid));
-        emailNote.classList.toggle('error', !valid);
-        emailNote.textContent = valid ? 'Your code is ready to send.' : 'Enter a complete email address.';
-        if (!valid) {
-          email.focus();
-          return;
-        }
-        sendCode.disabled = true;
-        sendCode.innerHTML = '<span class="spinner" aria-hidden="true"></span><span>Sending code…</span>';
-        window.setTimeout(() => {
-          sendCode.disabled = false;
-          sendCode.innerHTML = '<span>Send my code</span>';
-          hideEmailSheet();
-          showToast(`Code sent to ${email.value.trim()}.`);
-        }, 700);
-      });
-
-      document.querySelectorAll('[data-platform]').forEach((control) => {
-        control.addEventListener('click', () => {
-          const platform = control.dataset.platform;
-          document.querySelectorAll('[data-platform]').forEach((item) => item.setAttribute('aria-pressed', String(item === control)));
-          appleButton.hidden = platform !== 'ios';
-          showToast(`${platform === 'ios' ? 'iOS' : 'Android'} sign-in options shown.`);
-        });
-      });
-
-      document.querySelector('#showError').addEventListener('click', () => {
-        providerError.classList.add('visible');
+      document.querySelector("#showError").addEventListener("click", () => {
+        providerError.classList.add("visible");
         googleButton.focus();
       });
-
-      document.querySelector('#resetPrototype').addEventListener('click', () => {
-        providerError.classList.remove('visible');
-        appleButton.hidden = false;
-        document.querySelectorAll('[data-platform]').forEach((item) => item.setAttribute('aria-pressed', String(item.dataset.platform === 'ios')));
-        emailForm.reset();
-        email.removeAttribute('aria-invalid');
-        emailNote.classList.remove('error');
-        emailNote.textContent = 'Use the address you want attached to your journal.';
-        hideEmailSheet();
-      });
+      document
+        .querySelector("#resetPrototype")
+        .addEventListener("click", () => {
+          providerError.classList.remove("visible");
+          toast.classList.remove("visible");
+        });
     </script>
   </body>
 </html>

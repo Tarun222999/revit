@@ -134,8 +134,8 @@ function ListsLoadedContent({
               Build your first collection
             </Text>
             <Text className="text-sm leading-5 text-archive-300">
-              Lists are for hand-picked shelves that mix movies, series, and
-              anime without changing the journal log.
+              Lists are for hand-picked shelves that mix supported titles
+              without changing the journal log.
             </Text>
           </View>
         </View>

@@ -35,6 +35,13 @@ declare module 'npm:@supabase/supabase-js@2.106.1' {
       };
     },
   ): {
+    rpc: (
+      functionName: string,
+      args?: Record<string, unknown>,
+    ) => Promise<{
+      data: unknown;
+      error: unknown;
+    }>;
     auth: {
       getUser: () => Promise<{
         data: {

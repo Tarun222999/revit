@@ -1,11 +1,9 @@
-import {
-  errorResponse,
-  handleOptions,
-  HttpError,
-  jsonResponse,
-} from '../_shared/cors.ts';
-import { createServiceClient, requireAuth } from '../_shared/auth.ts';
-import { fetchTmdb } from '../_shared/tmdb.ts';
+import { HttpError } from "../_shared/cors.ts";
+import { createServiceClient, requireAuth } from "../_shared/auth.ts";
+import { requireGamesFeatureEnabled } from "../_shared/app-capabilities.ts";
+import { createIgdbClient } from "../_shared/igdb.ts";
+import type { IgdbGame } from "../_shared/igdb-types.ts";
+import { fetchTmdb } from "../_shared/tmdb.ts";
 import {
   isLikelyAnime,
   normalizeTmdbMovie,
@@ -13,16 +11,25 @@ import {
   type NormalizedMediaItem,
   type TmdbMovieResult,
   type TmdbTvResult,
-} from '../_shared/media-normalizers.ts';
-
-type DiscoverMode = 'trending' | 'new_releases' | 'top_rated';
-type DiscoverMediaType = 'movie' | 'series' | 'anime';
-
-type MediaDiscoverRequest = {
-  mode?: unknown;
-  mediaType?: unknown;
-  page?: unknown;
-};
+} from "../_shared/media-normalizers.ts";
+import {
+  buildIgdbDiscoverQuery,
+  buildIgdbGamesByIdQuery,
+  buildIgdbPopularityQuery,
+  getRankedPopularityGameIds,
+  igdbDiscoverTotalPages,
+  normalizeIgdbDiscoverResults,
+  orderGamesByPopularity,
+  paginateTrendingGames,
+  type IgdbPopularityPrimitive,
+} from "./games-discover.ts";
+import {
+  createMediaDiscoverHandler,
+  type DiscoverCacheRow,
+  type DiscoverMediaType,
+  type DiscoverMode,
+  type DiscoverResponse,
+} from "./media-discover-handler.ts";
 
 type TmdbPagedResponse<T> = {
   page: number;
@@ -31,29 +38,10 @@ type TmdbPagedResponse<T> = {
   total_results: number;
 };
 
-type DiscoverResponse = {
-  results: NormalizedMediaItem[];
-  page: number;
-  totalPages: number;
-  cachedAt: string;
-};
-
 type CacheRow = {
   response: unknown;
   expires_at: string;
 };
-
-const DISCOVER_MODES = new Set<DiscoverMode>([
-  'trending',
-  'new_releases',
-  'top_rated',
-]);
-
-const DISCOVER_MEDIA_TYPES = new Set<DiscoverMediaType>([
-  'movie',
-  'series',
-  'anime',
-]);
 
 const CACHE_TTL_MS: Record<DiscoverMode, number> = {
   trending: 3 * 60 * 60 * 1000,
@@ -63,57 +51,12 @@ const CACHE_TTL_MS: Record<DiscoverMode, number> = {
 const ANIME_TRENDING_PAGE_SCAN_LIMIT = 4;
 const DISCOVER_PAGE_SIZE = 20;
 
-function parsePage(value: unknown) {
-  if (typeof value !== 'number' || !Number.isInteger(value)) {
-    return 1;
-  }
-
-  return Math.min(Math.max(value, 1), 500);
-}
-
-function parseRequest(body: MediaDiscoverRequest) {
-  if (
-    typeof body.mode !== 'string' ||
-    !DISCOVER_MODES.has(body.mode as DiscoverMode)
-  ) {
-    throw new HttpError(400, 'A valid discovery mode is required.');
-  }
-
-  if (
-    typeof body.mediaType !== 'string' ||
-    !DISCOVER_MEDIA_TYPES.has(body.mediaType as DiscoverMediaType)
-  ) {
-    throw new HttpError(400, 'A valid discovery media type is required.');
-  }
-
-  return {
-    mode: body.mode as DiscoverMode,
-    mediaType: body.mediaType as DiscoverMediaType,
-    page: parsePage(body.page),
-  };
-}
-
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
 function expiresAtFor(mode: DiscoverMode) {
   return new Date(Date.now() + CACHE_TTL_MS[mode]).toISOString();
-}
-
-function isDiscoverResponse(value: unknown): value is DiscoverResponse {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-
-  const response = value as Partial<DiscoverResponse>;
-
-  return (
-    Array.isArray(response.results) &&
-    typeof response.page === 'number' &&
-    typeof response.totalPages === 'number' &&
-    typeof response.cachedAt === 'string'
-  );
 }
 
 function normalizeMovieResults(results: TmdbMovieResult[]) {
@@ -146,10 +89,10 @@ function dedupeMediaItems(items: NormalizedMediaItem[]) {
 }
 
 async function fetchMovieDiscover(mode: DiscoverMode, page: number) {
-  if (mode === 'trending') {
+  if (mode === "trending") {
     const response = await fetchTmdb<TmdbPagedResponse<TmdbMovieResult>>(
-      '/trending/movie/week',
-      { language: 'en-US', page },
+      "/trending/movie/week",
+      { language: "en-US", page },
     );
 
     return {
@@ -158,10 +101,10 @@ async function fetchMovieDiscover(mode: DiscoverMode, page: number) {
     };
   }
 
-  if (mode === 'new_releases') {
+  if (mode === "new_releases") {
     const response = await fetchTmdb<TmdbPagedResponse<TmdbMovieResult>>(
-      '/movie/now_playing',
-      { language: 'en-US', page },
+      "/movie/now_playing",
+      { language: "en-US", page },
     );
 
     return {
@@ -171,8 +114,8 @@ async function fetchMovieDiscover(mode: DiscoverMode, page: number) {
   }
 
   const response = await fetchTmdb<TmdbPagedResponse<TmdbMovieResult>>(
-    '/movie/top_rated',
-    { language: 'en-US', page },
+    "/movie/top_rated",
+    { language: "en-US", page },
   );
 
   return {
@@ -182,10 +125,10 @@ async function fetchMovieDiscover(mode: DiscoverMode, page: number) {
 }
 
 async function fetchSeriesDiscover(mode: DiscoverMode, page: number) {
-  if (mode === 'trending') {
+  if (mode === "trending") {
     const response = await fetchTmdb<TmdbPagedResponse<TmdbTvResult>>(
-      '/trending/tv/week',
-      { language: 'en-US', page },
+      "/trending/tv/week",
+      { language: "en-US", page },
     );
 
     return {
@@ -194,10 +137,10 @@ async function fetchSeriesDiscover(mode: DiscoverMode, page: number) {
     };
   }
 
-  if (mode === 'new_releases') {
+  if (mode === "new_releases") {
     const response = await fetchTmdb<TmdbPagedResponse<TmdbTvResult>>(
-      '/tv/on_the_air',
-      { language: 'en-US', page },
+      "/tv/on_the_air",
+      { language: "en-US", page },
     );
 
     return {
@@ -207,8 +150,8 @@ async function fetchSeriesDiscover(mode: DiscoverMode, page: number) {
   }
 
   const response = await fetchTmdb<TmdbPagedResponse<TmdbTvResult>>(
-    '/tv/top_rated',
-    { language: 'en-US', page },
+    "/tv/top_rated",
+    { language: "en-US", page },
   );
 
   return {
@@ -218,12 +161,12 @@ async function fetchSeriesDiscover(mode: DiscoverMode, page: number) {
 }
 
 async function fetchAnimeDiscover(mode: DiscoverMode, page: number) {
-  if (mode === 'trending') {
+  if (mode === "trending") {
     const startPage = (page - 1) * ANIME_TRENDING_PAGE_SCAN_LIMIT + 1;
     const scannedResponses = await Promise.all(
       Array.from({ length: ANIME_TRENDING_PAGE_SCAN_LIMIT }, (_, index) =>
-        fetchTmdb<TmdbPagedResponse<TmdbTvResult>>('/trending/tv/week', {
-          language: 'en-US',
+        fetchTmdb<TmdbPagedResponse<TmdbTvResult>>("/trending/tv/week", {
+          language: "en-US",
           page: startPage + index,
         }),
       ),
@@ -238,24 +181,25 @@ async function fetchAnimeDiscover(mode: DiscoverMode, page: number) {
       totalPages: Math.max(
         1,
         Math.floor(
-          Math.max(...scannedResponses.map((response) => response.total_pages)) /
-            ANIME_TRENDING_PAGE_SCAN_LIMIT,
+          Math.max(
+            ...scannedResponses.map((response) => response.total_pages),
+          ) / ANIME_TRENDING_PAGE_SCAN_LIMIT,
         ),
       ),
     };
   }
 
-  if (mode === 'new_releases') {
+  if (mode === "new_releases") {
     const response = await fetchTmdb<TmdbPagedResponse<TmdbTvResult>>(
-      '/discover/tv',
+      "/discover/tv",
       {
-        'first_air_date.lte': todayIsoDate(),
-        language: 'en-US',
+        "first_air_date.lte": todayIsoDate(),
+        language: "en-US",
         page,
-        sort_by: 'first_air_date.desc',
-        with_genres: '16',
-        with_origin_country: 'JP',
-        with_original_language: 'ja',
+        sort_by: "first_air_date.desc",
+        with_genres: "16",
+        with_origin_country: "JP",
+        with_original_language: "ja",
       },
     );
 
@@ -266,15 +210,15 @@ async function fetchAnimeDiscover(mode: DiscoverMode, page: number) {
   }
 
   const response = await fetchTmdb<TmdbPagedResponse<TmdbTvResult>>(
-    '/discover/tv',
+    "/discover/tv",
     {
-      language: 'en-US',
+      language: "en-US",
       page,
-      sort_by: 'vote_average.desc',
-      'vote_count.gte': 100,
-      with_genres: '16',
-      with_origin_country: 'JP',
-      with_original_language: 'ja',
+      sort_by: "vote_average.desc",
+      "vote_count.gte": 100,
+      with_genres: "16",
+      with_origin_country: "JP",
+      with_original_language: "ja",
     },
   );
 
@@ -284,17 +228,52 @@ async function fetchAnimeDiscover(mode: DiscoverMode, page: number) {
   };
 }
 
+async function fetchGameDiscover(mode: DiscoverMode, page: number) {
+  const client = createIgdbClient();
+
+  if (mode === "trending") {
+    const primitives = await client.queryPopularityPrimitives<IgdbPopularityPrimitive>(
+      buildIgdbPopularityQuery(),
+    );
+    const rankedGameIds = getRankedPopularityGameIds(primitives);
+    const detailsQuery = buildIgdbGamesByIdQuery(rankedGameIds);
+    if (!detailsQuery) {
+      return { results: [], totalPages: 1 };
+    }
+
+    const games = await client.queryGames<IgdbGame>(detailsQuery);
+    const eligible = normalizeIgdbDiscoverResults(
+      mode,
+      orderGamesByPopularity(games, rankedGameIds),
+    );
+    return paginateTrendingGames(eligible, page);
+  }
+
+  const games = await client.queryGames<IgdbGame>(
+    buildIgdbDiscoverQuery(mode, page),
+  );
+
+  return {
+    results: dedupeMediaItems(normalizeIgdbDiscoverResults(mode, games)),
+    totalPages: igdbDiscoverTotalPages(page, games.length),
+  };
+}
+
 async function fetchDiscoveryResults(
   mode: DiscoverMode,
   mediaType: DiscoverMediaType,
   page: number,
 ) {
-  if (mediaType === 'movie') {
+  if (mediaType === "movie") {
     return fetchMovieDiscover(mode, page);
   }
 
-  if (mediaType === 'series') {
+  if (mediaType === "series") {
     return fetchSeriesDiscover(mode, page);
+  }
+
+  if (mediaType === "game") {
+    return fetchGameDiscover(mode, page);
   }
 
   return fetchAnimeDiscover(mode, page);
@@ -304,19 +283,19 @@ async function readCachedResponse(
   mode: DiscoverMode,
   mediaType: DiscoverMediaType,
   page: number,
-) {
+): Promise<DiscoverCacheRow | null> {
   const supabase = createServiceClient();
   const { data, error } = await supabase
-    .from('media_discovery_cache')
-    .select('response, expires_at')
-    .eq('mode', mode)
-    .eq('media_type', mediaType)
-    .eq('page', page)
+    .from("media_discovery_cache")
+    .select("response, expires_at")
+    .eq("mode", mode)
+    .eq("media_type", mediaType)
+    .eq("page", page)
     .maybeSingle();
 
   if (error) {
     console.error(error);
-    throw new HttpError(500, 'Unable to load discovery cache.');
+    throw new HttpError(500, "Unable to load discovery cache.");
   }
 
   if (!data) {
@@ -325,11 +304,10 @@ async function readCachedResponse(
 
   const row = data as CacheRow;
 
-  if (new Date(row.expires_at).getTime() <= Date.now()) {
-    return null;
-  }
-
-  return isDiscoverResponse(row.response) ? row.response : null;
+  return {
+    expiresAt: row.expires_at,
+    response: row.response,
+  };
 }
 
 async function writeCachedResponse(
@@ -340,7 +318,7 @@ async function writeCachedResponse(
 ) {
   const supabase = createServiceClient();
   const { error } = await supabase
-    .from('media_discovery_cache')
+    .from("media_discovery_cache")
     .upsert(
       {
         cached_at: response.cachedAt,
@@ -351,52 +329,24 @@ async function writeCachedResponse(
         response,
       },
       {
-        onConflict: 'mode,media_type,page',
+        onConflict: "mode,media_type,page",
       },
     )
-    .select('mode')
+    .select("mode")
     .single();
 
   if (error) {
     console.error(error);
-    throw new HttpError(500, 'Unable to save discovery cache.');
+    throw new HttpError(500, "Unable to save discovery cache.");
   }
 }
 
-Deno.serve(async (request) => {
-  const optionsResponse = handleOptions(request);
-
-  if (optionsResponse) {
-    return optionsResponse;
-  }
-
-  try {
-    if (request.method !== 'POST') {
-      throw new HttpError(405, 'Method not allowed.');
-    }
-
-    await requireAuth(request);
-
-    const body = (await request.json()) as MediaDiscoverRequest;
-    const { mode, mediaType, page } = parseRequest(body);
-    const cachedResponse = await readCachedResponse(mode, mediaType, page);
-
-    if (cachedResponse) {
-      return jsonResponse(cachedResponse);
-    }
-
-    const discovery = await fetchDiscoveryResults(mode, mediaType, page);
-    const response: DiscoverResponse = {
-      cachedAt: new Date().toISOString(),
-      page,
-      results: discovery.results,
-      totalPages: discovery.totalPages,
-    };
-
-    await writeCachedResponse(mode, mediaType, page, response);
-
-    return jsonResponse(response);
-  } catch (error) {
-    return errorResponse(error);
-  }
-});
+Deno.serve(
+  createMediaDiscoverHandler({
+    assertGamesEnabled: requireGamesFeatureEnabled,
+    authenticate: requireAuth,
+    fetchDiscovery: fetchDiscoveryResults,
+    readCache: readCachedResponse,
+    writeCache: writeCachedResponse,
+  }),
+);

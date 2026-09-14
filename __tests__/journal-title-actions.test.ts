@@ -8,6 +8,7 @@ function summary(
   return {
     activityCount: options?.activityCount ?? 1,
     completedWatchCount: status === 'completed' ? 1 : 0,
+    latestActivityEvent: null,
     latestCompletedEvent: null,
     titleState: {
       activePlan:
@@ -54,6 +55,13 @@ describe('Title Details Journal action matrix', () => {
     expect(getJournalTitleActions('series', summary('in_progress')).primary).toMatchObject({
       intent: 'finish',
       label: 'Mark finished',
+    });
+  });
+
+  it('opens an existing game play for update instead of creating another start', () => {
+    expect(getJournalTitleActions('game', summary('in_progress')).primary).toMatchObject({
+      intent: 'edit_event',
+      label: 'Update playing',
     });
   });
 

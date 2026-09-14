@@ -1,11 +1,10 @@
-import {
-  errorResponse,
-  handleOptions,
-  HttpError,
-  jsonResponse,
-} from '../_shared/cors.ts';
+import { HttpError } from '../_shared/cors.ts';
 import { createServiceClient, requireAuth } from '../_shared/auth.ts';
+import { getAppCapabilities } from '../_shared/app-capabilities.ts';
 import { fetchTmdb } from '../_shared/tmdb.ts';
+import { createIgdbClient } from '../_shared/igdb.ts';
+import { fetchNormalizedIgdbDetails } from '../_shared/igdb-details.ts';
+import { createMediaDetailsHandler } from '../_shared/media-details-handler.ts';
 import {
   fromMediaItemRow,
   type MediaItemRow,
@@ -17,12 +16,6 @@ import {
   type TmdbMovieResult,
   type TmdbTvResult,
 } from '../_shared/media-normalizers.ts';
-
-type MediaDetailsRequest = {
-  mediaItemId?: unknown;
-  source?: unknown;
-  sourceId?: unknown;
-};
 
 type ParsedSourceId = {
   kind: 'movie' | 'tv';
@@ -39,26 +32,9 @@ function parseTmdbSourceId(sourceId: string): ParsedSourceId {
   return { kind, tmdbId };
 }
 
-function parseRequest(body: MediaDetailsRequest) {
-  if (typeof body.mediaItemId === 'string' && body.mediaItemId.trim()) {
-    return {
-      kind: 'mediaItemId' as const,
-      mediaItemId: body.mediaItemId.trim(),
-    };
-  }
-
-  if (body.source !== 'tmdb' || typeof body.sourceId !== 'string') {
-    throw new HttpError(400, 'Media source and source id are required.');
-  }
-
-  return {
-    kind: 'sourceId' as const,
-    source: body.source as MediaSource,
-    sourceId: body.sourceId.trim(),
-  };
-}
-
-async function fetchTmdbDetails(sourceId: string): Promise<NormalizedMediaItem> {
+async function fetchTmdbDetails(
+  sourceId: string,
+): Promise<NormalizedMediaItem> {
   const { kind, tmdbId } = parseTmdbSourceId(sourceId);
 
   if (kind === 'movie') {
@@ -74,6 +50,13 @@ async function fetchTmdbDetails(sourceId: string): Promise<NormalizedMediaItem> 
   });
 
   return normalizeTmdbTv(tv);
+}
+
+async function fetchIgdbDetails(
+  sourceId: string,
+): Promise<NormalizedMediaItem> {
+  const client = createIgdbClient();
+  return fetchNormalizedIgdbDetails(client, sourceId);
 }
 
 async function loadMediaItemById(mediaItemId: string) {
@@ -131,42 +114,14 @@ async function upsertMediaItem(item: NormalizedMediaItem) {
   return fromMediaItemRow(data as MediaItemRow);
 }
 
-Deno.serve(async (request) => {
-  const optionsResponse = handleOptions(request);
-
-  if (optionsResponse) {
-    return optionsResponse;
-  }
-
-  try {
-    if (request.method !== 'POST') {
-      throw new HttpError(405, 'Method not allowed.');
-    }
-
-    await requireAuth(request);
-
-    const body = (await request.json()) as MediaDetailsRequest;
-    const parsedRequest = parseRequest(body);
-
-    if (parsedRequest.kind === 'mediaItemId') {
-      const item = await loadMediaItemById(parsedRequest.mediaItemId);
-      return jsonResponse({ item });
-    }
-
-    const existingItem = await loadMediaItemBySourceId(
-      parsedRequest.source,
-      parsedRequest.sourceId,
-    );
-
-    if (existingItem) {
-      return jsonResponse({ item: existingItem });
-    }
-
-    const item = await fetchTmdbDetails(parsedRequest.sourceId);
-    const savedItem = await upsertMediaItem(item);
-
-    return jsonResponse({ item: savedItem });
-  } catch (error) {
-    return errorResponse(error);
-  }
+const handler = createMediaDetailsHandler({
+  fetchIgdbDetails,
+  fetchTmdbDetails,
+  gamesEnabled: () => getAppCapabilities().gamesEnabled,
+  loadMediaItemById,
+  loadMediaItemBySourceId,
+  requireAuth,
+  upsertMediaItem,
 });
+
+Deno.serve(handler);

@@ -28,6 +28,13 @@ export type MediaTrailerResult = {
 };
 
 export function createMediaRouteId(item: Pick<NormalizedMediaItem, 'id' | 'source' | 'sourceId'>) {
+  // IGDB ids are provider-local and can overlap with TMDB ids. Keep the
+  // provider in the route even when this title already has a persisted row so
+  // list navigation can never resolve a game as a different media type.
+  if (item.source === 'igdb') {
+    return `${item.source}:${item.sourceId}`;
+  }
+
   if (item.id) {
     return item.id;
   }

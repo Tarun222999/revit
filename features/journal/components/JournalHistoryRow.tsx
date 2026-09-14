@@ -17,9 +17,11 @@ export function getJournalHistoryEventLabel(
   event: JournalEvent,
   completedIndex: number,
   completedCount: number,
+  isGame = false,
 ) {
-  if (event.type === 'started') return 'Started watching';
-  if (event.type === 'stopped') return 'Stopped watching';
+  if (event.type === 'started') return isGame ? 'Started playing' : 'Started watching';
+  if (event.type === 'stopped') return isGame ? 'Stopped playing' : 'Stopped watching';
+  if (isGame) return 'Finished playing';
   return completedIndex < completedCount - 1 ? 'Rewatched' : 'Watched';
 }
 
@@ -32,6 +34,8 @@ export function JournalHistoryRow({
   onEdit,
   onToggleMenu,
   pending,
+  isGame = false,
+  allowEdit = true,
 }: {
   completedCount: number;
   completedIndex: number;
@@ -41,8 +45,10 @@ export function JournalHistoryRow({
   onEdit: () => void;
   onToggleMenu: () => void;
   pending: boolean;
+  isGame?: boolean;
+  allowEdit?: boolean;
 }) {
-  const label = getJournalHistoryEventLabel(event, completedIndex, completedCount);
+  const label = getJournalHistoryEventLabel(event, completedIndex, completedCount, isGame);
   const date = formatJournalHistoryDate(event.eventDate);
 
   return (
@@ -60,6 +66,9 @@ export function JournalHistoryRow({
             <Text className="text-sm leading-5 text-archive-300" numberOfLines={3}>
               {event.notes}
             </Text>
+          ) : null}
+          {event.playedOnPlatform ? (
+            <Text className="text-sm text-archive-300">Played on · {event.playedOnPlatform}</Text>
           ) : null}
         </View>
         <View className="items-end gap-2">
@@ -91,9 +100,9 @@ export function JournalHistoryRow({
 
       {menuOpen ? (
         <View className="flex-row justify-end gap-2 border-t border-archive-700 pt-3">
-          <Pressable
-            accessibilityHint="Opens this watch for editing."
-            accessibilityLabel="Edit watch"
+          {allowEdit ? <Pressable
+            accessibilityHint={`Opens this ${isGame ? 'play' : 'watch'} for editing.`}
+            accessibilityLabel={isGame ? 'Edit play' : 'Edit watch'}
             accessibilityRole="button"
             accessibilityState={{ disabled: pending }}
             className={`min-h-12 min-w-12 items-center justify-center rounded-app border border-archive-500 bg-archive-900 ${pending ? 'opacity-50' : ''}`}
@@ -102,10 +111,10 @@ export function JournalHistoryRow({
             testID="journal-history-edit"
           >
             <Ionicons color="#fbf6ec" name="create-outline" size={22} />
-          </Pressable>
+          </Pressable> : null}
           <Pressable
-            accessibilityHint="Permanently removes this watch after confirmation."
-            accessibilityLabel="Delete watch"
+            accessibilityHint={`Permanently removes this ${isGame ? 'play' : 'watch'} after confirmation.`}
+            accessibilityLabel={isGame ? 'Delete play' : 'Delete watch'}
             accessibilityRole="button"
             accessibilityState={{ disabled: pending }}
             className={`min-h-12 min-w-12 items-center justify-center rounded-app bg-reel-500 ${pending ? 'opacity-50' : ''}`}

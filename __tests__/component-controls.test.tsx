@@ -189,6 +189,60 @@ describe('title details hero', () => {
 });
 
 describe('cinematic title-detail controls', () => {
+  it('closes an open More drawer but preserves privacy actions when Journal capability is lost', async () => {
+    const onRemovePlan = jest.fn();
+    const summary = {
+      activityCount: 0,
+      completedWatchCount: 0,
+      latestCompletedEvent: null,
+      titleState: {
+        activePlan: { plannedFor: null },
+        id: 'entry-1',
+        mediaItemId: 'media-1',
+        status: 'planned' as const,
+        undatedCompletedCount: 0,
+      },
+    };
+    const renderActions = (canUseJournal: boolean) => (
+      <TitleDetailsJournalActions
+        addToListLoading={false}
+        canAddToList={false}
+        canUseJournal={canUseJournal}
+        isSignedIn
+        mediaType="game"
+        onAddToList={jest.fn()}
+        onIntent={jest.fn()}
+        onRemovePlan={onRemovePlan}
+        onRemoveTitle={jest.fn()}
+        onSignIn={jest.fn()}
+        onWatchTrailer={jest.fn()}
+        removing={false}
+        showTrailer={false}
+        summary={summary}
+      />
+    );
+
+    const { rerender } = await render(renderActions(true));
+    await fireEvent.press(screen.getByRole('button', { name: 'More actions' }));
+    expect(screen.getByRole('button', { name: 'Remove plan' })).toBeTruthy();
+
+    await rerender(renderActions(false));
+    expect(screen.queryByRole('button', { name: 'Remove plan' })).toBeNull();
+    expect(
+      screen.getByRole('button', { name: 'More actions' }).props
+        .accessibilityState,
+    ).toEqual({ disabled: false });
+
+    await fireEvent.press(screen.getByRole('button', { name: 'More actions' }));
+    expect(screen.getByRole('button', { name: 'Remove plan' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Remove plan' }));
+    expect(onRemovePlan).toHaveBeenCalledTimes(1);
+
+    await rerender(renderActions(true));
+    expect(screen.queryByRole('button', { name: 'Remove plan' })).toBeNull();
+    expect(onRemovePlan).toHaveBeenCalledTimes(1);
+  });
+
   it('exposes only Remove plan for a plan-only title', async () => {
     await render(
       <TitleDetailsJournalActions
@@ -361,6 +415,8 @@ describe('cinematic title-detail controls', () => {
             activePlan: null,
             id: 'entry-1',
             mediaItemId: 'media-1',
+            rating: 4.5,
+            reviewBody: 'Still excellent.',
             status: 'completed',
             undatedCompletedCount: 0,
           },
@@ -372,6 +428,48 @@ describe('cinematic title-detail controls', () => {
 
     expect(screen.getByText('1 watch')).toBeTruthy();
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('prioritizes an active game replay over a prior completed play', async () => {
+    await render(
+      <YourJournalSummary
+        mediaType="game"
+        summary={{
+          activityCount: 2,
+          completedWatchCount: 1,
+          latestActivityEvent: {
+            eventDate: '2026-08-12',
+            id: 'event-started',
+            journalEntryId: 'entry-game',
+            notes: 'Trying a new build.',
+            rating: 4,
+            type: 'started',
+          },
+          latestCompletedEvent: {
+            eventDate: '2026-08-10',
+            id: 'event-completed',
+            journalEntryId: 'entry-game',
+            notes: 'Old completion note.',
+            rating: 5,
+            type: 'completed',
+          },
+          titleState: {
+            activePlan: null,
+            id: 'entry-game',
+            mediaItemId: 'game-1',
+            rating: 4,
+            reviewBody: 'Trying a new build.',
+            status: 'in_progress',
+            undatedCompletedCount: 0,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Playing now')).toBeTruthy();
+    expect(screen.getByText('4 / 5')).toBeTruthy();
+    expect(screen.getByText('Trying a new build.')).toBeTruthy();
+    expect(screen.getByText('1 play')).toBeTruthy();
   });
 });
 

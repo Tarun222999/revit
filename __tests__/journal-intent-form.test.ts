@@ -47,7 +47,7 @@ describe('intent-based Journal form', () => {
   it('hydrates one selected event without merging another watch', () => {
     expect(
       createJournalIntentFormValues('edit_event', { event: completedEvent }),
-    ).toEqual({ date: '2026-07-20', notes: 'Original note', rating: 4 });
+    ).toEqual({ date: '2026-07-20', notes: 'Original note', playedOnPlatform: '', rating: 4 });
   });
 
   it('enforces plan and activity date boundaries', () => {
@@ -94,6 +94,8 @@ describe('intent-based Journal form', () => {
     expect(hasJournalIntentFormChanged(initial, { ...initial, notes: 'New' })).toBe(true);
     expect(allowsRating('stop')).toBe(false);
     expect(allowsRating('edit_event', completedEvent)).toBe(true);
+    expect(allowsRating('edit_event', { ...completedEvent, type: 'started' }, 'game')).toBe(true);
+    expect(allowsRating('edit_event', { ...completedEvent, type: 'started' }, 'series')).toBe(false);
   });
 
   it('maps form actions to lifecycle operations and creates valid request ids', () => {

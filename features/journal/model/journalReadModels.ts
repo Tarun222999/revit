@@ -26,6 +26,8 @@ export type JournalTitleStateRow = Pick<
   | 'effective_status'
   | 'has_active_plan'
   | 'planned_for'
+  | 'rating'
+  | 'review_body'
   | 'undated_completed_count'
 >;
 
@@ -137,7 +139,9 @@ export function toJournalTitleState(row: JournalTitleStateRow): JournalTitleStat
   return {
     activePlan: row.has_active_plan ? { plannedFor: row.planned_for } : null,
     id: row.id,
-    mediaItemId: row.media_item_id,
+      mediaItemId: row.media_item_id,
+      rating: row.rating,
+      reviewBody: row.review_body,
     status: row.effective_status,
     undatedCompletedCount: row.undated_completed_count,
   };
@@ -163,6 +167,7 @@ export function toJournalEvent(row: JournalEventRow): JournalEvent {
     id: row.id,
     journalEntryId: row.journal_entry_id,
     notes: row.notes,
+    playedOnPlatform: row.played_on_platform,
     rating: row.rating,
     type: row.event_type,
   };

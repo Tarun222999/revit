@@ -105,7 +105,7 @@ export function ListForm({
             {isEditMode ? 'Edit List' : 'Create List'}
           </Text>
           <Text className="text-sm leading-5 text-archive-300">
-            Lists can mix movies, series, and anime by default.
+            Lists can mix supported titles by default.
           </Text>
         </View>
       ) : null}

@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import PagerView, { type PagerViewRef } from '@/components/ui/PagerView';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -32,6 +33,7 @@ import { createMediaRouteId } from '@/features/media/api/media-api';
 import { cn } from '@/lib/utils/cn';
 
 type JournalView = JournalNavigationView;
+const JOURNAL_VIEWS: JournalView[] = ['timeline', 'planner', 'calendar'];
 
 function openMedia(media: {
   id: string;
@@ -194,7 +196,11 @@ export function JournalScreen() {
     getJournalCalendarMonthDate(localToday()),
   );
   const [calendarDate, setCalendarDate] = useState(localToday);
-  const setView = useCallback((view: JournalView) => setActiveView(view), []);
+  const pagerRef = useRef<PagerViewRef>(null);
+  const setView = useCallback((view: JournalView) => {
+    pagerRef.current?.setPage(JOURNAL_VIEWS.indexOf(view));
+    setActiveView(view);
+  }, []);
   const fastCapture = getJournalFastCapture(activeView);
   const openFastCapture = () => {
     if (!user) {
@@ -243,29 +249,24 @@ export function JournalScreen() {
           />
         </View>
       ) : null}
-      {!loading && user && activeView === 'timeline' ? (
-        <TimelineContent
-          filters={timelineFilters}
-          onFiltersChange={setTimelineFilters}
-          userId={user.id}
-        />
-      ) : null}
-      {!loading && user && activeView === 'calendar' ? (
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="gap-5 px-5 pb-28 pt-5"
-          showsVerticalScrollIndicator={false}>
-          <JournalEventCalendarView
-            monthDate={calendarMonth}
-            onMonthChange={setCalendarMonth}
-            onSelectedDateChange={setCalendarDate}
-            selectedDate={calendarDate}
-            userId={user.id}
-          />
-        </ScrollView>
-      ) : null}
-      {!loading && user && activeView === 'planner' ? (
-        <JournalPlannerView userId={user.id} />
+      {!loading && user ? (
+        <PagerView
+          ref={pagerRef}
+          initialPage={0}
+          style={{ flex: 1 }}
+          onPageSelected={(event) => setActiveView(JOURNAL_VIEWS[event.nativeEvent.position]!)}>
+          <View key="timeline" style={{ flex: 1 }}>
+            <TimelineContent filters={timelineFilters} onFiltersChange={setTimelineFilters} userId={user.id} />
+          </View>
+          <View key="planner" style={{ flex: 1 }}>
+            <JournalPlannerView userId={user.id} />
+          </View>
+          <View key="calendar" style={{ flex: 1 }}>
+            <ScrollView className="flex-1" contentContainerClassName="gap-5 px-5 pb-28 pt-5" showsVerticalScrollIndicator={false}>
+              <JournalEventCalendarView monthDate={calendarMonth} onMonthChange={setCalendarMonth} onSelectedDateChange={setCalendarDate} selectedDate={calendarDate} userId={user.id} />
+            </ScrollView>
+          </View>
+        </PagerView>
       ) : null}
     </Screen>
   );

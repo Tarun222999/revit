@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { useOptionalAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import { JournalDiscardConfirmation } from '@/features/journal/components/JournalDiscardConfirmation';
 import { JournalActionConfirmation } from '@/features/journal/components/JournalActionConfirmation';
 import { JournalEntryModalFrame } from '@/features/journal/components/JournalEntryModalFrame';
@@ -29,7 +30,7 @@ import {
   isPlanningIntent,
   isCompletedIntent,
   isFutureReleaseDate,
-  JOURNAL_INTENT_COPY,
+  getJournalIntentCopy,
   lifecycleIntentForForm,
   localToday,
   validateJournalIntentForm,
@@ -101,6 +102,7 @@ export function JournalEntryModalScreen({
       ? 'history'
       : 'title';
   const { user } = useAuth();
+  const { gamesEnabled } = useOptionalAppCapabilities();
   const detailsQuery = useMediaDetails(mediaItemId);
   const summaryQuery = useJournalTitleSummary(user?.id, mediaItemId);
   const eventQuery = useJournalEvent(
@@ -130,7 +132,7 @@ export function JournalEntryModalScreen({
     [intent, today, values],
   );
   const isDirty = hasJournalIntentFormChanged(initialValuesRef.current, values);
-  const copy = JOURNAL_INTENT_COPY[intent];
+  const copy = getJournalIntentCopy(intent, detailsQuery.data?.item?.mediaType);
   const closeModal = () => {
     if (returnToJournal) router.dismissTo('/journal');
     else router.back();
@@ -237,14 +239,20 @@ export function JournalEntryModalScreen({
       setSubmitError(null);
 
       if (isPlanningIntent(intent)) {
-        await savePlan.mutateAsync({ mediaItemId, plannedFor: values.date, today });
+        await savePlan.mutateAsync({ mediaItemId, mediaType: detailsQuery.data?.item?.mediaType, plannedFor: values.date, today });
       } else if (intent === 'edit_event') {
         if (!eventId || !values.date) throw new Error('This activity is unavailable.');
         await updateEvent.mutateAsync({
           eventDate: values.date,
           eventId,
           notes: values.notes.trim(),
-          rating: eventQuery.data?.type === 'completed' ? values.rating : null,
+          mediaType: detailsQuery.data?.item?.mediaType,
+          playedOnPlatform: values.playedOnPlatform,
+          rating:
+            eventQuery.data?.type === 'completed' ||
+            (detailsQuery.data?.item?.mediaType === 'game' && eventQuery.data?.type === 'started')
+              ? values.rating
+              : null,
           today,
         });
       } else {
@@ -253,7 +261,9 @@ export function JournalEntryModalScreen({
           eventDate: values.date,
           intent: lifecycleIntentForForm(intent),
           mediaItemId,
+          mediaType: detailsQuery.data?.item?.mediaType,
           notes: values.notes.trim(),
+          playedOnPlatform: values.playedOnPlatform,
           rating:
             intent === 'finish' ||
             intent === 'log' ||
@@ -280,6 +290,19 @@ export function JournalEntryModalScreen({
         message="Sign in before adding plans or activity to your Journal."
         onClose={closeModal}
         title="Sign in required"
+      />,
+    );
+  }
+
+  if (
+    detailsQuery.data?.item?.mediaType === 'game' &&
+    !gamesEnabled
+  ) {
+    return renderWithDiscardConfirmation(
+      <ModalMessage
+        message="Games are not available right now. Your existing private game history remains available to view."
+        onClose={closeModal}
+        title="Games unavailable"
       />,
     );
   }
@@ -366,7 +389,7 @@ export function JournalEntryModalScreen({
       <JournalActionConfirmation
         body="You can still log it if the date is right for you."
         cancelLabel="Go back"
-        confirmLabel="Log watch"
+        confirmLabel={detailsQuery.data?.item?.mediaType === 'game' ? 'Log play' : 'Log watch'}
         confirmVariant="primary"
         onCancel={() => setReleaseConfirmationVisible(false)}
         onConfirm={() => {
@@ -374,7 +397,7 @@ export function JournalEntryModalScreen({
           setReleaseConfirmationVisible(false);
           void submit();
         }}
-        title="This movie is yet to release"
+        title={`This ${detailsQuery.data?.item?.mediaType === 'game' ? 'game' : 'title'} is yet to release`}
         visible={releaseConfirmationVisible}
       />
     </JournalEntryModalFrame>,

@@ -13,20 +13,20 @@ $$;
 
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password,
-  confirmed_at, created_at, updated_at
+  created_at, updated_at
 )
 values
   (
     '11111111-1111-4111-8111-111111111111',
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated', 'journal-one@example.test', '',
-    now(), now(), now()
+    now(), now()
   ),
   (
     '22222222-2222-4222-8222-222222222222',
     '00000000-0000-0000-0000-000000000000',
     'authenticated', 'authenticated', 'journal-two@example.test', '',
-    now(), now(), now()
+    now(), now()
   );
 
 insert into public.profiles (id, username, display_name)
@@ -1205,5 +1205,318 @@ select pg_temp.assert_true(
   not has_function_privilege('anon', 'public.journal_log_event(uuid,text,date,numeric,text,boolean,uuid,date)', 'EXECUTE'),
   'anonymous role can execute lifecycle RPC'
 );
+
+-- TAR-177: games remain in the same event table. A direct completion never
+-- invents a start, an active play can be rated, and each event owns its own
+-- optional private platform choice.
+insert into public.media_items (
+  id, source, source_id, media_type, title, genres, metadata
+)
+values (
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', 'igdb', 'game:1', 'game',
+  'Lifecycle game', '[]'::jsonb, '{}'::jsonb
+);
+
+set local role service_role;
+set local request.jwt.claim.role = 'service_role';
+set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+select public.journal_server_save_game_plan(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', '2026-08-02', '2026-07-29'
+);
+select public.journal_server_log_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', 'completed', '2026-07-20',
+  4.5, 'Direct completion', true,
+  '30000000-0000-4000-8000-000000000001', '2026-07-29', 'PC'
+);
+select public.journal_server_log_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', 'started', '2026-07-29',
+  4.0, 'Still playing', false,
+  '30000000-0000-4000-8000-000000000002', '2026-07-29', 'PlayStation 5'
+);
+select pg_temp.assert_true(
+  (select count(*) = 2 from public.journal_events where journal_entry_id = (
+    select id from public.journal_entries where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001'
+  )),
+  'game direct completion or active play wrote an unexpected event count'
+);
+select pg_temp.assert_true(
+  (select rating = 4.0 and played_on_platform = 'PlayStation 5'
+   from public.journal_events where operation_id = '30000000-0000-4000-8000-000000000002'),
+  'an in-progress game rating or event platform was not preserved'
+);
+select pg_temp.assert_true(
+  (public.journal_server_log_game_event(
+    '11111111-1111-4111-8111-111111111111',
+    'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', 'started', '2026-07-29',
+    4.0, 'Still playing', false,
+    '30000000-0000-4000-8000-000000000002', '2026-07-29', 'PlayStation 5'
+  )->>'idempotent_replay')::boolean,
+  'a rated active game play was not idempotent'
+);
+do $$
+begin
+  perform public.journal_server_log_game_event(
+    '11111111-1111-4111-8111-111111111111',
+    'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', 'started', '2026-07-29',
+    4.0, 'Still playing', false,
+    '30000000-0000-4000-8000-000000000002', '2026-07-29', 'Different platform'
+  );
+  raise exception 'Expected conflicting game idempotency failure.';
+exception
+  when sqlstate '22023' then null;
+end;
+$$;
+select pg_temp.assert_true(
+  (select effective_status = 'in_progress' from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001'),
+  'rating an active game changed its title state'
+);
+select pg_temp.assert_true(
+  (select not has_active_plan from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001'),
+  'a game completion did not resolve its active plan atomically'
+);
+select pg_temp.assert_true(
+  (select rating = 4.0 from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001'),
+  'active game rating was not projected onto the current Journal title'
+);
+select public.journal_server_update_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  (select id from public.journal_events
+   where operation_id = '30000000-0000-4000-8000-000000000002'),
+  '2026-07-29', 4.5, 'Updated active play', '2026-07-29', 'Steam Deck'
+);
+select pg_temp.assert_true(
+  (select rating = 4.5 and notes = 'Updated active play' and played_on_platform = 'Steam Deck'
+   from public.journal_events where operation_id = '30000000-0000-4000-8000-000000000002'),
+  'a game event update did not preserve its full private payload'
+);
+select public.journal_server_log_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', 'stopped', '2026-07-30',
+  null, 'Paused this run', false,
+  '30000000-0000-4000-8000-000000000004', '2026-07-30', 'Steam Deck'
+);
+select pg_temp.assert_true(
+  (select effective_status = 'dropped' and rating is null from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001'),
+  'stopping an active game did not clear its active rating and state'
+);
+select public.journal_server_log_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', 'started', '2026-07-31',
+  3.5, 'Resumed', false,
+  '30000000-0000-4000-8000-000000000005', '2026-07-31', 'Switch'
+);
+select pg_temp.assert_true(
+  (select effective_status = 'in_progress' and rating = 3.5 from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001'),
+  'resuming a stopped game did not restore the active play state'
+);
+select public.journal_server_log_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', 'completed', '2026-07-29',
+  5.0, null, false,
+  '30000000-0000-4000-8000-000000000003', '2026-07-29', null
+);
+select pg_temp.assert_true(
+  (select count(*) = 5 from public.journal_events where journal_entry_id = (
+    select id from public.journal_entries where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001'
+  )),
+  'another play did not preserve earlier game history'
+);
+select pg_temp.assert_true(
+  not has_function_privilege('authenticated', 'public.journal_log_game_event(uuid,text,date,numeric,text,boolean,uuid,date,text)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.journal_update_game_event(uuid,date,numeric,text,date,text)', 'EXECUTE')
+  and has_function_privilege('service_role', 'public.journal_server_log_game_event(uuid,uuid,text,date,numeric,text,boolean,uuid,date,text)', 'EXECUTE')
+  and has_function_privilege('service_role', 'public.journal_server_update_game_event(uuid,uuid,date,numeric,text,date,text)', 'EXECUTE')
+  and has_function_privilege('service_role', 'public.journal_server_delete_game_event(uuid,uuid,text)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.journal_log_game_event(uuid,text,date,numeric,text,boolean,uuid,date,text)', 'EXECUTE')
+  and not has_function_privilege('anon', 'public.journal_update_game_event(uuid,date,numeric,text,date,text)', 'EXECUTE'),
+  'game lifecycle RPC grants are not owner-safe'
+);
+
+-- The media-aware rule belongs in the database too: a raw client write may
+-- rate an active game, but it must not create that exception for a movie.
+reset role;
+do $$
+begin
+  insert into public.journal_events (
+    journal_entry_id, user_id, event_type, event_date, rating
+  )
+  values (
+    (select id from public.journal_entries
+     where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
+    '11111111-1111-4111-8111-111111111111', 'started', '2026-07-29', 4.0
+  );
+  raise exception 'Expected non-game active rating failure.';
+exception
+  when sqlstate '22023' then null;
+end;
+$$;
+
+-- Generic user RPCs cannot bypass the Edge-owned Games capability gate.
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+begin
+  perform public.journal_update_event(
+    (select id from public.journal_events
+     where operation_id = '30000000-0000-4000-8000-000000000005'),
+    '2026-07-31', null, 'Bypass attempt', '2026-07-31'
+  );
+  raise exception 'Expected generic game update denial.';
+exception
+  when sqlstate '42501' then null;
+end;
+$$;
+reset role;
+
+-- Platform data cannot be smuggled onto a non-game through direct table writes.
+do $$
+begin
+  insert into public.journal_events (
+    journal_entry_id, user_id, event_type, event_date, played_on_platform
+  ) values (
+    (select id from public.journal_entries
+     where media_item_id = 'aaaaaaaa-aaaa-4aaa-8aaa-000000000002'),
+    '11111111-1111-4111-8111-111111111111', 'started', '2026-10-01', 'PC'
+  );
+  raise exception 'Expected non-game platform failure.';
+exception
+  when sqlstate '22023' then null;
+end;
+$$;
+
+-- Plan removal remains the narrow privacy-control exception while Games is
+-- disabled. It must not double as a way to rewrite a game Journal title.
+set local role service_role;
+set local request.jwt.claim.role = 'service_role';
+select public.journal_server_save_game_plan(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000001', '2026-08-03', '2026-07-31'
+);
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+begin
+  update public.journal_entries
+  set has_active_plan = false, planned_for = null, rating = 1.0
+  where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001';
+  raise exception 'Expected bundled game plan-removal denial.';
+exception
+  when sqlstate '42501' then null;
+end;
+$$;
+select public.journal_remove_plan(
+  (select id from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001')
+);
+select pg_temp.assert_true(
+  (select not has_active_plan and rating = 3.5
+   from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001'),
+  'the canonical game plan removal did not remain the narrow privacy exception'
+);
+
+-- Game deletion is an authenticated privacy-control path, but its projection
+-- update runs through the service wrapper so a direct entry rewrite remains
+-- impossible. Exercise one-event, final keep, final remove, and ownership.
+reset role;
+insert into public.media_items (
+  id, source, source_id, media_type, title, genres, metadata
+) values (
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000002', 'igdb', 'game:2', 'game',
+  'Deletion lifecycle game', '[]'::jsonb, '{}'::jsonb
+);
+set local role service_role;
+set local request.jwt.claim.role = 'service_role';
+select public.journal_server_log_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000002', 'completed', '2026-07-20',
+  4.0, 'First play', false,
+  '30000000-0000-4000-8000-000000000006', '2026-07-31', 'PC'
+);
+select public.journal_server_log_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000002', 'started', '2026-07-21',
+  4.5, 'Second play', false,
+  '30000000-0000-4000-8000-000000000007', '2026-07-31', 'PC'
+);
+select public.journal_server_delete_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  (select id from public.journal_events
+   where operation_id = '30000000-0000-4000-8000-000000000007'),
+  null
+);
+select pg_temp.assert_true(
+  (select effective_status = 'completed' and rating = 4.0
+   from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002'),
+  'deleting one game event did not refresh its current title projection'
+);
+do $$
+begin
+  perform public.journal_server_delete_game_event(
+    '22222222-2222-4222-8222-222222222222',
+    (select id from public.journal_events
+     where operation_id = '30000000-0000-4000-8000-000000000006'),
+    'remove'
+  );
+  raise exception 'Expected cross-user game deletion failure.';
+exception
+  when no_data_found then null;
+end;
+$$;
+select public.journal_server_delete_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  (select id from public.journal_events
+   where operation_id = '30000000-0000-4000-8000-000000000006'),
+  'keep_someday'
+);
+select pg_temp.assert_true(
+  (select has_active_plan and planned_for is null and status = 'planned'
+   from public.journal_entries
+   where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002'),
+  'deleting the final game event did not preserve the title in Someday'
+);
+select public.journal_server_log_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  'bbbbbbbb-bbbb-4bbb-8bbb-000000000002', 'completed', '2026-07-22',
+  5.0, 'Final play', true,
+  '30000000-0000-4000-8000-000000000008', '2026-07-31', 'Switch'
+);
+select public.journal_server_delete_game_event(
+  '11111111-1111-4111-8111-111111111111',
+  (select id from public.journal_events
+   where operation_id = '30000000-0000-4000-8000-000000000008'),
+  'remove'
+);
+select pg_temp.assert_true(
+  not exists (
+    select 1 from public.journal_entries
+    where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000002'
+  ),
+  'deleting the final game event with remove did not remove the title'
+);
+set local role authenticated;
+set local request.jwt.claim.role = 'authenticated';
+set local request.jwt.claim.sub = '11111111-1111-4111-8111-111111111111';
+do $$
+begin
+  update public.journal_entries
+  set rating = 1.0
+  where media_item_id = 'bbbbbbbb-bbbb-4bbb-8bbb-000000000001';
+  raise exception 'Expected direct game title update denial.';
+exception
+  when sqlstate '42501' then null;
+end;
+$$;
 
 rollback;

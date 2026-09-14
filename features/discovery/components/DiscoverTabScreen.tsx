@@ -13,7 +13,7 @@ export function DiscoverTabScreen() {
   };
 
   return (
-    <Screen scroll className="gap-6">
+    <Screen padded={false}>
       <DiscoverScreen onSeeAll={openDiscoverListing} />
     </Screen>
   );

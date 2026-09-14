@@ -396,6 +396,18 @@
         background: linear-gradient(150deg, #312448, #846a91 46%, #d0b57b 47%, #17131d);
       }
 
+      .poster.bg3 {
+        background-image: url("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1086940/library_600x900_2x.jpg"), linear-gradient(150deg, #4e301d, #b69361 46%, #353d39 47%, #111);
+        background-size: cover;
+        background-position: center;
+      }
+
+      .poster.hades-two {
+        background-image: url("https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1145350/library_600x900_2x.jpg"), linear-gradient(150deg, #182c4f, #5f4b86 44%, #c9b162 45%, #111);
+        background-size: cover;
+        background-position: center;
+      }
+
       .event-type {
         display: block;
         margin-bottom: 5px;
@@ -903,10 +915,10 @@
       <div class="concept-header">
         <section class="intro">
           <p class="eyebrow">Revit Journal · Interaction concept</p>
-          <h1>Your history, plans, and next watch—<em>without the button wall.</em></h1>
+          <h1>Your history, plans, and next story—<em>without the button wall.</em></h1>
           <p class="lede">
-            The redesigned Journal keeps one clear action at the top, turns repeated cards into calm rows,
-            and reveals decisions only when they are needed.
+            Movies, series, anime, and games now share one calm Journal. Playthroughs use their own language,
+            while Timeline, Planner, and Calendar keep the same familiar rhythm.
           </p>
           <div class="principles" aria-label="Design principles">
             <div class="principle"><span class="principle-number">01</span><span><strong>One primary action</strong><span>Log or Add plan changes with the selected Journal view.</span></span></div>
@@ -922,7 +934,7 @@
               <div class="statusbar"><span>10:21</span><span>● 33%</span></div>
               <div class="appbar"><h2 class="appbar-title">Journal</h2><button class="avatar" type="button" aria-label="Open profile"></button></div>
               <div class="journal-heading">
-                <div><h2>Your Journal</h2><p data-subtitle>Keep your personal viewing record.</p></div>
+                <div><h2>Your Journal</h2><p data-subtitle>Keep your personal entertainment record.</p></div>
                 <button class="primary-action" type="button" data-primary>Log</button>
               </div>
 
@@ -935,11 +947,15 @@
               <section class="view-panel active" data-panel="timeline" aria-label="Timeline">
                 <div class="month-label">August 2026</div>
                 <div class="timeline-list">
-                  <button class="timeline-row" type="button" data-entry="The Grand Budapest Hotel" data-entry-meta="Watched · 9 Aug 2026">
+                  <button class="timeline-row" type="button" data-entry="The Grand Budapest Hotel" data-entry-meta="Watched · 9 Aug 2026" data-media="movie" data-poster="purple">
                     <span class="date-medallion">Aug<strong>09</strong></span>
                     <span class="timeline-card"><span class="poster purple"></span><span><span class="event-type">Watched</span><span class="item-title">The Grand Budapest Hotel</span><span class="item-meta">2014 · Movie</span><span class="rating">4.5 / 5</span></span></span>
                   </button>
-                  <button class="timeline-row" type="button" data-entry="Severance" data-entry-meta="Started watching · 4 Aug 2026">
+                  <button class="timeline-row" type="button" data-entry="Baldur's Gate 3" data-entry-meta="Finished playing · 7 Aug 2026" data-media="game" data-poster="bg3">
+                    <span class="date-medallion">Aug<strong>07</strong></span>
+                    <span class="timeline-card"><span class="poster bg3"></span><span><span class="event-type">Finished playing</span><span class="item-title">Baldur's Gate 3</span><span class="item-meta">2023 · Game · PC</span><span class="rating">4.5 / 5</span></span></span>
+                  </button>
+                  <button class="timeline-row" type="button" data-entry="Severance" data-entry-meta="Started watching · 4 Aug 2026" data-media="series" data-poster="blue">
                     <span class="date-medallion">Aug<strong>04</strong></span>
                     <span class="timeline-card"><span class="poster blue"></span><span><span class="event-type">Started watching</span><span class="item-title">Severance</span><span class="item-meta">2022 · Series</span></span></span>
                   </button>
@@ -951,11 +967,11 @@
                   <h3 class="section-label">Upcoming</h3>
                   <p class="section-note">Future plans in date order.</p>
                   <div class="plan-list">
-                    <button class="plan-row" type="button" data-plan="upcoming" data-title="DC" data-meta="7 Aug 2026 · Planned">
+                    <button class="plan-row" type="button" data-plan="upcoming" data-title="DC" data-meta="7 Aug 2026 · Planned" data-media="movie" data-poster="">
                       <span class="poster"></span><span class="plan-copy"><span class="item-title">DC</span><span class="item-meta">7 Aug 2026 · Planned</span></span><span class="chevron">›</span>
                     </button>
-                    <button class="plan-row" type="button" data-plan="upcoming" data-title="I Will Find You" data-meta="18 Aug 2026 · Planned">
-                      <span class="poster blue"></span><span class="plan-copy"><span class="item-title">I Will Find You</span><span class="item-meta">18 Aug 2026 · Planned</span></span><span class="chevron">›</span>
+                    <button class="plan-row" type="button" data-plan="upcoming" data-title="Hades II" data-meta="18 Aug 2026 · Plan to play" data-media="game" data-poster="hades-two">
+                      <span class="poster hades-two"></span><span class="plan-copy"><span class="item-title">Hades II</span><span class="item-meta">18 Aug 2026 · Plan to play</span></span><span class="chevron">›</span>
                     </button>
                   </div>
                 </div>
@@ -963,7 +979,7 @@
                   <h3 class="section-label">Missed</h3>
                   <p class="section-note">Past plans waiting for a decision.</p>
                   <div class="plan-list">
-                    <button class="plan-row" type="button" data-plan="missed" data-title="The Sheep Detectives" data-meta="27 Jun 2026 · Needs a decision">
+                    <button class="plan-row" type="button" data-plan="missed" data-title="The Sheep Detectives" data-meta="27 Jun 2026 · Needs a decision" data-media="movie" data-poster="sheep">
                       <span class="poster sheep"></span><span class="plan-copy"><span class="item-title">The Sheep Detectives</span><span class="item-meta">27 Jun 2026 · Needs a decision</span></span><span class="chevron">›</span>
                     </button>
                   </div>
@@ -974,8 +990,9 @@
                 <div class="calendar-heading"><button class="month-control" type="button" aria-label="Previous month">‹</button><strong>August 2026</strong><button class="month-control" type="button" aria-label="Next month">›</button></div>
                 <div class="weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
                 <div class="calendar-grid" data-calendar></div>
-                <div class="selected-date" data-selected-date>9 August · 1 logged title</div>
-                <button class="calendar-entry" type="button" data-entry="The Grand Budapest Hotel" data-entry-meta="Watched · 9 Aug 2026"><span class="poster purple"></span><span class="plan-copy"><span class="event-type">Watched</span><span class="item-title">The Grand Budapest Hotel</span><span class="item-meta">4.5 / 5</span></span><span class="chevron">›</span></button>
+                <div class="selected-date" data-selected-date>9 August · 2 logged titles</div>
+                <button class="calendar-entry" type="button" data-entry="The Grand Budapest Hotel" data-entry-meta="Watched · 9 Aug 2026" data-media="movie" data-poster="purple"><span class="poster purple"></span><span class="plan-copy"><span class="event-type">Watched</span><span class="item-title">The Grand Budapest Hotel</span><span class="item-meta">4.5 / 5</span></span><span class="chevron">›</span></button>
+                <button class="calendar-entry" type="button" data-entry="Baldur's Gate 3" data-entry-meta="Finished playing · 9 Aug 2026" data-media="game" data-poster="bg3"><span class="poster bg3"></span><span class="plan-copy"><span class="event-type">Finished playing</span><span class="item-title">Baldur's Gate 3</span><span class="item-meta">Game · PC · 4.5 / 5</span></span><span class="chevron">›</span></button>
               </section>
             </div>
 
@@ -1017,7 +1034,7 @@
         let toastTimer;
 
         const viewCopy = {
-          timeline: { action: 'Log', subtitle: 'Keep your personal viewing record.' },
+          timeline: { action: 'Log', subtitle: 'Keep your personal entertainment record.' },
           planner: { action: 'Add plan', subtitle: 'Decide what comes next.' },
           calendar: { action: 'Log', subtitle: 'See when stories became part of your life.' }
         };
@@ -1055,11 +1072,12 @@
 
         const openPlanActions = (button) => {
           const missed = button.dataset.plan === 'missed';
-          const posterClass = button.querySelector('.poster').classList.contains('sheep') ? 'sheep' : button.querySelector('.poster').classList.contains('blue') ? 'blue' : '';
+          const isGame = button.dataset.media === 'game';
+          const posterClass = button.dataset.poster || '';
           openDrawer(`
             ${drawerHeader(button.dataset.title, button.dataset.meta, posterClass)}
             ${missed ? '<p class="decision-note">What happened with this plan?</p>' : ''}
-            ${actionButton('✓', missed ? 'I watched it' : 'Log watch', 'primary')}
+            ${actionButton(isGame ? '▶' : '✓', isGame ? (missed ? 'I played it' : 'Start playing') : (missed ? 'I watched it' : 'Log watch'), 'primary')}
             ${actionButton('◷', 'Reschedule')}
             ${actionButton('◇', 'Move to Someday')}
             ${actionButton('↗', 'View title details')}
@@ -1068,11 +1086,12 @@
         };
 
         const openEntryActions = (button) => {
+          const isGame = button.dataset.media === 'game';
           openDrawer(`
-            ${drawerHeader(button.dataset.entry, button.dataset.entryMeta, 'purple')}
+            ${drawerHeader(button.dataset.entry, button.dataset.entryMeta, button.dataset.poster || '')}
             ${actionButton('↗', 'View title details', 'primary')}
             ${actionButton('✎', 'Edit Journal entry')}
-            ${actionButton('↻', 'Log a rewatch')}
+            ${actionButton('↻', isGame ? 'Start another playthrough' : 'Log a rewatch')}
           `);
         };
 
@@ -1081,16 +1100,16 @@
             openDrawer(`
               <div class="drawer-title"><span class="drawer-title-copy"><strong id="drawer-heading">Add a plan</strong><span class="item-meta">Choose a title, then decide when.</span></span><button class="drawer-close" type="button" data-close-drawer aria-label="Close">×</button></div>
               <div class="add-flow">
-                <input class="search-field" type="search" value="The Bear" aria-label="Search titles" />
-                <button class="add-result" type="button"><span class="poster blue"></span><span class="plan-copy"><span class="item-title">The Bear</span><span class="item-meta">2022 · Series</span></span><span class="chevron">›</span></button>
+                <input class="search-field" type="search" value="Hades" aria-label="Search titles" />
+                <button class="add-result" type="button"><span class="poster hades-two"></span><span class="plan-copy"><span class="item-title">Hades II</span><span class="item-meta">2025 · Game · PC</span></span><span class="chevron">›</span></button>
                 <div class="date-choice-row" aria-label="Plan date"><button class="date-choice" type="button" aria-pressed="true">Tonight</button><button class="date-choice" type="button" aria-pressed="false">This weekend</button><button class="date-choice" type="button" aria-pressed="false">Someday</button></div>
                 <button class="save-plan" type="button" data-complete="Plan saved">Save plan</button>
               </div>
             `);
           } else {
             openDrawer(`
-              <div class="drawer-title"><span class="drawer-title-copy"><strong id="drawer-heading">Log a watch</strong><span class="item-meta">Find the title you just watched.</span></span><button class="drawer-close" type="button" data-close-drawer aria-label="Close">×</button></div>
-              <div class="add-flow"><input class="search-field" type="search" placeholder="Search movies and series" aria-label="Search titles" /><button class="add-result" type="button"><span class="poster purple"></span><span class="plan-copy"><span class="item-title">The Grand Budapest Hotel</span><span class="item-meta">2014 · Movie</span></span><span class="chevron">›</span></button></div>
+              <div class="drawer-title"><span class="drawer-title-copy"><strong id="drawer-heading">Log an activity</strong><span class="item-meta">Find what you watched or played.</span></span><button class="drawer-close" type="button" data-close-drawer aria-label="Close">×</button></div>
+              <div class="add-flow"><input class="search-field" type="search" placeholder="Search movies, series, anime, and games" aria-label="Search titles" /><button class="add-result" type="button"><span class="poster bg3"></span><span class="plan-copy"><span class="item-title">Baldur's Gate 3</span><span class="item-meta">2023 · Game · PC</span></span><span class="chevron">›</span></button></div>
             `);
           }
         };
@@ -1144,7 +1163,7 @@
           calendar.querySelectorAll('[data-day]').forEach((item) => item.setAttribute('aria-selected', String(item === day)));
           const hasLog = day.classList.contains('has-log');
           const hasPlan = day.classList.contains('has-plan');
-          const count = Number(hasLog) + Number(hasPlan);
+          const count = day.dataset.day === '9' ? 2 : Number(hasLog) + Number(hasPlan);
           selectedDate.textContent = `${day.dataset.day} August · ${count ? `${count} Journal item${count > 1 ? 's' : ''}` : 'Nothing recorded'}`;
         });
 

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Text, View } from 'react-native';
@@ -47,7 +47,11 @@ function LegalSection() {
         title="Credits / Attributions"
         onPress={() => router.push('/legal/credits')}
       />
-      <ProfileAccountRow title="Support" onPress={() => router.push('/support')} />
+      <ProfileAccountRow
+        title="Help & Feedback"
+        description="Report a problem, suggest an idea, or contact support."
+        onPress={() => router.push('/help-feedback' as Href)}
+      />
     </View>
   );
 }

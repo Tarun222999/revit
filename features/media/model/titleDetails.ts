@@ -44,7 +44,9 @@ function firstString(values: unknown) {
     return null;
   }
 
-  return values.find((value): value is string => typeof value === 'string') ?? null;
+  return (
+    values.find((value): value is string => typeof value === 'string') ?? null
+  );
 }
 
 export function formatTitleMetadataLine(item: NormalizedMediaItem) {
@@ -78,6 +80,15 @@ export function formatTitleHeroMetadata(item: NormalizedMediaItem) {
 }
 
 export function formatTmdbRating(item: NormalizedMediaItem) {
+  if (item.source === 'igdb' && item.mediaType === 'game') {
+    const rating = item.metadata.totalRating;
+    if (typeof rating !== 'number' || !Number.isFinite(rating) || rating <= 0) {
+      return null;
+    }
+
+    return `${Math.round(rating)} IGDB total`;
+  }
+
   const rating = item.metadata.voteAverage;
 
   if (typeof rating !== 'number' || !Number.isFinite(rating) || rating <= 0) {
