@@ -40,6 +40,7 @@
 
       .concept-shell { width: min(1180px, calc(100% - 36px)); margin: 0 auto; padding: 54px 0 72px; }
       .concept-grid { display: grid; grid-template-columns: minmax(0, .86fr) minmax(390px, 1.14fr); gap: 72px; align-items: center; }
+      .concept-grid > section { min-width: 0; }
       .eyebrow { margin: 0 0 16px; color: var(--gold-soft); font-size: 12px; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }
       h1 { max-width: 620px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(44px, 6vw, 76px); font-weight: 500; letter-spacing: -.055em; line-height: .98; }
       h1 em { color: var(--gold-soft); font-style: normal; }
@@ -78,15 +79,20 @@
       .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--gold); }
 
       .shelf { margin-bottom: 27px; }
-      .shelf-head { margin-bottom: 11px; }
+      .shelf-head { margin-bottom: 11px; gap: 12px; }
       .shelf-head h3 { margin: 0; font-size: 18px; font-weight: 760; letter-spacing: -.02em; }
-      .shelf-head button { min-height: 36px; padding: 0 2px 0 12px; border: 0; background: transparent; color: var(--gold-soft); font-size: 11px; font-weight: 700; }
-      .poster-row { gap: 10px; overflow: hidden; }
-      .poster-card { width: 88px; flex: 0 0 88px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
-      .poster-card.featured-poster { width: 120px; flex-basis: 120px; }
-      .poster-card:not(.featured-poster) { margin-top: 25px; }
+      .shelf-head button { min-height: 36px; flex-shrink: 0; padding: 0 2px 0 12px; border: 0; background: transparent; color: var(--gold-soft); font-size: 11px; font-weight: 700; }
+      .poster-row { gap: 14px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; padding: 13px 7px 11px; margin: -4px -7px 0; scrollbar-width: none; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+      .poster-row::-webkit-scrollbar { display: none; }
+      .poster-card { width: 108px; flex: 0 0 108px; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; scroll-snap-align: center; transform: scale(.96) translateY(5px); transform-origin: 50% 45%; opacity: .76; transition: transform 340ms cubic-bezier(.22,1,.36,1), opacity 280ms ease; cursor: pointer; }
+      .poster-card.is-focused { transform: scale(1.035) translateY(-3px); opacity: 1; }
       .poster { display: block; width: 100%; height: 126px; border-radius: 8px; background-color: #211a15; background-image: linear-gradient(150deg,#7d2320,#d3c4a7 48%,#24221f 49%,#111); background-position: center; background-size: cover; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
-      .featured-poster .poster { height: 170px; }
+      .poster-card .poster { height: 154px; transition: box-shadow 340ms ease; }
+      .poster-card.is-focused .poster { box-shadow: 0 10px 22px #0008, 0 0 0 1px rgba(231,191,104,.55); }
+      .poster-card.is-focused strong { color: var(--gold-soft); }
+      .poster.ippo { background-image: url('../../assets/images/animie-ippo.jpg'); }
+      .poster.vinland { background-image: url('../../assets/images/animie-vinland.jpeg'); }
+      .poster.bear { background-image: url('../../assets/images/series-bear.jpg'); }
       .poster.blue { background: linear-gradient(155deg,#1b3f50,#718e93 43%,#e1c999 44%,#1a2025); }
       .poster.purple { background: linear-gradient(150deg,#312448,#846a91 46%,#d0b57b 47%,#17131d); }
       .poster.green { background: linear-gradient(145deg,#243d31,#79926d 46%,#d8c7a0 47%,#191d19); }
@@ -133,7 +139,39 @@
 
       @media (max-width: 900px) { .concept-grid { grid-template-columns: 1fr; gap: 50px; } .intro { max-width: 720px; margin: 0 auto; } .flow-strip { grid-template-columns: 1fr; } .flow-step { min-height: auto; } .flow-step h3 { margin-top: 16px; } }
       @media (max-width: 520px) { .concept-shell { width: 100%; padding: 34px 0 0; } .intro,.flow-strip { margin-right: 18px; margin-left: 18px; } h1 { font-size: 46px; } .lede { font-size: 16px; } .demo-label { padding: 0 18px; } .phone { width: 100%; border-right: 0; border-left: 0; border-radius: 0; } .flow-strip { margin-top: 44px; margin-bottom: 36px; } }
-      @media (prefers-reduced-motion: no-preference) { .drawer.open { animation: rise 180ms ease-out; } @keyframes rise { from { opacity: 0; transform: translateY(12px); } } }
+      /* Motion stays inside stable bounds: no expanding rows or jumping text. */
+      .phone { height: 900px; min-height: 0; }
+      .phone-content { height: 100%; min-height: 0; overflow-y: auto; scrollbar-width: none; overscroll-behavior-y: contain; }
+      .phone-content::-webkit-scrollbar { display: none; }
+      .feature-stage { position: relative; }
+      .feature-card { height: 265px; min-height: 265px; margin-bottom: 0; cursor: pointer; }
+      .feature-ghost { position: absolute; inset: 0; z-index: 2; margin: 0; pointer-events: none; }
+      .feature-poster { width: 104px; height: 154px; }
+      .feature-title { font-size: 23px; }
+      .feature-card[aria-busy='true'] { cursor: default; }
+      .feature-controls { display: flex; align-items: center; gap: 10px; margin: 6px 0 17px; }
+      .feature-selections { display: flex; align-items: center; flex: 1; gap: 7px; }
+      .feature-select { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px; border: 0; background: transparent; color: var(--muted); font-size: 10px; cursor: pointer; transition: color 220ms ease; }
+      .feature-select::before { content: ''; width: 5px; height: 5px; border-radius: 8px; background: #726451; transition: width 300ms cubic-bezier(.22,1,.36,1), background 220ms ease; }
+      .feature-select[aria-pressed='true'] { color: var(--gold-soft); }
+      .feature-select[aria-pressed='true']::before { width: 18px; background: var(--gold-soft); }
+      .rotation-toggle { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+      .rotation-toggle svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; }
+      .rotation-toggle .play-icon { display: none; }
+      .rotation-toggle[aria-pressed='true'] .play-icon { display: block; }
+      .rotation-toggle[aria-pressed='true'] .pause-icon { display: none; }
+      .mode-tabs { position: relative; }
+      .mode-tabs::after { content: ''; position: absolute; bottom: 0; left: 0; width: 33.333%; height: 2px; background: var(--gold); transform: translateX(var(--tab-position, 0%)); transition: transform 320ms cubic-bezier(.22,1,.36,1); }
+      .mode-tab { transition: color 220ms ease; cursor: pointer; }
+      .mode-tab[aria-selected='true'] { border-bottom-color: transparent; }
+      .shelf-hint { margin: -4px 0 9px; color: var(--muted); font-size: 10px; }
+      .bottom-nav { z-index: 3; }
+      .drawer.open { animation: rise 240ms cubic-bezier(.22,1,.36,1); max-height: 80%; overflow-y: auto; }
+      .scrim.open { animation: fade-in 200ms ease; }
+      @keyframes rise { from { opacity: 0; transform: translateY(16px); } }
+      @keyframes fade-in { from { opacity: 0; } }
+      @media (max-width: 370px) { .feature-card { padding: 14px; gap: 12px; } .feature-poster { width: 88px; height: 132px; } .feature-title { font-size: 21px; } .feature-rank { font-size: 8px; } .feature-meta { flex-wrap: wrap; line-height: 1.5; } }
+      @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } .poster-card { transform: none; } .poster-card.is-focused { transform: none; } }
     </style>
   </head>
   <body>
@@ -142,16 +180,16 @@
         <section class="intro">
           <p class="eyebrow">Revit Discover · Feature presentation</p>
           <h1>Stories to watch. Worlds to <em>step inside.</em></h1>
-          <p class="lede">One title opens the experience, varied shelves create rhythm, and games join the catalog without turning Discover into a store or changing its editorial character.</p>
+          <p class="lede">A gentle crossfade brings movies, series, and anime into the spotlight. Below, the title you focus on steps forward just enough to invite a closer look.</p>
           <div class="principles" aria-label="Design principles">
-            <div class="principle"><span class="principle-number">01</span><span><strong>Begin with a feature</strong><span>The first real result becomes a cinematic focal point—no new recommendation system required.</span></span></div>
-            <div class="principle"><span class="principle-number">02</span><span><strong>Change the viewing rhythm</strong><span>One larger poster leads each shelf while supporting titles stay compact.</span></span></div>
-            <div class="principle"><span class="principle-number">03</span><span><strong>Let context do the labeling</strong><span>Movies, Series, Anime, and Games live in named shelves, so every cover no longer repeats its media type.</span></span></div>
+            <div class="principle"><span class="principle-number">01</span><span><strong>Give every medium a moment</strong><span>One feature from each medium, a quiet dissolve, and time to take it in. Use the selectors whenever you like.</span></span></div>
+            <div class="principle"><span class="principle-number">02</span><span><strong>Let your focus lead</strong><span>Hover, use the keyboard, or tap a cover. On touch, tap the focused cover again to open it. The shelf keeps its shape.</span></span></div>
+            <div class="principle"><span class="principle-number">03</span><span><strong>Know when to be still</strong><span>Rotation pauses during interaction and while the hero is offscreen. Reduced-motion preferences turn automatic motion off.</span></span></div>
           </div>
         </section>
 
         <section aria-label="Interactive redesigned Discover screen">
-          <div class="demo-label">Interactive concept · switch modes and open any title</div>
+          <div class="demo-label">Motion concept · cycle the hero, explore the shelves</div>
           <div class="phone">
             <div class="phone-content">
               <div class="statusbar"><span>10:21</span><span>● 33%</span></div>
@@ -159,18 +197,31 @@
               <p class="screen-kicker">Your personal entertainment room</p>
               <h1 class="screen-heading">Find a story—or a world—worth your time.</h1>
               <div class="mode-tabs" role="tablist" aria-label="Discovery modes">
-                <button class="mode-tab" type="button" data-mode="trending" aria-selected="true">Trending</button>
-                <button class="mode-tab" type="button" data-mode="new" aria-selected="false">New releases</button>
-                <button class="mode-tab" type="button" data-mode="rated" aria-selected="false">Top rated</button>
+                <button class="mode-tab" role="tab" type="button" data-mode="trending" aria-selected="true" tabindex="0">Trending</button>
+                <button class="mode-tab" role="tab" type="button" data-mode="new" aria-selected="false" tabindex="-1">New releases</button>
+                <button class="mode-tab" role="tab" type="button" data-mode="rated" aria-selected="false" tabindex="-1">Top rated</button>
               </div>
 
+              <section class="feature-carousel" aria-label="Featured titles" aria-roledescription="carousel">
+              <div class="feature-stage">
               <button class="feature-card" type="button" data-title-card data-title="Dune: Part Two" data-year="2024" data-genres="Sci-fi · Adventure" data-description="Paul Atreides unites with Chani and the Fremen while seeking revenge against those who destroyed his family." data-poster="dune">
                 <span class="feature-poster" data-feature-poster></span>
                 <span class="feature-copy"><span class="feature-rank" data-feature-rank>Feature presentation · #1 today</span><span class="feature-title" data-feature-title>Dune: Part Two</span><span class="feature-description" data-feature-description>Paul Atreides unites with Chani and the Fremen while seeking revenge.</span><span class="feature-meta"><span data-feature-year>2024</span><span class="dot"></span><span data-feature-genres>Sci-fi · Adventure</span></span></span>
               </button>
+              </div>
+              <div class="feature-controls">
+                <div class="feature-selections" role="group" aria-label="Choose a featured medium">
+                  <button class="feature-select" type="button" data-feature-index="0" aria-pressed="true">Movie</button>
+                  <button class="feature-select" type="button" data-feature-index="1" aria-pressed="false">Series</button>
+                  <button class="feature-select" type="button" data-feature-index="2" aria-pressed="false">Anime</button>
+                </div>
+                <button class="rotation-toggle" type="button" aria-label="Pause automatic rotation" aria-pressed="false"><svg class="pause-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5v10m6-10v10"/></svg><svg class="play-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6V4Z"/></svg></button>
+              </div>
+              </section>
 
               <section class="shelf">
                 <div class="shelf-head"><h3>Movies on the big screen</h3><button type="button">View all</button></div>
+                <p class="shelf-hint">Tap to focus. Tap the focused cover to open.</p>
                 <div class="poster-row">
                   <button class="poster-card featured-poster" type="button" data-title-card data-title="Nosferatu" data-year="2024" data-genres="Horror · Drama" data-description="A gothic tale of obsession between a haunted young woman and a terrifying vampire." data-poster="nosferatu"><span class="poster nosferatu"></span><strong>Nosferatu</strong><small>2024 · Horror</small></button>
                   <button class="poster-card" type="button" data-title-card data-title="Past Lives" data-year="2023" data-genres="Drama · Romance" data-description="Two deeply connected childhood friends reunite in New York decades after being separated." data-poster="past-lives"><span class="poster past-lives"></span><strong>Past Lives</strong><small>2023 · Drama</small></button>
@@ -182,8 +233,16 @@
                 <div class="shelf-head"><h3>Series for a longer stay</h3><button type="button">View all</button></div>
                 <div class="poster-row">
                   <button class="poster-card featured-poster" type="button" data-title-card data-title="Severance" data-year="2022" data-genres="Drama · Mystery" data-description="Office workers undergo a procedure that separates their work memories from their personal lives." data-poster="severance"><span class="poster severance"></span><strong>Severance</strong><small>2022 · Drama</small></button>
-                  <button class="poster-card" type="button" data-title-card data-title="The Bear" data-year="2022" data-genres="Comedy · Drama" data-description="A young chef returns home to run his family's sandwich shop." data-poster="gold"><span class="poster gold"></span><strong>The Bear</strong><small>2022 · Comedy</small></button>
+                  <button class="poster-card" type="button" data-title-card data-title="The Bear" data-year="2022" data-genres="Comedy · Drama" data-description="A young chef returns home to run his family's sandwich shop." data-poster="bear"><span class="poster bear"></span><strong>The Bear</strong><small>2022 · Comedy</small></button>
                   <button class="poster-card" type="button" data-title-card data-title="Shōgun" data-year="2024" data-genres="Drama · History" data-description="An English navigator becomes entangled in a struggle for power in feudal Japan." data-poster="red"><span class="poster red"></span><strong>Shōgun</strong><small>2024 · Drama</small></button>
+                </div>
+              </section>
+
+              <section class="shelf">
+                <div class="shelf-head"><h3>Anime with a little soul</h3><button type="button">View all</button></div>
+                <div class="poster-row">
+                  <button class="poster-card" type="button" data-title-card data-title="Fighting Spirit" data-year="2000" data-genres="Anime · Sports" data-description="A shy teenager finds his courage, one round at a time." data-poster="ippo"><span class="poster ippo"></span><strong>Fighting Spirit</strong><small>2000 · Sports</small></button>
+                  <button class="poster-card" type="button" data-title-card data-title="Vinland Saga" data-year="2019" data-genres="Anime · Adventure" data-description="A young warrior searches for a purpose beyond revenge." data-poster="vinland"><span class="poster vinland"></span><strong>Vinland Saga</strong><small>2019 · Adventure</small></button>
                 </div>
               </section>
 
@@ -214,9 +273,9 @@
       </div>
 
       <section class="flow-strip" aria-label="Redesigned Discover structure">
-        <article class="flow-step"><span>01</span><h3>Set the mood</h3><p>The selected mode changes the program while preserving a recognizable editorial identity across stories and games.</p></article>
-        <article class="flow-step"><span>02</span><h3>Offer one clear entrance</h3><p>A featured title gives the eye somewhere to begin before browsing the wider catalog.</p></article>
-        <article class="flow-step"><span>03</span><h3>Continue through shelves</h3><p>Movies, Series, Anime, and Games share one browsing rhythm while each shelf keeps provider-specific context useful.</p></article>
+        <article class="flow-step"><span>01</span><h3>A quiet dissolve</h3><p>A 700 ms crossfade, with 6.5 seconds between features. Pause or choose a medium directly. Titles here are illustrative sample data.</p></article>
+        <article class="flow-step"><span>02</span><h3>A little focus</h3><p>A restrained lift and a fine gold edge follow the focused cover. Fixed card widths keep neighbouring titles from jumping.</p></article>
+        <article class="flow-step"><span>03</span><h3>Motion with manners</h3><p>The tab underline glides, the title panel settles in, and automatic motion rests while you interact, scroll away, or switch tabs.</p></article>
       </section>
     </main>
 
@@ -233,9 +292,95 @@
         const drawer = document.querySelector('[data-drawer]');
         const drawerContent = document.querySelector('[data-drawer-content]');
         const scrim = document.querySelector('[data-scrim]');
+        const carousel = document.querySelector('.feature-carousel');
+        const stage = document.querySelector('.feature-stage');
+        const selectors = [...document.querySelectorAll('[data-feature-index]')];
+        const rotationToggle = document.querySelector('.rotation-toggle');
+        const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+        const phoneContent = document.querySelector('.phone-content');
+        const bottomNav = document.querySelector('.bottom-nav');
+        const pauseReasons = new Set(['offscreen']);
+        const seriesFeature = { title: 'Severance', year: '2022', genres: 'Drama · Mystery', rank: 'Series · In the spotlight', description: 'Two lives. One person. And a mystery that follows them between worlds.', backdrop: 'url("https://image.tmdb.org/t/p/w500/npD65vPa4vvn1ZHpp3o05A5vdKT.jpg")', poster: 'url("https://image.tmdb.org/t/p/w500/npD65vPa4vvn1ZHpp3o05A5vdKT.jpg")', posterClass: 'severance' };
+        const animeFeature = { title: 'Fighting Spirit', year: '2000', genres: 'Anime · Sports', rank: 'Anime · In the spotlight', description: 'A little courage. A lot of heart. An underdog finding his place, one round at a time.', backdrop: 'url("../../assets/images/animie-ippo.jpg")', poster: 'url("../../assets/images/animie-ippo.jpg")', posterClass: 'ippo' };
+        let selectedMode = 'trending';
+        let featureIndex = 0;
+        let userPaused = false;
+        let rotationTimer;
+        let transitionNumber = 0;
+        let fadeAnimation;
+        let posterAnimation;
+        let drawerSource;
+        const focusOnlyTaps = new WeakSet();
 
-        const closeDrawer = () => { drawer.classList.remove('open'); scrim.classList.remove('open'); };
+        // Preload the small sample program so the first dissolve has artwork ready.
+        [...Object.values(modes), seriesFeature, animeFeature].forEach(item => {
+          [item.backdrop, item.poster].forEach(cssUrl => {
+            const image = new Image();
+            image.src = cssUrl.slice(5, -2);
+          });
+        });
+
+        const scheduleRotation = () => {
+          clearTimeout(rotationTimer);
+          if (userPaused || reducedMotion.matches || pauseReasons.size) return;
+          rotationTimer = setTimeout(() => showFeature((featureIndex + 1) % 3), 6500);
+        };
+        const setPause = (reason, paused) => {
+          if (paused) pauseReasons.add(reason); else pauseReasons.delete(reason);
+          scheduleRotation();
+        };
+        const syncRotationControl = () => {
+          rotationToggle.setAttribute('aria-pressed', String(userPaused || reducedMotion.matches));
+          rotationToggle.disabled = reducedMotion.matches;
+          rotationToggle.setAttribute('aria-label', reducedMotion.matches ? 'Automatic rotation disabled by reduced-motion preference' : userPaused ? 'Resume automatic rotation' : 'Pause automatic rotation');
+        };
+        const showFeature = (index) => {
+          clearTimeout(rotationTimer);
+          const transition = ++transitionNumber;
+          fadeAnimation?.cancel();
+          posterAnimation?.cancel();
+          stage.querySelector('.feature-ghost')?.remove();
+          // The outgoing copy is decorative and cannot intercept a tap or take focus.
+          const outgoing = feature.cloneNode(true);
+          outgoing.classList.add('feature-ghost');
+          outgoing.removeAttribute('data-title-card');
+          outgoing.setAttribute('aria-hidden', 'true');
+          outgoing.tabIndex = -1;
+          outgoing.inert = true;
+          featureIndex = index;
+          const item = [modes[selectedMode], seriesFeature, animeFeature][index];
+          feature.querySelector('[data-feature-title]').textContent = item.title;
+          feature.querySelector('[data-feature-year]').textContent = item.year;
+          feature.querySelector('[data-feature-genres]').textContent = item.genres;
+          feature.querySelector('[data-feature-rank]').textContent = index === 0 ? `Movie · ${item.rank}` : item.rank;
+          feature.querySelector('[data-feature-description]').textContent = item.description;
+          feature.style.setProperty('--feature-backdrop', item.backdrop);
+          featurePoster.style.backgroundImage = item.poster;
+          Object.assign(feature.dataset, { title: item.title, year: item.year, genres: item.genres, description: item.description, poster: item.posterClass });
+          selectors.forEach((button, i) => button.setAttribute('aria-pressed', String(i === index)));
+          if (!reducedMotion.matches) {
+            stage.append(outgoing);
+            feature.setAttribute('aria-busy', 'true');
+            fadeAnimation = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 700, easing: 'ease-in-out', fill: 'forwards' });
+            posterAnimation = featurePoster.animate([{ transform: 'scale(1.025)' }, { transform: 'scale(1)' }], { duration: 900, easing: 'cubic-bezier(.22,1,.36,1)' });
+            fadeAnimation.finished.then(() => {
+              outgoing.remove();
+              if (transition === transitionNumber) feature.removeAttribute('aria-busy');
+            }).catch(() => outgoing.remove());
+          } else feature.removeAttribute('aria-busy');
+          scheduleRotation();
+        };
+
+        const closeDrawer = () => {
+          drawer.classList.remove('open'); scrim.classList.remove('open');
+          phoneContent.inert = false; bottomNav.inert = false;
+          drawerSource?.focus({ preventScroll: true });
+          setPause('drawer', false);
+        };
         const openTitle = (button) => {
+          if (button.getAttribute('aria-busy') === 'true') return;
+          drawerSource = button;
+          setPause('drawer', true);
           const posterClass = button.dataset.poster || '';
           const isGame = button.dataset.media === 'game';
           drawerContent.innerHTML = `
@@ -246,24 +391,105 @@
             ${isGame ? '<button class="drawer-action" type="button"><span class="action-mark">◇</span><span>Plan to play</span></button>' : ''}
             <button class="drawer-action" type="button"><span class="action-mark">☷</span><span>Add to List</span></button>`;
           drawer.classList.add('open'); scrim.classList.add('open');
+          phoneContent.inert = true; bottomNav.inert = true;
+          drawer.querySelector('[data-close]').focus({ preventScroll: true });
         };
 
         tabs.forEach((tab) => tab.addEventListener('click', () => {
-          const mode = modes[tab.dataset.mode];
-          tabs.forEach((item) => item.setAttribute('aria-selected', String(item === tab)));
-          document.querySelector('[data-feature-title]').textContent = mode.title;
-          document.querySelector('[data-feature-year]').textContent = mode.year;
-          document.querySelector('[data-feature-genres]').textContent = mode.genres;
-          document.querySelector('[data-feature-rank]').textContent = mode.rank;
-          document.querySelector('[data-feature-description]').textContent = mode.description;
-          feature.style.setProperty('--feature-backdrop', mode.backdrop);
-          featurePoster.style.backgroundImage = mode.poster;
-          feature.dataset.title = mode.title; feature.dataset.year = mode.year; feature.dataset.genres = mode.genres; feature.dataset.description = mode.description; feature.dataset.poster = mode.posterClass;
+          selectedMode = tab.dataset.mode;
+          tabs.forEach((item) => { item.setAttribute('aria-selected', String(item === tab)); item.tabIndex = item === tab ? 0 : -1; });
+          document.querySelector('.mode-tabs').style.setProperty('--tab-position', `${tabs.indexOf(tab) * 100}%`);
+          showFeature(0);
         }));
-        document.querySelectorAll('[data-title-card]').forEach((button) => button.addEventListener('click', () => openTitle(button)));
+        tabs.forEach((tab, index) => tab.addEventListener('keydown', event => {
+          const destinations = { ArrowRight: (index + 1) % tabs.length, ArrowLeft: (index + tabs.length - 1) % tabs.length, Home: 0, End: tabs.length - 1 };
+          if (!(event.key in destinations)) return;
+          event.preventDefault();
+          const destination = tabs[destinations[event.key]];
+          destination.focus(); destination.click();
+        }));
+        selectors.forEach((button, index) => button.addEventListener('click', () => { if (index !== featureIndex) showFeature(index); }));
+        rotationToggle.addEventListener('click', () => {
+          userPaused = !userPaused;
+          // An explicit Resume works even while the control retains keyboard focus.
+          if (!userPaused) { pauseReasons.delete('focus'); pauseReasons.delete('hover'); }
+          syncRotationControl(); scheduleRotation();
+        });
+        carousel.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') setPause('hover', true); });
+        carousel.addEventListener('pointerleave', () => setPause('hover', false));
+        carousel.addEventListener('pointerdown', event => { if (event.pointerType !== 'mouse') setPause('touch', true); });
+        carousel.addEventListener('pointerup', () => setPause('touch', false));
+        carousel.addEventListener('pointercancel', () => setPause('touch', false));
+        carousel.addEventListener('focusin', () => setPause('focus', true));
+        carousel.addEventListener('focusout', event => { if (!carousel.contains(event.relatedTarget)) setPause('focus', false); });
+        document.addEventListener('visibilitychange', () => setPause('hidden', document.hidden));
+        new IntersectionObserver(([entry]) => setPause('offscreen', !entry.isIntersecting || entry.intersectionRatio < .55), { threshold: [0, .55, 1] }).observe(stage);
+        reducedMotion.addEventListener('change', () => {
+          if (reducedMotion.matches) {
+            ++transitionNumber; fadeAnimation?.cancel(); posterAnimation?.cancel();
+            stage.querySelector('.feature-ghost')?.remove(); feature.removeAttribute('aria-busy');
+          }
+          syncRotationControl(); scheduleRotation();
+        });
+        syncRotationControl();
+        setPause('hidden', document.hidden);
+
+        document.querySelectorAll('.poster-row').forEach(row => {
+          const cards = [...row.querySelectorAll('.poster-card')];
+          let scrollIntent = false;
+          let scrollFrame;
+          const focusCard = card => cards.forEach(item => item.classList.toggle('is-focused', item === card));
+          focusCard(cards[0]);
+          cards.forEach((card, index) => {
+            card.classList.remove('featured-poster');
+            card.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') { scrollIntent = false; focusCard(card); } });
+            card.addEventListener('pointerdown', event => {
+              if (event.pointerType === 'touch' && !card.classList.contains('is-focused')) focusOnlyTaps.add(card);
+              else focusOnlyTaps.delete(card);
+              focusCard(card);
+            });
+            card.addEventListener('pointercancel', () => focusOnlyTaps.delete(card));
+            card.addEventListener('focus', () => { scrollIntent = false; focusCard(card); });
+            card.addEventListener('keydown', event => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+              event.preventDefault();
+              const next = event.key === 'Home' ? 0 : event.key === 'End' ? cards.length - 1 : Math.max(0, Math.min(cards.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)));
+              const target = cards[next]; target.focus({ preventScroll: true });
+              row.scrollTo({ left: target.offsetLeft - row.offsetLeft - (row.clientWidth - target.offsetWidth) / 2, behavior: reducedMotion.matches ? 'instant' : 'smooth' });
+            });
+          });
+          row.addEventListener('pointerdown', () => { scrollIntent = true; });
+          row.addEventListener('wheel', () => { scrollIntent = true; }, { passive: true });
+          row.addEventListener('scroll', () => {
+            if (!scrollIntent) return;
+            cancelAnimationFrame(scrollFrame);
+            scrollFrame = requestAnimationFrame(() => {
+              const rect = row.getBoundingClientRect(), center = rect.left + rect.width / 2;
+              const closest = cards.reduce((best, card) => {
+                const r = card.getBoundingClientRect(), b = best.getBoundingClientRect();
+                return Math.abs(r.left + r.width / 2 - center) < Math.abs(b.left + b.width / 2 - center) ? card : best;
+              });
+              focusCard(closest);
+            });
+          }, { passive: true });
+        });
+        document.querySelectorAll('[data-title-card]').forEach((button) => button.addEventListener('click', event => {
+          // Screen-reader and keyboard activation still opens in a single action.
+          const focusOnly = event.detail !== 0 && focusOnlyTaps.has(button);
+          focusOnlyTaps.delete(button);
+          if (!focusOnly) openTitle(button);
+        }));
         scrim.addEventListener('click', closeDrawer);
         drawer.addEventListener('click', (event) => { if (event.target.closest('[data-close]')) closeDrawer(); });
-        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeDrawer(); });
+        document.addEventListener('keydown', (event) => {
+          if (!drawer.classList.contains('open')) return;
+          if (event.key === 'Escape') closeDrawer();
+          if (event.key === 'Tab') {
+            const buttons = [...drawer.querySelectorAll('button')];
+            if (event.shiftKey && document.activeElement === buttons[0]) { event.preventDefault(); buttons.at(-1).focus(); }
+            else if (!event.shiftKey && document.activeElement === buttons.at(-1)) { event.preventDefault(); buttons[0].focus(); }
+          }
+        });
       })();
     </script>
   </body>
