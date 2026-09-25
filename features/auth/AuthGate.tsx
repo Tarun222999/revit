@@ -7,6 +7,7 @@ import { ErrorState } from '@/components/feedback/ErrorState';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useCurrentProfile } from '@/features/profile/hooks/useCurrentProfile';
 import { useOnlineStatus } from '@/lib/query/network';
+import { isPotentialTitleSharePath } from '@/features/sharing/model/titleShare';
 import {
   isRequestTimeoutError,
   STARTUP_REQUEST_TIMEOUT_MS,
@@ -37,6 +38,8 @@ export function AuthGate({ children }: PropsWithChildren) {
     pathname === '/legal/terms' ||
     pathname === '/legal/credits' ||
     pathname === '/support';
+  const isPublicSharedTitleRoute = isPotentialTitleSharePath(pathname);
+  const isPublicRoute = isPublicInfoRoute || isPublicSharedTitleRoute;
   const isAuthRoute = isWelcomeRoute || isEmailCodeRoute || isCallbackRoute || isOnboardingRoute;
   const isProfileLoading = Boolean(
     user &&
@@ -85,10 +88,10 @@ export function AuthGate({ children }: PropsWithChildren) {
     const wasOnline = wasOnlineRef.current;
     wasOnlineRef.current = isOnline;
 
-    if (!wasOnline && isOnline && hasStartupError && !isPublicInfoRoute && !isRetrying) {
+    if (!wasOnline && isOnline && hasStartupError && !isPublicRoute && !isRetrying) {
       void retryStartup();
     }
-  }, [hasStartupError, isOnline, isPublicInfoRoute, isRetrying, retryStartup]);
+  }, [hasStartupError, isOnline, isPublicRoute, isRetrying, retryStartup]);
 
   const redirectTarget = useMemo(() => {
     if (hasStartupError) {
@@ -100,7 +103,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     }
 
     if (!user) {
-      return !isAuthRoute && !isPublicInfoRoute ? '/welcome' : null;
+      return !isAuthRoute && !isPublicRoute ? '/welcome' : null;
     }
 
     if (isCallbackRoute) {
@@ -122,7 +125,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     isAuthRoute,
     isCallbackRoute,
     isOnboardingRoute,
-    isPublicInfoRoute,
+    isPublicRoute,
     profileQuery.data,
     profileQuery.isSuccess,
     isProfileLoading,
@@ -147,17 +150,17 @@ export function AuthGate({ children }: PropsWithChildren) {
 
   const isResolvingAuthRoute =
     !hasStartupError &&
-    ((authLoading && !isPublicInfoRoute) ||
+    ((authLoading && !isPublicRoute) ||
     isProfileLoading ||
     Boolean(user && profileQuery.data && isAuthRoute) ||
-    Boolean(!user && !authLoading && !isAuthRoute && !isPublicInfoRoute) ||
+    Boolean(!user && !authLoading && !isAuthRoute && !isPublicRoute) ||
     Boolean(
       user &&
         profileQuery.isSuccess &&
         profileQuery.data === null &&
         !isOnboardingRoute,
     ));
-  const showStartupError = hasStartupError && !isPublicInfoRoute && !isCallbackRoute;
+  const showStartupError = hasStartupError && !isPublicRoute && !isCallbackRoute;
   const showOfflineState =
     !isOnline || resolutionTimedOut || isRequestTimeoutError(authError) ||
     isRequestTimeoutError(profileQuery.error);

@@ -7,6 +7,9 @@ project_id = "Revit"
 [functions.app-capabilities]
 verify_jwt = false
 
+[functions.public-title]
+verify_jwt = false
+
 [api]
 enabled = true
 # Port to use for the API URL.

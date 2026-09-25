@@ -173,6 +173,8 @@ describe('auth route boundaries', () => {
     '/legal/terms',
     '/legal/credits',
     '/support',
+    '/title/tmdb:movie:550',
+    '/title/tmdb:malformed',
   ])('keeps the public route %s available without a session', async (pathname) => {
     mockUsePathname.mockReturnValue(pathname);
 
@@ -268,6 +270,21 @@ describe('auth callback boundaries', () => {
 
     await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/(tabs)'));
     expect(mockExchangeCodeForSession).toHaveBeenCalledWith('code-with-profile');
+  });
+
+  it('restores a valid shared title after an existing user signs in', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ code: 'code-with-shared-title' });
+    mockExchangeCodeForSession.mockResolvedValue(successfulCallbackResponse);
+    mockGetCurrentProfile.mockResolvedValue(profile);
+
+    await render(
+      <AuthCallbackScreen returnTo="revit://title/tmdb%3Atv%3A1396" />,
+    );
+
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({
+      pathname: '/title/[id]',
+      params: { id: 'tmdb:tv:1396' },
+    }));
   });
 
   it('shows an auth error and does not route when code exchange fails', async () => {

@@ -16,6 +16,7 @@ import {
 } from '@/features/profile/api/profile-api';
 import { useCreateProfile } from '@/features/profile/hooks/useCreateProfile';
 import { getProfileErrorMessage } from '@/features/profile/utils/profileErrors';
+import { getPendingAuthDestination } from '@/features/auth/utils/pendingDestination';
 
 function ProfileTextInput({
   autoCapitalize = 'none',
@@ -60,7 +61,11 @@ function ProfileTextInput({
   );
 }
 
-export function OnboardingScreen() {
+export function OnboardingScreen({
+  returnTo,
+}: {
+  returnTo?: string | string[];
+}) {
   const { signOut, user } = useAuth();
   const createProfile = useCreateProfile();
   const [displayName, setDisplayName] = useState('');
@@ -155,7 +160,7 @@ export function OnboardingScreen() {
         displayName,
         username: normalizedUsername,
       });
-      router.replace('/(tabs)');
+      router.replace(getPendingAuthDestination(returnTo) ?? '/(tabs)');
     } catch (profileError) {
       const message = profileError instanceof Error ? profileError.message : 'Could not create your profile.';
 
@@ -179,7 +184,10 @@ export function OnboardingScreen() {
 
     try {
       await signOut();
-      router.replace('/welcome');
+      router.replace({
+        pathname: '/welcome',
+        params: typeof returnTo === 'string' ? { returnTo } : {},
+      });
     } catch (signOutError) {
       setError(getProfileErrorMessage(signOutError, 'Could not sign out.'));
     }
