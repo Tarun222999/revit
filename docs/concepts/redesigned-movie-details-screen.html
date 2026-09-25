@@ -155,7 +155,20 @@
 
       .statusbar, .topbar, .journal-strip { justify-content: space-between; }
       .statusbar { position: relative; z-index: 1; margin-bottom: 12px; color: #f2e9dc; font-size: 11px; font-weight: 700; }
-      .topbar { position: relative; z-index: 1; }
+      .topbar { position: relative; z-index: 4; }
+      .title-menu-wrap { position: relative; }
+      .title-menu {
+        position: absolute; top: 50px; right: 0; display: none; width: 214px;
+        padding: 7px; border: 1px solid var(--line-strong); border-radius: 14px;
+        background: rgba(25, 21, 18, .98); box-shadow: 0 18px 48px rgba(0,0,0,.5);
+        backdrop-filter: blur(18px);
+      }
+      .title-menu.open { display: block; animation: menu-in 150ms ease-out; }
+      .title-menu-action { display: flex; width: 100%; min-height: 52px; align-items: center; gap: 12px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--paper); text-align: left; cursor: pointer; }
+      .title-menu-action:hover, .title-menu-action:focus-visible { background: rgba(223, 173, 67, .09); }
+      .title-menu-action svg { width: 19px; height: 19px; flex: 0 0 auto; color: var(--gold-soft); }
+      .title-menu-copy strong { display: block; font-size: 12px; }
+      @keyframes menu-in { from { opacity: 0; transform: translateY(-5px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
       .round-button {
         width: 42px;
@@ -456,7 +469,7 @@
         </section>
 
         <section aria-label="Interactive movie details concept">
-          <div class="demo-label">Interactive concept · try the Journal and Read more actions</div>
+          <div class="demo-label">Interactive concept · try the top-right Share menu</div>
           <article class="phone">
             <header class="hero">
               <div>
@@ -465,9 +478,17 @@
                   <button class="round-button" type="button" aria-label="Go back">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" /></svg>
                   </button>
-                  <button class="round-button" type="button" aria-label="More options">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor" /><circle cx="12" cy="12" r="1.7" fill="currentColor" /><circle cx="19" cy="12" r="1.7" fill="currentColor" /></svg>
-                  </button>
+                  <div class="title-menu-wrap">
+                    <button class="round-button" id="titleMenuButton" type="button" aria-label="More title options" aria-expanded="false" aria-controls="titleMenu">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.7" fill="currentColor" /><circle cx="12" cy="12" r="1.7" fill="currentColor" /><circle cx="19" cy="12" r="1.7" fill="currentColor" /></svg>
+                    </button>
+                    <div class="title-menu" id="titleMenu" role="menu">
+                      <button class="title-menu-action" id="shareTitle" type="button" role="menuitem">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="m8.7 10.7 6.6-4.1M8.7 13.3l6.6 4.1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" /></svg>
+                        <span class="title-menu-copy"><strong>Share title</strong></span>
+                      </button>
+                    </div>
+                  </div>
                 </nav>
               </div>
 
@@ -635,8 +656,39 @@
       const eventMenu = document.querySelector('#eventMenu');
       const eventActions = document.querySelector('#eventActions');
       const anotherWatch = document.querySelector('#anotherWatch');
+      const titleMenuButton = document.querySelector('#titleMenuButton');
+      const titleMenu = document.querySelector('#titleMenu');
+      const shareTitle = document.querySelector('#shareTitle');
       let historyReady = false;
       let toastTimer;
+
+      const closeTitleMenu = () => {
+        titleMenu.classList.remove('open');
+        titleMenuButton.setAttribute('aria-expanded', 'false');
+      };
+
+      titleMenuButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const expanded = titleMenuButton.getAttribute('aria-expanded') === 'true';
+        titleMenu.classList.toggle('open', !expanded);
+        titleMenuButton.setAttribute('aria-expanded', String(!expanded));
+      });
+
+      shareTitle.addEventListener('click', () => {
+        closeTitleMenu();
+        toast.textContent = 'Opening the share sheet with this title’s Revit link.';
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!titleMenu.contains(event.target) && event.target !== titleMenuButton) closeTitleMenu();
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeTitleMenu();
+      });
 
       readMore.addEventListener('click', () => {
         const expanded = readMore.getAttribute('aria-expanded') === 'true';

@@ -70,6 +70,14 @@
       .statusbar { color: #e9e1d6; font-size: 11px; font-weight: 750; }
       .hero-nav { margin-top: 20px; }
       .round-button { display: grid; width: 42px; height: 42px; padding: 0; place-items: center; border: 1px solid rgba(255,255,255,.18); border-radius: 50%; background: rgba(12,10,8,.58); backdrop-filter: blur(12px); font-size: 21px; }
+      .title-menu-wrap { position: relative; }
+      .title-menu { position: absolute; top: 50px; right: 0; z-index: 4; display: none; width: 214px; padding: 7px; border: 1px solid var(--line-strong); border-radius: 14px; background: rgba(25,21,18,.98); box-shadow: 0 18px 48px rgba(0,0,0,.5); backdrop-filter: blur(18px); }
+      .title-menu.open { display: block; animation: menu-in 150ms ease-out; }
+      .title-menu-action { display: flex; width: 100%; min-height: 52px; align-items: center; gap: 12px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--paper); text-align: left; }
+      .title-menu-action:hover, .title-menu-action:focus-visible { background: rgba(223,173,67,.09); }
+      .title-menu-action svg { width: 19px; height: 19px; flex: 0 0 auto; color: var(--gold-soft); }
+      .title-menu-copy strong { display: block; font-size: 12px; }
+      @keyframes menu-in { from { opacity: 0; transform: translateY(-5px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
       .hero-copy { margin-top: 143px; }
       .media-label { margin: 0 0 6px; color: var(--gold-soft); font-size: 10px; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
       .game-title { max-width: 350px; margin: 0; font-family: Georgia, serif; font-size: 37px; font-weight: 500; letter-spacing: -.04em; line-height: 1; text-shadow: 0 2px 16px #000; }
@@ -178,12 +186,23 @@
         </section>
 
         <section aria-label="Interactive game details concept">
-          <div class="demo-label">Interactive concept · try Start playing, Plan, and the Journal card</div>
+          <div class="demo-label">Interactive concept · try the top-right Share menu</div>
           <div class="phone">
             <div class="phone-scroll">
               <header class="hero">
                 <div class="statusbar"><span>10:21</span><span>● 33%</span></div>
-                <div class="hero-nav"><button class="round-button" type="button" aria-label="Go back">‹</button><button class="round-button" type="button" aria-label="More options">•••</button></div>
+                <div class="hero-nav">
+                  <button class="round-button" type="button" aria-label="Go back">‹</button>
+                  <div class="title-menu-wrap">
+                    <button class="round-button" type="button" data-title-menu-trigger aria-label="More title options" aria-expanded="false">•••</button>
+                    <div class="title-menu" data-title-menu role="menu">
+                      <button class="title-menu-action" type="button" data-share-title role="menuitem">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="6" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8" /><circle cx="18" cy="19" r="3" fill="none" stroke="currentColor" stroke-width="1.8" /><path d="m8.7 10.7 6.6-4.1M8.7 13.3l6.6 4.1" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8" /></svg>
+                        <span class="title-menu-copy"><strong>Share title</strong></span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
                 <div class="hero-copy">
                   <p class="media-label">Game · 2023</p>
                   <h2 class="game-title">Baldur’s Gate 3</h2>
@@ -279,8 +298,20 @@
         const sheetContent = document.querySelector('[data-sheet-content]');
         const scrim = document.querySelector('[data-scrim]');
         const toast = document.querySelector('[data-toast]');
+        const titleMenu = document.querySelector('[data-title-menu]');
+        const titleMenuTrigger = document.querySelector('[data-title-menu-trigger]');
         let toastTimer;
         let journalStatus = 'none';
+
+        const closeTitleMenu = () => { titleMenu.classList.remove('open'); titleMenuTrigger.setAttribute('aria-expanded', 'false'); };
+        titleMenuTrigger.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const expanded = titleMenuTrigger.getAttribute('aria-expanded') === 'true';
+          titleMenu.classList.toggle('open', !expanded);
+          titleMenuTrigger.setAttribute('aria-expanded', String(!expanded));
+        });
+        document.querySelector('[data-share-title]').addEventListener('click', () => { closeTitleMenu(); showToast('Opening the share sheet with this title’s Revit link'); });
+        document.addEventListener('click', (event) => { if (!titleMenu.contains(event.target) && event.target !== titleMenuTrigger) closeTitleMenu(); });
 
         const closeSheet = () => { sheet.classList.remove('open'); scrim.classList.remove('open'); };
         const openSheet = (content) => { sheetContent.innerHTML = content; sheet.classList.add('open'); scrim.classList.add('open'); };
@@ -355,7 +386,7 @@
           }
         });
 
-        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeSheet(); });
+        document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeTitleMenu(); closeSheet(); } });
       })();
     </script>
   </body>
