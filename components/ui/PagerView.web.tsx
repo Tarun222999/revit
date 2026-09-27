@@ -15,6 +15,9 @@ type Props = {
   children: ReactNode;
   initialPage?: number;
   onPageSelected?: (event: PageSelectedEvent) => void;
+  onPageScrollStateChanged?: (event: {
+    nativeEvent: { pageScrollState: 'idle' | 'dragging' | 'settling' };
+  }) => void;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -24,11 +27,14 @@ const PagerView = forwardRef<PagerViewRef, Props>(function PagerView(
 ) {
   const pages = Children.toArray(children);
   const [page, setPage] = useState(initialPage);
-  const selectPage = useCallback((nextPage: number) => {
-    const clamped = Math.max(0, Math.min(nextPage, pages.length - 1));
-    setPage(clamped);
-    onPageSelected?.({ nativeEvent: { position: clamped } });
-  }, [onPageSelected, pages.length]);
+  const selectPage = useCallback(
+    (nextPage: number) => {
+      const clamped = Math.max(0, Math.min(nextPage, pages.length - 1));
+      setPage(clamped);
+      onPageSelected?.({ nativeEvent: { position: clamped } });
+    },
+    [onPageSelected, pages.length],
+  );
 
   useImperativeHandle(ref, () => ({ setPage: selectPage }), [selectPage]);
 
