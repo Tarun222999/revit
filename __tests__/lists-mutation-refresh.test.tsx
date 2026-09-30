@@ -31,13 +31,16 @@ jest.mock('@/features/lists/api/list-api', () => ({
 
 it('refreshes both screens and actual membership after add, remove, and note writes without touching Journal caches', async () => {
   const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
   });
   const invalidate = jest.spyOn(client, 'invalidateQueries');
   const wrapper = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  const { result } = await renderHook(
+  const { result, unmount } = await renderHook(
     () => ({
       add: useAddMediaItemToList(),
       remove: useRemoveListItem(),
@@ -75,16 +78,23 @@ it('refreshes both screens and actual membership after add, remove, and note wri
       mediaListMembershipsQueryKey('owner', 'media'),
     ]);
   }
+  await unmount();
+  client.clear();
 });
 
 it('refreshes edited metadata and removes only deleted-list Details cache', async () => {
-  const client = new QueryClient();
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { gcTime: Infinity },
+      mutations: { gcTime: Infinity },
+    },
+  });
   const invalidate = jest.spyOn(client, 'invalidateQueries');
   const removeCache = jest.spyOn(client, 'removeQueries');
   const wrapper = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   );
-  const { result } = await renderHook(
+  const { result, unmount } = await renderHook(
     () => ({ update: useUpdateList(), deletion: useDeleteList() }),
     { wrapper },
   );
@@ -109,4 +119,6 @@ it('refreshes edited metadata and removes only deleted-list Details cache', asyn
   expect(removeCache).toHaveBeenCalledWith({
     queryKey: listDetailsQueryKey('owner', 'list'),
   });
+  await unmount();
+  client.clear();
 });
