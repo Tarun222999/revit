@@ -1,24 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { router, Stack } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Pressable, Text } from 'react-native';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { CollectionSheet } from '@/features/lists/components/CollectionSheet';
+import { CollectionContents } from '@/features/lists/components/CollectionContents';
+import { ListDetailsHeader } from '@/features/lists/components/ListDetailsHeader';
 import { DeleteListConfirmation } from '@/features/lists/components/DeleteListConfirmation';
 import {
   getVisibleListFormErrors,
@@ -27,7 +19,8 @@ import {
   type ListFormTouchedFields,
   type ListFormValues,
 } from '@/features/lists/components/ListForm';
-import { ListItemCard } from '@/features/lists/components/ListItemCard';
+import { useCollectionDismiss } from '@/features/lists/hooks/useCollectionDismiss';
+import { useUserLists } from '@/features/lists/hooks/useUserLists';
 import { useListDetails } from '@/features/lists/hooks/useListDetails';
 import {
   useDeleteList,
@@ -35,485 +28,195 @@ import {
   useUpdateList,
   useUpdateListItemNote,
 } from '@/features/lists/hooks/useListMutations';
+import { hasDuplicateListName } from '@/features/lists/model/listPresentation';
 import type { UserListDetails, UserListItem } from '@/features/lists/types';
 import { createMediaRouteId } from '@/features/media/api/media-api';
 
-type ListDetailsScreenProps = {
-  listId?: string;
-};
-
-const EMPTY_LIST_FORM_VALUES: ListFormValues = {
-  description: '',
-  name: '',
-};
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
-
-function getMutationErrorMessage(error: unknown) {
+const EMPTY_VALUES: ListFormValues = { name: '', description: '' };
+function errorMessage(error: unknown, fallback: string) {
   if (
     error &&
     typeof error === 'object' &&
     'code' in error &&
     error.code === '23505'
-  ) {
+  )
     return 'A list with this name already exists.';
-  }
-
-  return error instanceof Error ? error.message : 'Unable to save this list right now.';
+  return error instanceof Error ? error.message : fallback;
 }
-
-function getItemCountLabel(count: number) {
-  return count === 1 ? '1 title' : `${count} titles`;
-}
-
-function openItemTitleDetails(item: UserListItem) {
-  const routeId = createMediaRouteId({
-    id: item.media.id,
-    source: item.media.source,
-    sourceId: item.media.sourceId,
-  });
-
-  router.push(`/title/${encodeURIComponent(routeId)}`);
-}
-
-function ListEditSheet({
-  deleteError,
-  errors,
-  hasSubmitted,
-  isDeleting,
-  isSubmitting,
-  list,
-  submitError,
-  touchedFields,
-  values,
-  onBlurField,
-  onCancel,
-  onChange,
-  onDelete,
-  onSubmit,
-}: {
-  deleteError: string | null;
-  errors: ReturnType<typeof getVisibleListFormErrors>;
-  hasSubmitted: boolean;
-  isDeleting: boolean;
-  isSubmitting: boolean;
-  list: UserListDetails;
-  submitError: string | null;
-  touchedFields: ListFormTouchedFields;
-  values: ListFormValues;
-  onBlurField: (key: keyof ListFormValues) => void;
-  onCancel: () => void;
-  onChange: <Key extends keyof ListFormValues>(
-    key: Key,
-    value: ListFormValues[Key],
-  ) => void;
-  onDelete: () => void;
-  onSubmit: () => void;
-}) {
-  return (
-    <Modal
-      animationType="slide"
-      onRequestClose={onCancel}
-      transparent
-      visible>
-      <SafeAreaView
-        className="flex-1"
-        edges={['top', 'right', 'bottom', 'left']}
-        style={{ backgroundColor: 'rgba(13, 11, 9, 0.72)' }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          className="flex-1 justify-end">
-          <Pressable className="flex-1 justify-end px-3 pb-5 pt-8" onPress={onCancel}>
-            <Pressable
-              className="max-h-[92%] w-full max-w-xl self-center overflow-hidden rounded-app border border-archive-700 bg-archive-900"
-              onPress={(event) => event.stopPropagation()}>
-              <View className="flex-row items-center justify-between gap-4 border-b border-archive-700 px-5 py-4">
-                <View className="min-w-0 flex-1 gap-1">
-                  <Text className="text-lg font-bold text-archive-50">
-                    Edit List
-                  </Text>
-                  <Text className="text-sm leading-5 text-archive-300" numberOfLines={1}>
-                    Update the name, description, or remove the list.
-                  </Text>
-                </View>
-                <Pressable
-                  accessibilityLabel="Close edit list"
-                  accessibilityRole="button"
-                  hitSlop={10}
-                  className="h-10 w-10 items-center justify-center rounded-full border border-archive-700 bg-archive-800"
-                  onPress={onCancel}>
-                  <Ionicons color="#fbf6ec" name="close" size={20} />
-                </Pressable>
-              </View>
-
-              <ScrollView
-                automaticallyAdjustKeyboardInsets
-                className="min-h-0"
-                contentContainerClassName="gap-4 px-5 py-5 pb-8"
-                keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}>
-                <ListForm
-                  deleteError={deleteError}
-                  errors={errors}
-                  hasSubmitted={hasSubmitted}
-                  isDeleting={isDeleting}
-                  isSubmitting={isSubmitting}
-                  list={list}
-                  showIntro={false}
-                  submitError={submitError}
-                  touchedFields={touchedFields}
-                  values={values}
-                  onBlurField={onBlurField}
-                  onCancel={onCancel}
-                  onChange={onChange}
-                  onDelete={onDelete}
-                  onSubmit={onSubmit}
-                />
-              </ScrollView>
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </Modal>
+function openTitle(item: UserListItem) {
+  router.push(
+    `/title/${encodeURIComponent(createMediaRouteId({ id: item.media.id, source: item.media.source, sourceId: item.media.sourceId }))}`,
   );
 }
 
-function ListDetailsHeader({
-  list,
-  onEdit,
-}: {
-  list: UserListDetails;
-  onEdit: () => void;
-}) {
-  return (
-    <Card className="gap-4">
-      <View className="flex-row items-start justify-between gap-4">
-        <View className="min-w-0 flex-1 gap-2">
-          <Text className="text-3xl font-bold text-archive-50" numberOfLines={2}>
-            {list.name}
-          </Text>
-          {list.description ? (
-            <Text className="text-sm leading-5 text-archive-300">
-              {list.description}
-            </Text>
-          ) : (
-            <Text className="text-sm leading-5 text-archive-300">
-              Mixed-media collection
-            </Text>
-          )}
-        </View>
-        <View className="rounded-full bg-archive-700 px-3 py-1">
-          <Text className="text-xs font-bold text-gold-300">
-            {getItemCountLabel(list.itemCount)}
-          </Text>
-        </View>
-      </View>
-
-      <View className="flex-row gap-3">
-        <View className="min-w-0 flex-1">
-          <Button
-            onPress={onEdit}
-            title="Edit List"
-            variant="secondary"
-          />
-        </View>
-        <View className="min-w-0 flex-1">
-          <Button
-            onPress={() => router.push('/search')}
-            title="Add Items"
-          />
-        </View>
-      </View>
-      <Text className="text-xs leading-4 text-archive-300">
-        Add titles from Search, Discover, or any Title Details screen.
-      </Text>
-    </Card>
-  );
-}
-
-function EmptyListDetailsState() {
-  return (
-    <Card className="gap-5 p-5">
-      <View className="flex-row items-start gap-4">
-        <View className="w-20 gap-1.5">
-          <View className="h-12 rounded-app border border-archive-600 bg-shelf-700" />
-          <View className="flex-row gap-1.5">
-            <View className="h-9 flex-1 rounded-app border border-archive-700 bg-archive-900" />
-            <View className="h-9 flex-1 rounded-app border border-archive-700 bg-archive-900" />
-          </View>
-        </View>
-        <View className="min-w-0 flex-1 gap-2">
-          <Text className="text-xl font-bold text-archive-50">
-            Start building this list
-          </Text>
-          <Text className="text-sm leading-5 text-archive-300">
-            Add supported titles from Search, Discover, or any Title Details screen.
-          </Text>
-        </View>
-      </View>
-
-      <View className="gap-3">
-        <Button title="Add Items" onPress={() => router.push('/search')} />
-        <Button
-          title="Browse Discover"
-          variant="secondary"
-          onPress={() => router.push('/')}
-        />
-      </View>
-    </Card>
-  );
-}
-
-function ListItemsSection({
-  itemErrorId,
-  itemErrorMessage,
-  list,
-  removingItemId,
-  savingNoteItemId,
-  onRemoveItem,
-  onSaveNote,
-}: {
-  itemErrorId: string | null;
-  itemErrorMessage: string | null;
-  list: UserListDetails;
-  removingItemId: string | null;
-  savingNoteItemId: string | null;
-  onRemoveItem: (item: UserListItem) => void;
-  onSaveNote: (item: UserListItem, note: string | null) => void;
-}) {
-  if (list.items.length === 0) {
-    return <EmptyListDetailsState />;
-  }
-
-  return (
-    <View className="gap-3">
-      <View className="flex-row items-center justify-between gap-4">
-        <Text className="text-lg font-bold text-archive-50">List items</Text>
-        <Text className="text-sm font-semibold text-archive-300">
-          {getItemCountLabel(list.itemCount)}
-        </Text>
-      </View>
-
-      {list.items.map((item) => (
-        <ListItemCard
-          isRemoving={removingItemId === item.id}
-          isSavingNote={savingNoteItemId === item.id}
-          item={item}
-          key={item.id}
-          mutationError={itemErrorId === item.id ? itemErrorMessage : null}
-          onPress={() => openItemTitleDetails(item)}
-          onRemove={() => onRemoveItem(item)}
-          onSaveNote={(note) => onSaveNote(item, note)}
-        />
-      ))}
-    </View>
-  );
-}
-
-export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
+export function ListDetailsScreen({ listId }: { listId?: string }) {
   const { loading: authLoading, user } = useAuth();
   const listQuery = useListDetails(user?.id, listId);
-  const updateListMutation = useUpdateList();
-  const deleteListMutation = useDeleteList();
-  const removeListItemMutation = useRemoveListItem();
-  const updateListItemNoteMutation = useUpdateListItemNote();
-  const [isEditingList, setIsEditingList] = useState(false);
+  const listsQuery = useUserLists(user?.id);
+  const update = useUpdateList();
+  const deletion = useDeleteList();
+  const remove = useRemoveListItem();
+  const noteMutation = useUpdateListItemNote();
+  const [editing, setEditing] = useState(false);
+  const [options, setOptions] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [formValues, setFormValues] = useState<ListFormValues>(
-    EMPTY_LIST_FORM_VALUES,
-  );
-  const [touchedFields, setTouchedFields] = useState<ListFormTouchedFields>({});
-  const [hasSubmittedForm, setHasSubmittedForm] = useState(false);
+  const [values, setValues] = useState<ListFormValues>(EMPTY_VALUES);
+  const [initialValues, setInitialValues] =
+    useState<ListFormValues>(EMPTY_VALUES);
+  const [touched, setTouched] = useState<ListFormTouchedFields>({});
+  const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [removingItemId, setRemovingItemId] = useState<string | null>(null);
-  const [savingNoteItemId, setSavingNoteItemId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [itemErrorId, setItemErrorId] = useState<string | null>(null);
-  const [itemErrorMessage, setItemErrorMessage] = useState<string | null>(null);
-  const formErrors = useMemo(() => validateListForm(formValues), [formValues]);
-  const visibleFormErrors = useMemo(
-    () => getVisibleListFormErrors(formErrors, touchedFields, hasSubmittedForm),
-    [formErrors, hasSubmittedForm, touchedFields],
-  );
-  const isSubmittingList = updateListMutation.isPending;
-  const isDeletingList = deleteListMutation.isPending;
-
+  const [itemError, setItemError] = useState<string | null>(null);
+  const submitting = useRef(false);
+  const deleting = useRef(false);
+  const itemRequests = useRef(new Set<string>());
+  const errors = useMemo(() => validateListForm(values), [values]);
+  const visibleErrors = getVisibleListFormErrors(errors, touched, submitted);
+  const list = listQuery.data;
   useEffect(() => {
-    if (listQuery.isSuccess && !listQuery.data) {
-      router.replace('/lists');
-    }
-  }, [listQuery.data, listQuery.isSuccess]);
-
-  const startEditList = useCallback((list: UserListDetails) => {
-    setIsEditingList(true);
-    setConfirmingDelete(false);
-    setFormValues({
-      description: list.description ?? '',
-      name: list.name,
-    });
-    setTouchedFields({});
-    setHasSubmittedForm(false);
+    if (listQuery.isSuccess && !listQuery.data) router.replace('/lists');
+  }, [listQuery.isSuccess, listQuery.data]);
+  const closeEdit = useCallback(() => {
+    setEditing(false);
     setSubmitError(null);
-    setDeleteError(null);
   }, []);
-
-  const cancelEditList = useCallback(() => {
-    setIsEditingList(false);
-    setConfirmingDelete(false);
-    setFormValues(EMPTY_LIST_FORM_VALUES);
-    setTouchedFields({});
-    setHasSubmittedForm(false);
-    setSubmitError(null);
-    setDeleteError(null);
-  }, []);
-
-  const markFieldTouched = useCallback((key: keyof ListFormValues) => {
-    setTouchedFields((currentFields) => ({
-      ...currentFields,
-      [key]: true,
-    }));
-  }, []);
-
-  const updateFormValue = useCallback(
-    <Key extends keyof ListFormValues>(key: Key, value: ListFormValues[Key]) => {
-      setFormValues((currentValues) => ({
-        ...currentValues,
-        [key]: value,
-      }));
-      markFieldTouched(key);
-      setSubmitError(null);
-    },
-    [markFieldTouched],
+  const dismissEdit = useCollectionDismiss(
+    editing,
+    values.name !== initialValues.name ||
+      values.description !== initialValues.description,
+    update.isPending || submitting.current,
+    closeEdit,
   );
-
-  const submitListForm = useCallback(async () => {
-    setHasSubmittedForm(true);
-
-    if (!user || !listQuery.data || Object.keys(formErrors).length > 0) {
+  const startEdit = (current: UserListDetails) => {
+    const next = { name: current.name, description: current.description ?? '' };
+    setValues(next);
+    setInitialValues(next);
+    setTouched({});
+    setSubmitted(false);
+    setSubmitError(null);
+    setOptions(false);
+    setEditing(true);
+  };
+  const submit = async () => {
+    setSubmitted(true);
+    if (!user || !list || submitting.current || Object.keys(errors).length)
+      return;
+    if (hasDuplicateListName(listsQuery.data ?? [], values.name, list.id)) {
+      setSubmitError('A list with this name already exists.');
       return;
     }
-
+    submitting.current = true;
     setSubmitError(null);
-
     try {
-      await updateListMutation.mutateAsync({
-        description: formValues.description,
-        listId: listQuery.data.id,
-        name: formValues.name,
-        userId: user.id,
-      });
-      cancelEditList();
+      await update.mutateAsync({ userId: user.id, listId: list.id, ...values });
+      closeEdit();
     } catch (error) {
-      setSubmitError(getMutationErrorMessage(error));
+      setSubmitError(
+        errorMessage(error, 'Unable to save this list. Try again.'),
+      );
+    } finally {
+      submitting.current = false;
     }
-  }, [
-    cancelEditList,
-    formErrors,
-    formValues.description,
-    formValues.name,
-    listQuery.data,
-    updateListMutation,
-    user,
-  ]);
-
-  const confirmDeleteList = useCallback(async () => {
-    if (!user || !listQuery.data) {
-      return;
-    }
-
+  };
+  const deleteList = async () => {
+    if (!user || !list || deleting.current) return;
+    deleting.current = true;
     setDeleteError(null);
-
     try {
-      await deleteListMutation.mutateAsync({
-        listId: listQuery.data.id,
-        userId: user.id,
-      });
+      await deletion.mutateAsync({ userId: user.id, listId: list.id });
       router.replace('/lists');
     } catch (error) {
-      setDeleteError(getMutationErrorMessage(error));
+      setDeleteError(
+        errorMessage(error, 'Unable to delete this list. Try again.'),
+      );
+    } finally {
+      deleting.current = false;
     }
-  }, [deleteListMutation, listQuery.data, user]);
-
-  const removeItem = useCallback(
-    async (item: UserListItem) => {
-      if (!user) {
-        return;
-      }
-
-      setRemovingItemId(item.id);
-      setItemErrorId(null);
-      setItemErrorMessage(null);
-
-      try {
-        await removeListItemMutation.mutateAsync({
-          listItemId: item.id,
-          mediaItemId: item.mediaItemId,
-          userId: user.id,
-        });
-      } catch (error) {
-        setItemErrorId(item.id);
-        setItemErrorMessage(
-          getErrorMessage(error, 'Unable to remove this title right now.'),
-        );
-      } finally {
-        setRemovingItemId(null);
-      }
-    },
-    [removeListItemMutation, user],
-  );
-
-  const saveNote = useCallback(
-    async (item: UserListItem, note: string | null) => {
-      if (!user) {
-        return;
-      }
-
-      setSavingNoteItemId(item.id);
-      setItemErrorId(null);
-      setItemErrorMessage(null);
-
-      try {
-        await updateListItemNoteMutation.mutateAsync({
-          listItemId: item.id,
-          note,
-          userId: user.id,
-        });
-      } catch (error) {
-        setItemErrorId(item.id);
-        setItemErrorMessage(
-          getErrorMessage(error, 'Unable to save this note right now.'),
-        );
-      } finally {
-        setSavingNoteItemId(null);
-      }
-    },
-    [updateListItemNoteMutation, user],
-  );
-
-  const currentList = listQuery.data;
-
+  };
+  const removeItem = async (item: UserListItem) => {
+    if (!user || itemRequests.current.has(item.id)) return;
+    itemRequests.current.add(item.id);
+    setRemovingId(item.id);
+    setItemErrorId(null);
+    setItemError(null);
+    try {
+      await remove.mutateAsync({
+        listItemId: item.id,
+        mediaItemId: item.mediaItemId,
+        userId: user.id,
+      });
+    } catch (error) {
+      setItemErrorId(item.id);
+      setItemError(
+        errorMessage(error, 'Unable to remove this title. Try again.'),
+      );
+    } finally {
+      itemRequests.current.delete(item.id);
+      setRemovingId(null);
+    }
+  };
+  const saveNote = async (item: UserListItem, note: string | null) => {
+    if (!user || itemRequests.current.has(item.id))
+      throw new Error('Unable to save this note right now.');
+    itemRequests.current.add(item.id);
+    setSavingId(item.id);
+    setItemErrorId(null);
+    setItemError(null);
+    try {
+      await noteMutation.mutateAsync({
+        listItemId: item.id,
+        note,
+        userId: user.id,
+      });
+    } catch (error) {
+      setItemErrorId(item.id);
+      setItemError(errorMessage(error, 'Unable to save this note. Try again.'));
+      throw error;
+    } finally {
+      itemRequests.current.delete(item.id);
+      setSavingId(null);
+    }
+  };
   return (
-    <Screen scroll className="gap-5">
-      {authLoading ? <LoadingState message="Loading list" /> : null}
-
+    <Screen padded={false}>
+      <Stack.Screen
+        options={{
+          title: 'Collection',
+          headerRight: () =>
+            list && user ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Collection options"
+                accessibilityState={{ expanded: options }}
+                className="h-12 w-12 items-center justify-center"
+                onPress={() => setOptions(true)}
+              >
+                <Ionicons
+                  name="ellipsis-horizontal"
+                  size={22}
+                  color="#fbf6ec"
+                />
+              </Pressable>
+            ) : null,
+        }}
+      />
+      {authLoading || (user && listQuery.isLoading) ? (
+        <LoadingState message="Loading list" />
+      ) : null}
       {!authLoading && !user ? (
         <EmptyState
           title="Sign in to view this list"
           message="Your custom collections are available after you sign in."
         />
       ) : null}
-
-      {!authLoading && user && listQuery.isLoading ? (
-        <LoadingState message="Loading list" />
-      ) : null}
-
       {!authLoading && user && listQuery.isError ? (
         <ErrorState
           title="List unavailable"
-          message={getErrorMessage(
+          message={errorMessage(
             listQuery.error,
             'Unable to load this list right now.',
           )}
@@ -521,58 +224,82 @@ export function ListDetailsScreen({ listId }: ListDetailsScreenProps) {
           onRetry={() => listQuery.refetch()}
         />
       ) : null}
-
-      {!authLoading && user && currentList ? (
+      {!authLoading && user && list ? (
         <>
-          <ListDetailsHeader
-            list={currentList}
-            onEdit={() => startEditList(currentList)}
-          />
-
-          {isEditingList ? (
-            <ListEditSheet
-              deleteError={deleteError}
-              errors={visibleFormErrors}
-              hasSubmitted={hasSubmittedForm}
-              isDeleting={isDeletingList}
-              isSubmitting={isSubmittingList}
-              list={currentList}
-              submitError={submitError}
-              touchedFields={touchedFields}
-              values={formValues}
-              onBlurField={markFieldTouched}
-              onCancel={cancelEditList}
-              onChange={updateFormValue}
-              onDelete={() => {
-                setConfirmingDelete(true);
-                setDeleteError(null);
-              }}
-              onSubmit={submitListForm}
-            />
-          ) : null}
-
-          {confirmingDelete ? (
-            <DeleteListConfirmation
-              error={deleteError}
-              isDeleting={isDeletingList}
-              list={currentList}
-              onCancel={() => {
-                setConfirmingDelete(false);
-                setDeleteError(null);
-              }}
-              onConfirm={confirmDeleteList}
-            />
-          ) : null}
-
-          <ListItemsSection
+          <CollectionContents
+            header={
+              <ListDetailsHeader list={list} onEdit={() => startEdit(list)} />
+            }
+            list={list}
             itemErrorId={itemErrorId}
-            itemErrorMessage={itemErrorMessage}
-            list={currentList}
-            removingItemId={removingItemId}
-            savingNoteItemId={savingNoteItemId}
+            itemErrorMessage={itemError}
+            removingItemId={removingId}
+            savingNoteItemId={savingId}
+            onPressItem={openTitle}
             onRemoveItem={removeItem}
             onSaveNote={saveNote}
           />
+          {options ? (
+            <CollectionSheet
+              title="Collection options"
+              onClose={() => setOptions(false)}
+            >
+              <Button
+                title="Edit name & description"
+                variant="secondary"
+                onPress={() => startEdit(list)}
+              />
+              <Button
+                title="Delete list"
+                variant="danger"
+                onPress={() => {
+                  setOptions(false);
+                  setDeleteError(null);
+                  setConfirmingDelete(true);
+                }}
+              />
+            </CollectionSheet>
+          ) : null}
+          {editing ? (
+            <CollectionSheet
+              title="Edit list"
+              onClose={dismissEdit}
+              busy={update.isPending}
+            >
+              <ListForm
+                errors={visibleErrors}
+                hasSubmitted={submitted}
+                isSubmitting={update.isPending}
+                list={list}
+                submitError={submitError}
+                touchedFields={touched}
+                values={values}
+                onBlurField={(key) =>
+                  setTouched((current) => ({ ...current, [key]: true }))
+                }
+                onCancel={dismissEdit}
+                onChange={(key, value) => {
+                  setValues((current) => ({ ...current, [key]: value }));
+                  setTouched((current) => ({ ...current, [key]: true }));
+                  setSubmitError(null);
+                }}
+                onSubmit={submit}
+                showIntro={false}
+                showDeleteAction={false}
+              />
+            </CollectionSheet>
+          ) : null}
+          {confirmingDelete ? (
+            <DeleteListConfirmation
+              error={deleteError}
+              isDeleting={deletion.isPending}
+              list={list}
+              onCancel={() => {
+                if (!deleting.current) setConfirmingDelete(false);
+              }}
+              onConfirm={deleteList}
+            />
+          ) : null}
         </>
       ) : null}
     </Screen>
