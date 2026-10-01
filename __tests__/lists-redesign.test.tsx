@@ -4,7 +4,9 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
+import { CollectionSheet } from '@/features/lists/components/CollectionSheet';
+import { ListForm } from '@/features/lists/components/ListForm';
 import { ListsScreen } from '@/features/lists/components/ListsScreen';
 import { ListDetailsScreen } from '@/features/lists/components/ListDetailsScreen';
 import { ListItemCard } from '@/features/lists/components/ListItemCard';
@@ -23,6 +25,8 @@ const mockDelete = jest.fn();
 let mockPrevent: { open: boolean; dismiss: () => void };
 let mockLists: UserListSummary[];
 let mockDetails: UserListDetails;
+let mockUser: { id: string } | null = { id: 'owner' };
+const mockPrevention = jest.fn();
 // Native Pressable dispatches events without awaiting an async application handler.
 jest.mock('@/components/ui/Button', () => {
   const { Button } = jest.requireActual('@/components/ui/Button');
@@ -45,6 +49,7 @@ jest.mock('expo-router', () => ({
 }));
 jest.mock('@react-navigation/native', () => ({
   usePreventRemove: (open: boolean, dismiss: () => void) => {
+    mockPrevention(open);
     if (open) mockPrevent = { open, dismiss };
   },
 }));
@@ -52,7 +57,7 @@ jest.mock('react-native-reanimated', () =>
   require('react-native-reanimated/mock'),
 );
 jest.mock('@/features/auth/hooks/useAuth', () => ({
-  useAuth: () => ({ user: { id: 'owner' }, loading: false }),
+  useAuth: () => ({ user: mockUser, loading: false }),
 }));
 jest.mock('@/features/lists/hooks/useUserLists', () => ({
   useUserLists: () => ({ data: mockLists, isSuccess: true }),
@@ -103,11 +108,165 @@ const summary: UserListSummary = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockUser = { id: 'owner' };
   mockLists = [summary];
   mockDetails = { ...summary, items: [item] };
   mockCreate.mockResolvedValue({ id: 'new' });
   mockUpdate.mockResolvedValue({});
   mockNote.mockResolvedValue({});
+});
+
+it('locks note input and dismissal until a save settles, then retains failed input', async () => {
+  let reject!: (error: Error) => void;
+  const save = jest.fn(
+    () =>
+      new Promise<void>((_, fail) => {
+        reject = fail;
+      }),
+  );
+  await render(
+    <ListItemCard
+      item={item}
+      onPress={jest.fn()}
+      onRemove={jest.fn()}
+      onSaveNote={save}
+    />,
+  );
+  await fireEvent.press(screen.getByLabelText('Add note for Heat'));
+  await fireEvent.changeText(
+    screen.getByLabelText('Collection note'),
+    'Submitted text',
+  );
+  await fireEvent.press(screen.getByRole('button', { name: 'Save note' }));
+  expect(screen.getByLabelText('Collection note').props.editable).toBe(false);
+  await fireEvent.changeText(
+    screen.getByLabelText('Collection note'),
+    'Later text',
+  );
+  await fireEvent(screen.getByLabelText('Collection note'), 'requestClose');
+  expect(screen.getByLabelText('Collection note').props.value).toBe(
+    'Submitted text',
+  );
+  expect(save).toHaveBeenCalledTimes(1);
+  reject(new Error('Offline'));
+  await waitFor(() => expect(screen.getByText('Offline')).toBeTruthy());
+  expect(screen.getByLabelText('Collection note').props.editable).toBe(true);
+  expect(screen.getByLabelText('Collection note').props.value).toBe(
+    'Submitted text',
+  );
+});
+
+it('locks metadata fields during create, update, and delete requests', async () => {
+  const props = {
+    errors: {},
+    values: { name: 'Collection', description: 'Description' },
+    onCancel: jest.fn(),
+    onChange: jest.fn(),
+    onSubmit: jest.fn(),
+    isSubmitting: true,
+  };
+  const view = await render(<ListForm {...props} />);
+  expect(screen.getByLabelText('List name').props.editable).toBe(false);
+  expect(screen.getByLabelText('List description').props.editable).toBe(false);
+  await view.rerender(<ListForm {...props} isSubmitting={false} isDeleting />);
+  expect(screen.getByLabelText('List name').props.editable).toBe(false);
+  expect(screen.getByLabelText('List description').props.editable).toBe(false);
+  await view.rerender(<ListForm {...props} isSubmitting={false} />);
+  expect(screen.getByLabelText('List name').props.editable).toBe(true);
+});
+
+it('releases create-form navigation protection on sign-out and clears the account draft', async () => {
+  const view = await render(<ListsScreen />);
+  await fireEvent.press(screen.getByRole('button', { name: 'New list' }));
+  await fireEvent.changeText(
+    screen.getByLabelText('List name'),
+    'Private draft',
+  );
+  expect(mockPrevention).toHaveBeenCalledWith(true);
+  mockUser = null;
+  await view.rerender(<ListsScreen />);
+  expect(mockPrevention).toHaveBeenLastCalledWith(false);
+  mockUser = { id: 'another-owner' };
+  await view.rerender(<ListsScreen />);
+  expect(screen.queryByLabelText('List name')).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: 'New list' }));
+  expect(screen.getByLabelText('List name').props.value).toBe('');
+});
+
+it('releases metadata navigation protection when the session ends', async () => {
+  const view = await render(<ListDetailsScreen listId="list" />);
+  await fireEvent.press(screen.getByRole('button', { name: 'Edit list' }));
+  await fireEvent.changeText(
+    screen.getByLabelText('List name'),
+    'Private edit',
+  );
+  expect(mockPrevention).toHaveBeenCalledWith(true);
+  mockPrevention.mockClear();
+  mockUser = null;
+  await view.rerender(<ListDetailsScreen listId="list" />);
+  expect(mockPrevention).toHaveBeenLastCalledWith(false);
+  expect(screen.queryByLabelText('List name')).toBeNull();
+});
+
+it('opens web panels without using the unsupported native focus handle', async () => {
+  jest.replaceProperty(Platform, 'OS', 'web');
+  try {
+    await render(
+      <CollectionSheet title="New list" onClose={jest.fn()}>
+        {null}
+      </CollectionSheet>,
+    );
+    const nativeHandle = jest
+      .spyOn(require('react-native'), 'findNodeHandle')
+      .mockImplementation(() => {
+        throw new Error('Unsupported on web');
+      });
+    await fireEvent(screen.getByRole('header', { name: 'New list' }), 'show');
+    expect(nativeHandle).not.toHaveBeenCalled();
+    nativeHandle.mockRestore();
+  } finally {
+    jest.restoreAllMocks();
+  }
+});
+
+it('allows web users to keep or discard drafts and confirm scoped removal', async () => {
+  jest.replaceProperty(Platform, 'OS', 'web');
+  const originalConfirm = window.confirm;
+  const confirm = jest.fn().mockReturnValue(false);
+  window.confirm = confirm;
+  try {
+    await render(
+      <ListItemCard
+        item={item}
+        onPress={jest.fn()}
+        onRemove={mockRemove}
+        onSaveNote={mockNote}
+      />,
+    );
+    await fireEvent.press(screen.getByLabelText('Add note for Heat'));
+    await fireEvent.changeText(
+      screen.getByLabelText('Collection note'),
+      'Keep me',
+    );
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByLabelText('Collection note').props.value).toBe(
+      'Keep me',
+    );
+    confirm.mockReturnValue(true);
+    await fireEvent.press(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByLabelText('Collection note')).toBeNull();
+    await fireEvent.press(screen.getByLabelText('Options for Heat'));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Remove from this list' }),
+    );
+    expect(confirm).toHaveBeenLastCalledWith(
+      expect.stringContaining('Your Journal and other lists stay as they are.'),
+    );
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+  } finally {
+    window.confirm = originalConfirm;
+    jest.restoreAllMocks();
+  }
 });
 
 it('opens normal Search from both populated Add titles and empty Find a title without mutations', async () => {

@@ -117,6 +117,7 @@ export function ListForm({
 
       <TextField
         accessibilityLabel="List name"
+        editable={!isSubmitting && !isDeleting}
         error={visibleErrors.name}
         label={`Name (${values.name.length}/${LIST_NAME_MAX_LENGTH})`}
         maxLength={LIST_NAME_MAX_LENGTH}
@@ -128,6 +129,7 @@ export function ListForm({
 
       <TextField
         accessibilityLabel="List description"
+        editable={!isSubmitting && !isDeleting}
         className="min-h-24 py-3"
         error={visibleErrors.description}
         label={`Description (${values.description.length}/${LIST_DESCRIPTION_MAX_LENGTH})`}

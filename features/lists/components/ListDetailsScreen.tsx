@@ -85,12 +85,17 @@ export function ListDetailsScreen({ listId }: { listId?: string }) {
     setSubmitError(null);
   }, []);
   const dismissEdit = useCollectionDismiss(
-    editing,
+    editing && Boolean(user) && !authLoading,
     values.name !== initialValues.name ||
       values.description !== initialValues.description,
     update.isPending || submitting.current,
     closeEdit,
   );
+  useEffect(() => {
+    closeEdit();
+    setOptions(false);
+    setConfirmingDelete(false);
+  }, [closeEdit, user?.id, listId]);
   const startEdit = (current: UserListDetails) => {
     const next = { name: current.name, description: current.description ?? '' };
     setValues(next);
@@ -227,6 +232,7 @@ export function ListDetailsScreen({ listId }: { listId?: string }) {
       {!authLoading && user && list ? (
         <>
           <CollectionContents
+            key={`${user.id}:${list.id}`}
             header={
               <ListDetailsHeader list={list} onEdit={() => startEdit(list)} />
             }
@@ -279,6 +285,7 @@ export function ListDetailsScreen({ listId }: { listId?: string }) {
                 }
                 onCancel={dismissEdit}
                 onChange={(key, value) => {
+                  if (submitting.current) return;
                   setValues((current) => ({ ...current, [key]: value }));
                   setTouched((current) => ({ ...current, [key]: true }));
                   setSubmitError(null);

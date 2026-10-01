@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View, useWindowDimensions } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
@@ -173,11 +173,12 @@ export function ListsScreen() {
   }, []);
 
   const dismissCreate = useCollectionDismiss(
-    isCreatingList,
+    isCreatingList && Boolean(user) && !authLoading,
     Boolean(formValues.name || formValues.description),
     isSubmitting || submitting.current,
     resetForm,
   );
+  useEffect(resetForm, [resetForm, user?.id]);
 
   const startCreateList = useCallback(() => {
     setIsCreatingList(true);
@@ -199,6 +200,7 @@ export function ListsScreen() {
       key: Key,
       value: ListFormValues[Key],
     ) => {
+      if (submitting.current) return;
       setFormValues((currentValues) => ({
         ...currentValues,
         [key]: value,

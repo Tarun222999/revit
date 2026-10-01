@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useCallback, useRef, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, Text, View } from 'react-native';
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
 import { TextField } from '@/components/ui/TextField';
@@ -32,7 +32,9 @@ export function ListItemCard({
   const [options, setOptions] = useState(false);
   const [note, setNote] = useState(item.note ?? '');
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const saving = useRef(false);
+  const busy = isSaving || isSavingNote;
   const close = useCallback(() => {
     setEditing(false);
     setError(null);
@@ -40,7 +42,7 @@ export function ListItemCard({
   const dismiss = useCollectionDismiss(
     editing,
     note !== (item.note ?? ''),
-    isSavingNote || saving.current,
+    busy || saving.current,
     close,
   );
   const openNote = () => {
@@ -52,6 +54,7 @@ export function ListItemCard({
   const save = async () => {
     if (saving.current || isSavingNote || note.length > 500) return;
     saving.current = true;
+    setIsSaving(true);
     setError(null);
     try {
       await onSaveNote(note.trim() || null);
@@ -64,6 +67,7 @@ export function ListItemCard({
       );
     } finally {
       saving.current = false;
+      setIsSaving(false);
     }
   };
   return (
@@ -151,18 +155,19 @@ export function ListItemCard({
             variant="danger"
             onPress={() => {
               setOptions(false);
-              Alert.alert(
-                'Remove this title?',
-                `Remove ${item.media.title} and its note from this list? Your Journal and other lists stay as they are.`,
-                [
-                  { text: 'Keep title', style: 'cancel' },
-                  {
-                    text: 'Remove from list',
-                    style: 'destructive',
-                    onPress: onRemove,
-                  },
-                ],
-              );
+              const message = `Remove ${item.media.title} and its note from this list? Your Journal and other lists stay as they are.`;
+              if (Platform.OS === 'web') {
+                if (window.confirm(message)) onRemove();
+                return;
+              }
+              Alert.alert('Remove this title?', message, [
+                { text: 'Keep title', style: 'cancel' },
+                {
+                  text: 'Remove from list',
+                  style: 'destructive',
+                  onPress: onRemove,
+                },
+              ]);
             }}
           />
         </CollectionSheet>
@@ -171,7 +176,7 @@ export function ListItemCard({
         <CollectionSheet
           title={item.note ? 'Edit note' : 'Add note'}
           onClose={dismiss}
-          busy={isSavingNote}
+          busy={busy}
         >
           <Text className="text-sm leading-6 text-archive-300">
             {item.media.title} · A note just for this collection.
@@ -184,19 +189,22 @@ export function ListItemCard({
             className="min-h-28"
             label={`Your note (${note.length}/500)`}
             value={note}
+            editable={!busy}
             maxLength={500}
-            onChangeText={setNote}
+            onChangeText={(value) => {
+              if (!saving.current && !isSavingNote) setNote(value);
+            }}
           />
           {error ? (
             <Text accessibilityRole="alert" className="text-sm text-reel-300">
               {error}
             </Text>
           ) : null}
-          <Button title="Save note" loading={isSavingNote} onPress={save} />
+          <Button title="Save note" loading={busy} onPress={save} />
           <Button
             title="Cancel"
             variant="secondary"
-            disabled={isSavingNote}
+            disabled={busy}
             onPress={dismiss}
           />
         </CollectionSheet>

@@ -39,6 +39,8 @@ export function CollectionSheet({
         if (!busy) onClose();
       }}
       onShow={() => {
+        // React Native Web's Modal manages DOM focus; findNodeHandle throws there.
+        if (Platform.OS === 'web') return;
         const node = findNodeHandle(heading.current);
         if (node) AccessibilityInfo.setAccessibilityFocus(node);
       }}
