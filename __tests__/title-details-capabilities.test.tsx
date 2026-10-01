@@ -11,6 +11,7 @@ const mockUseAppCapabilities = jest.fn();
 const mockUseAuth = jest.fn();
 const mockUseJournalTitleSummary = jest.fn();
 const mockUseMediaDetails = jest.fn();
+const mockUsePublicTitleDetails = jest.fn();
 
 jest.mock('expo-router', () => ({
   router: {
@@ -33,7 +34,11 @@ jest.mock('@/features/capabilities/context/AppCapabilitiesProvider', () => ({
 }));
 
 jest.mock('@/features/media/hooks/useMediaDetails', () => ({
-  useMediaDetails: () => mockUseMediaDetails(),
+  useMediaDetails: (routeId?: string) => mockUseMediaDetails(routeId),
+}));
+
+jest.mock('@/features/media/hooks/usePublicTitleDetails', () => ({
+  usePublicTitleDetails: (titleId?: string) => mockUsePublicTitleDetails(titleId),
 }));
 
 jest.mock('@/features/media/hooks/useMediaTrailer', () => ({
@@ -119,6 +124,11 @@ beforeEach(() => {
     isError: false,
     isLoading: false,
   });
+  mockUsePublicTitleDetails.mockReturnValue({
+    data: undefined,
+    isError: false,
+    isLoading: false,
+  });
   mockUseJournalTitleSummary.mockReturnValue({
     data: null,
     isError: false,
@@ -151,5 +161,29 @@ describe('Title Details game capability boundaries', () => {
     );
 
     expect(mockPush).toHaveBeenCalledWith('/title/igdb%3A42/history');
+  });
+
+  it('uses only the public resolver and renders no personal Journal summary when signed out', async () => {
+    mockUseAuth.mockReturnValue({ user: null });
+    mockUsePublicTitleDetails.mockReturnValue({
+      data: {
+        item: {
+          genres: [],
+          mediaType: 'movie',
+          metadata: {},
+          source: 'tmdb',
+          sourceId: 'movie:550',
+          title: 'Public title',
+        },
+      },
+      isError: false,
+      isLoading: false,
+    });
+
+    await render(<TitleDetailsScreen titleId="tmdb:movie:550" />);
+
+    expect(mockUseMediaDetails).toHaveBeenCalledWith(undefined);
+    expect(mockUsePublicTitleDetails).toHaveBeenCalledWith('tmdb:movie:550');
+    expect(screen.queryByText('Your Journal')).toBeNull();
   });
 });

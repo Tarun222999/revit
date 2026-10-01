@@ -2,14 +2,11 @@ name: Verify
 
 on:
   pull_request:
-    branches:
-      - develop
-      - main
-      - v1.3.1
   push:
     branches:
       - develop
       - main
+      - 'v*'
 
 permissions:
   contents: read

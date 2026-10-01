@@ -20,6 +20,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Screen } from '@/components/ui/Screen';
 import { signInWithGoogle } from '@/features/auth/api/google-auth-api';
+import { storePendingAuthReturnTo } from '@/features/auth/utils/pendingDestination';
 import { useAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import { cn } from '@/lib/utils/cn';
 
@@ -226,7 +227,11 @@ export function GoogleSignInError({ error }: { error: string | null }) {
   );
 }
 
-export function WelcomeAuthScreen() {
+export function WelcomeAuthScreen({
+  returnTo,
+}: {
+  returnTo?: string | string[];
+}) {
   const { gamesEnabled } = useAppCapabilities();
   const chapters = useMemo(() => getWelcomeMediaChapters(gamesEnabled), [gamesEnabled]);
   const { fontScale, height } = useWindowDimensions();
@@ -316,6 +321,7 @@ export function WelcomeAuthScreen() {
     setLoadingGoogle(true);
 
     try {
+      const canonicalReturnTo = await storePendingAuthReturnTo(returnTo);
       const callbackUrl = await signInWithGoogle();
 
       if (!callbackUrl) {
@@ -337,6 +343,7 @@ export function WelcomeAuthScreen() {
           ...(typeof errorDescription === 'string'
             ? { error_description: errorDescription }
             : {}),
+          ...(canonicalReturnTo ? { returnTo: canonicalReturnTo } : {}),
         },
       });
     } catch (signInError) {

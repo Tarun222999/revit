@@ -32,12 +32,19 @@ import { TitleDetailsMetadataCard } from '@/features/media/components/TitleDetai
 import { TitleDetailsSummaryCard } from '@/features/media/components/TitleDetailsSummaryCard';
 import { GameTitleDetailsContent } from '@/features/media/components/GameTitleDetailsContent';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
+import { usePublicTitleDetails } from '@/features/media/hooks/usePublicTitleDetails';
 import { useMediaTrailer } from '@/features/media/hooks/useMediaTrailer';
+import { PublicTitleUnavailableError } from '@/features/media/api/public-title-api';
+import { TitleDetailsOverflow } from '@/features/media/components/TitleDetailsOverflow';
 import {
   getGameDetailsModel,
   isGame,
 } from '@/features/media/model/gameDetails';
 import { getTitleDetailMetrics } from '@/features/media/model/titleDetails';
+import {
+  createTitleShareUrl,
+  getPotentialTitleShareId,
+} from '@/features/sharing/model/titleShare';
 
 type TitleDetailsScreenProps = {
   journalCapture?: string;
@@ -56,16 +63,21 @@ export function TitleDetailsScreen({
 }: TitleDetailsScreenProps) {
   const { user } = useAuth();
   const { gamesEnabled } = useAppCapabilities();
-  const detailsQuery = useMediaDetails(titleId);
+  const publicTitleRequestId = getPotentialTitleShareId(titleId);
+  const authenticatedDetailsQuery = useMediaDetails(user?.id ? titleId : undefined);
+  const publicDetailsQuery = usePublicTitleDetails(
+    !user?.id ? publicTitleRequestId : undefined,
+  );
+  const detailsQuery = user?.id ? authenticatedDetailsQuery : publicDetailsQuery;
   const item = detailsQuery.data?.item;
   const canUseTitleMutations = Boolean(
     item && (item.mediaType !== 'game' || gamesEnabled),
   );
   const game = item && isGame(item) ? getGameDetailsModel(item) : null;
   const trailerQuery = useMediaTrailer(
-    item?.source === 'tmdb' ? item.sourceId : undefined,
+    user?.id && item?.source === 'tmdb' ? item.sourceId : undefined,
   );
-  const mediaItemId = item?.id;
+  const mediaItemId = user?.id && item && 'id' in item ? item.id : undefined;
   const journalQuery = useJournalTitleSummary(user?.id, mediaItemId);
   const removePlan = useRemoveJournalPlan();
   const removeTitle = useRemoveJournalTitle();
@@ -205,7 +217,11 @@ export function TitleDetailsScreen({
 
   const openJournalSummary = () => {
     if (!user?.id) {
-      router.push('/welcome');
+      const returnTo = item ? createTitleShareUrl(item) : undefined;
+      router.push({
+        pathname: '/welcome',
+        params: returnTo ? { returnTo } : {},
+      });
       return;
     }
 
@@ -285,18 +301,30 @@ export function TitleDetailsScreen({
           headerTintColor: '#fbf6ec',
           headerTitle: '',
           headerTransparent: true,
+          headerRight: () => item ? <TitleDetailsOverflow item={item} /> : null,
         }}
       />
 
       <View>
         {detailsQuery.isLoading ? <TitleDetailsHeroLoading /> : null}
 
-        {detailsQuery.isError ? (
+        {detailsQuery.isError && detailsQuery.error instanceof PublicTitleUnavailableError ? (
+          <EmptyState
+            actionLabel="Retry"
+            message="It may not have been added to Revit yet."
+            onAction={() => detailsQuery.refetch()}
+            title="This title isn't available in Revit yet"
+          />
+        ) : null}
+
+        {detailsQuery.isError && !(detailsQuery.error instanceof PublicTitleUnavailableError) ? (
           <ErrorState
-            title="Details failed"
+            title={user?.id ? 'Details failed' : 'Shared title unavailable'}
             message={errorMessage(
               detailsQuery.error,
-              'Unable to load this title right now.',
+              user?.id
+                ? 'Unable to load this title right now.'
+                : 'Unable to load this shared title right now. Check your connection and try again.',
             )}
             onRetry={() => detailsQuery.refetch()}
           />
@@ -304,8 +332,8 @@ export function TitleDetailsScreen({
 
         {!detailsQuery.isLoading && !detailsQuery.isError && !item ? (
           <EmptyState
-            title="Title not found"
-            message="This title is not available right now."
+            title={user?.id ? 'Title not found' : "This title isn't available in Revit yet"}
+            message={user?.id ? 'This title is not available right now.' : 'It may not have been added to Revit yet.'}
           />
         ) : null}
       </View>
@@ -334,7 +362,7 @@ export function TitleDetailsScreen({
               onIntent={openJournalIntent}
               onRemovePlan={confirmRemovePlan}
               onRemoveTitle={confirmRemoveTitle}
-              onSignIn={() => router.push('/welcome')}
+              onSignIn={openJournalSummary}
               onWatchTrailer={openTrailer}
               removing={removePlan.isPending || removeTitle.isPending}
               showTrailer={Boolean(
@@ -356,28 +384,27 @@ export function TitleDetailsScreen({
               />
             ) : null}
 
-            {user?.id && journalQuery.isLoading ? (
-              <LoadingState message="Loading your Journal" />
-            ) : user?.id && journalQuery.isError ? (
-              <ErrorState
-                title="Journal unavailable"
-                message={errorMessage(
-                  journalQuery.error,
-                  'Unable to load your Journal information for this title.',
-                )}
-                onRetry={() => journalQuery.refetch()}
-              />
-            ) : (
-              <YourJournalSummary
-                mediaType={item.mediaType}
-                disabled={Boolean(
-                  user?.id &&
-                    (!journalQuery.isSuccess || !journalSummaryAction),
-                )}
-                onPress={journalSummaryAction}
-                summary={summary}
-              />
-            )}
+            {user?.id ? (
+              journalQuery.isLoading ? (
+                <LoadingState message="Loading your Journal" />
+              ) : journalQuery.isError ? (
+                <ErrorState
+                  title="Journal unavailable"
+                  message={errorMessage(
+                    journalQuery.error,
+                    'Unable to load your Journal information for this title.',
+                  )}
+                  onRetry={() => journalQuery.refetch()}
+                />
+              ) : (
+                <YourJournalSummary
+                  mediaType={item.mediaType}
+                  disabled={Boolean(!journalQuery.isSuccess || !journalSummaryAction)}
+                  onPress={journalSummaryAction}
+                  summary={summary}
+                />
+              )
+            ) : null}
 
             <TitleDetailsSummaryCard description={item.description} />
             {game ? (

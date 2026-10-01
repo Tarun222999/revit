@@ -1,7 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { act, render, screen, waitFor } from '@testing-library/react-native';
 import { AuthError } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
-import { router, useLocalSearchParams, usePathname } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  router,
+  useGlobalSearchParams,
+  useLocalSearchParams,
+  usePathname,
+} from 'expo-router';
 import { Text } from 'react-native';
 
 import { AuthGate } from '@/features/auth/AuthGate';
@@ -20,6 +26,7 @@ jest.mock('expo-router', () => ({
   router: {
     replace: jest.fn(),
   },
+  useGlobalSearchParams: jest.fn(),
   useLocalSearchParams: jest.fn(),
   usePathname: jest.fn(),
 }));
@@ -71,6 +78,10 @@ const mockAuth = jest.mocked(useAuth);
 const mockCurrentProfile = jest.mocked(useCurrentProfile);
 const mockGetCurrentProfile = jest.mocked(getCurrentProfile);
 const mockRouterReplace = jest.mocked(router.replace);
+const mockGetStoredReturnTo = jest.mocked(AsyncStorage.getItem);
+const mockStoreReturnTo = jest.mocked(AsyncStorage.setItem);
+const mockClearStoredReturnTo = jest.mocked(AsyncStorage.removeItem);
+const mockUseGlobalSearchParams = jest.mocked(useGlobalSearchParams);
 const mockUsePathname = jest.mocked(usePathname);
 const mockUseLocalSearchParams = jest.mocked(useLocalSearchParams);
 const mockExchangeCodeForSession = jest.mocked(supabase.auth.exchangeCodeForSession);
@@ -153,7 +164,11 @@ describe('auth route boundaries', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockUsePathname.mockReturnValue('/journal');
+    mockUseGlobalSearchParams.mockReturnValue({});
     mockUseLocalSearchParams.mockReturnValue({});
+    mockGetStoredReturnTo.mockResolvedValue(null);
+    mockStoreReturnTo.mockResolvedValue(undefined);
+    mockClearStoredReturnTo.mockResolvedValue(undefined);
     setAuthState();
     setProfileState();
   });
@@ -173,6 +188,8 @@ describe('auth route boundaries', () => {
     '/legal/terms',
     '/legal/credits',
     '/support',
+    '/title/tmdb:movie:550',
+    '/title/tmdb:malformed',
   ])('keeps the public route %s available without a session', async (pathname) => {
     mockUsePathname.mockReturnValue(pathname);
 
@@ -213,6 +230,26 @@ describe('auth route boundaries', () => {
     await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/onboarding'));
   });
 
+  it('carries a valid public title route through onboarding for a profileless session', async () => {
+    mockUsePathname.mockReturnValue('/title/tmdb:movie:550');
+    setAuthState({ user: authUser });
+
+    await render(
+      <AuthGate>
+        <Text>Shared title</Text>
+      </AuthGate>,
+    );
+
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({
+      pathname: '/onboarding',
+      params: { returnTo: 'revit://title/tmdb%3Amovie%3A550' },
+    }));
+    expect(mockStoreReturnTo).toHaveBeenCalledWith(
+      'revit.pending-auth-return-to',
+      'revit://title/tmdb%3Amovie%3A550',
+    );
+  });
+
   it('sends a signed-in user with a profile to the tab shell when they are on auth routes', async () => {
     mockUsePathname.mockReturnValue('/welcome');
     setAuthState({ user: authUser });
@@ -223,6 +260,104 @@ describe('auth route boundaries', () => {
         <Text>Welcome content</Text>
       </AuthGate>,
     );
+
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/(tabs)'));
+  });
+
+  it.each(['/welcome', '/email-code', '/onboarding'])(
+    'restores a shared title from %s after the profile becomes available',
+    async (pathname) => {
+      mockUsePathname.mockReturnValue(pathname);
+      mockUseGlobalSearchParams.mockReturnValue({
+        returnTo: 'revit://title/tmdb%3Atv%3A1396',
+      });
+      setAuthState({ user: authUser });
+      setProfileState({ id: 'profile-1' });
+
+      await render(
+        <AuthGate>
+          <Text>Auth transition</Text>
+        </AuthGate>,
+      );
+
+      await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({
+        pathname: '/title/[id]',
+        params: { id: 'tmdb:tv:1396' },
+      }));
+    },
+  );
+
+  it('falls back to the tab shell instead of honoring an invalid auth return path', async () => {
+    mockUsePathname.mockReturnValue('/welcome');
+    mockUseGlobalSearchParams.mockReturnValue({ returnTo: 'https://example.com/not-revit' });
+    setAuthState({ user: authUser });
+    setProfileState({ id: 'profile-1' });
+
+    await render(
+      <AuthGate>
+        <Text>Invalid auth transition</Text>
+      </AuthGate>,
+    );
+
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/(tabs)'));
+  });
+
+  it('recovers a stored shared title when onboarding route parameters are unavailable', async () => {
+    mockUsePathname.mockReturnValue('/onboarding');
+    mockGetStoredReturnTo.mockResolvedValue('revit://title/igdb%3A1942');
+    setAuthState({ user: authUser });
+    setProfileState({ id: 'profile-1' });
+
+    await render(
+      <AuthGate>
+        <Text>Recovered auth transition</Text>
+      </AuthGate>,
+    );
+
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({
+      pathname: '/title/[id]',
+      params: { id: 'igdb:1942' },
+    }));
+  });
+
+  it('clears a restored stored title before a later ordinary auth redirect', async () => {
+    mockUsePathname.mockReturnValue('/onboarding');
+    mockGetStoredReturnTo.mockResolvedValue('revit://title/igdb%3A1942');
+    setAuthState({ user: authUser });
+    setProfileState({ id: 'profile-1' });
+
+    const view = await render(
+      <AuthGate>
+        <Text>Stored lifecycle</Text>
+      </AuthGate>,
+    );
+
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({
+      pathname: '/title/[id]',
+      params: { id: 'igdb:1942' },
+    }));
+
+    mockUsePathname.mockReturnValue('/title/igdb:1942');
+    await act(async () => {
+      view.rerender(
+        <AuthGate>
+          <Text>Stored lifecycle</Text>
+        </AuthGate>,
+      );
+    });
+    await waitFor(() => expect(mockClearStoredReturnTo).toHaveBeenCalledWith(
+      'revit.pending-auth-return-to',
+    ));
+
+    mockRouterReplace.mockClear();
+    mockUsePathname.mockReturnValue('/welcome');
+    await act(async () => {
+      view.rerender(
+        <AuthGate>
+          <Text>Stored lifecycle</Text>
+        </AuthGate>,
+      );
+    });
 
     await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/(tabs)'));
   });
@@ -270,6 +405,21 @@ describe('auth callback boundaries', () => {
     expect(mockExchangeCodeForSession).toHaveBeenCalledWith('code-with-profile');
   });
 
+  it('restores a valid shared title after an existing user signs in', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ code: 'code-with-shared-title' });
+    mockExchangeCodeForSession.mockResolvedValue(successfulCallbackResponse);
+    mockGetCurrentProfile.mockResolvedValue(profile);
+
+    await render(
+      <AuthCallbackScreen returnTo="revit://title/tmdb%3Atv%3A1396" />,
+    );
+
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({
+      pathname: '/title/[id]',
+      params: { id: 'tmdb:tv:1396' },
+    }));
+  });
+
   it('shows an auth error and does not route when code exchange fails', async () => {
     mockUseLocalSearchParams.mockReturnValue({ code: 'invalid-code' });
     mockExchangeCodeForSession.mockResolvedValue(failedCallbackResponse);
@@ -308,6 +458,29 @@ describe('auth callback boundaries', () => {
     await render(<AuthCallbackScreen />);
 
     await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/(auth)/onboarding'));
+  });
+
+  it('retains a stored shared title while a new user is handed off to onboarding', async () => {
+    mockUseLocalSearchParams.mockReturnValue({ code: 'code-with-stored-shared-title' });
+    mockGetStoredReturnTo.mockResolvedValue('revit://title/tmdb%3Amovie%3A550');
+    mockExchangeCodeForSession.mockResolvedValue({
+      ...successfulCallbackResponse,
+      data: {
+        session: { ...authSession, user: { ...authUser, id: 'user-3' } },
+        user: { ...authUser, id: 'user-3' },
+      },
+    });
+    mockGetCurrentProfile.mockResolvedValue(null);
+
+    await render(<AuthCallbackScreen />);
+
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({
+      pathname: '/(auth)/onboarding',
+      params: { returnTo: 'revit://title/tmdb%3Amovie%3A550' },
+    }));
+    expect(AsyncStorage.removeItem).not.toHaveBeenCalledWith(
+      'revit.pending-auth-return-to',
+    );
   });
 });
 
