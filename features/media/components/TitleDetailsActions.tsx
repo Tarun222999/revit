@@ -11,6 +11,8 @@ type TitleDetailsActionsProps = {
   journalEntryLoading: boolean;
   onOpenAddToList: () => void;
   onOpenJournalEntry: () => void;
+  onOpenTrailer: () => void;
+  canOpenTrailer: boolean;
 };
 
 export function TitleDetailsActions({
@@ -21,6 +23,8 @@ export function TitleDetailsActions({
   journalEntryLoading,
   onOpenAddToList,
   onOpenJournalEntry,
+  onOpenTrailer,
+  canOpenTrailer,
 }: TitleDetailsActionsProps) {
   return (
     <View className="gap-3">
@@ -36,6 +40,9 @@ export function TitleDetailsActions({
         loading={addToListLoading}
         onPress={onOpenAddToList}
       />
+      {canOpenTrailer ? (
+        <Button title="Watch Trailer" variant="ghost" onPress={onOpenTrailer} />
+      ) : null}
       {!canOpenLists ? (
         <Text className="text-center text-xs leading-4 text-archive-300">
           Sign in and wait for title details to finish loading before adding this title to lists.

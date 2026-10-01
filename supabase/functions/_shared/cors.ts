@@ -7,11 +7,13 @@ export const corsHeaders = {
 
 export class HttpError extends Error {
   status: number;
+  code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = 'HttpError';
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -27,7 +29,13 @@ export function jsonResponse(body: unknown, status = 200) {
 
 export function errorResponse(error: unknown) {
   if (error instanceof HttpError) {
-    return jsonResponse({ error: error.message }, error.status);
+    return jsonResponse(
+      {
+        error: error.message,
+        ...(error.code ? { code: error.code } : {}),
+      },
+      error.status,
+    );
   }
 
   console.error(error);

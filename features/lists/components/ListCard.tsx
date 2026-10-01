@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 import { Card } from '@/components/ui/Card';
 import { MEDIA_TYPE_LABELS, MEDIA_TYPES, type MediaType } from '@/constants/media';
@@ -46,8 +47,11 @@ function getInitials(title: string) {
     .join('');
 }
 
-function getMediaTypeCounts(coverItems: ListCoverMedia[]) {
-  const counts = coverItems.reduce<Record<MediaType, number>>(
+function getMediaTypeCounts(
+  coverItems: ListCoverMedia[],
+  completeCounts?: Record<MediaType, number>,
+) {
+  const counts = completeCounts ?? coverItems.reduce<Record<MediaType, number>>(
     (nextCounts, item) => ({
       ...nextCounts,
       [item.mediaType]: nextCounts[item.mediaType] + 1,
@@ -74,6 +78,12 @@ function CoverTile({
   className?: string;
   item?: ListCoverMedia;
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [item?.imageUrl]);
+
   if (!item) {
     return (
       <View
@@ -93,8 +103,9 @@ function CoverTile({
         coverAccentClasses[item.mediaType],
         className,
       )}>
-      {item.imageUrl ? (
+      {item.imageUrl && !imageFailed ? (
         <Image
+          onError={() => setImageFailed(true)}
           source={{ uri: item.imageUrl }}
           contentFit="cover"
           style={{ height: '100%', width: '100%' }}
@@ -128,7 +139,10 @@ function ListCoverCollage({ coverItems }: { coverItems: ListCoverMedia[] }) {
 }
 
 export function ListCard({ list, onPress }: ListCardProps) {
-  const mediaTypeCounts = getMediaTypeCounts(list.coverItems);
+  const mediaTypeCounts = getMediaTypeCounts(
+    list.coverItems,
+    list.mediaTypeCounts,
+  );
   const updatedAt = formatUpdatedAt(list.updatedAt);
 
   return (

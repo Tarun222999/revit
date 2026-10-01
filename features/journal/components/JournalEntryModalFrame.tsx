@@ -14,7 +14,9 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 type JournalEntryModalFrameProps = {
   children: React.ReactNode;
+  onClose?: () => void;
   scroll?: boolean;
+  title?: string;
 };
 
 function useKeyboardInset(bottomInset: number) {
@@ -47,7 +49,9 @@ function useKeyboardInset(bottomInset: number) {
 
 export function JournalEntryModalFrame({
   children,
+  onClose = () => router.back(),
   scroll = false,
+  title = 'Journal',
 }: JournalEntryModalFrameProps) {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
@@ -78,14 +82,14 @@ export function JournalEntryModalFrame({
               className="min-w-0 flex-1 text-lg font-bold text-archive-50"
               numberOfLines={1}
             >
-              Journal Entry
+              {title}
             </Text>
             <Pressable
               accessibilityLabel="Close journal entry modal"
               accessibilityRole="button"
               hitSlop={10}
               className="h-10 w-10 items-center justify-center rounded-full border border-archive-700 bg-archive-800"
-              onPress={() => router.back()}
+              onPress={onClose}
             >
               <Ionicons color="#fbf6ec" name="close" size={20} />
             </Pressable>

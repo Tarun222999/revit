@@ -37,7 +37,7 @@ export function DeleteListConfirmation({
             <Card className="gap-4 border-reel-500/70 p-5">
               <View className="gap-2">
                 <Text className="text-xl font-bold text-archive-50">
-                  Delete "{list.name}"?
+                  Delete &quot;{list.name}&quot;?
                 </Text>
                 <Text className="text-sm leading-5 text-archive-300">
                   This removes the list and its saved items. Your journal entries stay untouched.

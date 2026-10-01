@@ -117,6 +117,21 @@ export function isLikelyAnime(result: TmdbTvResult) {
   );
 }
 
+export function filterTmdbTvSearchResults(
+  results: TmdbTvResult[],
+  mediaType: 'all' | 'series' | 'anime',
+) {
+  if (mediaType === 'anime') {
+    return results.filter(isLikelyAnime);
+  }
+
+  if (mediaType === 'series') {
+    return results.filter((result) => !isLikelyAnime(result));
+  }
+
+  return results;
+}
+
 export function normalizeTmdbMovie(
   result: TmdbMovieResult,
 ): NormalizedMediaItem {

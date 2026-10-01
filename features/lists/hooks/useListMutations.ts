@@ -78,8 +78,20 @@ export function useAddMediaItemToList() {
         queryKey: listDetailsQueryKey(input.userId, listItem.list_id),
       });
       queryClient.invalidateQueries({
-        queryKey: mediaListMembershipsQueryKey(input.userId, input.mediaItemId),
+        queryKey: mediaListMembershipsQueryKey(
+          input.userId,
+          listItem.media_item_id,
+        ),
       });
+
+      // A provider-backed add may resolve a source identity to its persisted
+      // media row immediately before insertion. Keep any caller cache keyed by
+      // the original id coherent as well when those identities differ.
+      if (listItem.media_item_id !== input.mediaItemId) {
+        queryClient.invalidateQueries({
+          queryKey: mediaListMembershipsQueryKey(input.userId, input.mediaItemId),
+        });
+      }
     },
   });
 }

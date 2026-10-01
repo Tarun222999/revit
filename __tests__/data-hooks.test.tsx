@@ -8,8 +8,9 @@ import {
 import { searchTitles } from '@/features/discovery/api/search-api';
 import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
 import { useSearchTitles } from '@/features/discovery/hooks/useSearchTitles';
-import { getMediaDetails } from '@/features/media/api/media-api';
+import { getMediaDetails, getMediaTrailer } from '@/features/media/api/media-api';
 import { useMediaDetails } from '@/features/media/hooks/useMediaDetails';
+import { useMediaTrailer } from '@/features/media/hooks/useMediaTrailer';
 import {
   createJournalEntry,
   deleteJournalEntry,
@@ -47,6 +48,7 @@ jest.mock('@/features/discovery/api/search-api', () => ({
 
 jest.mock('@/features/media/api/media-api', () => ({
   getMediaDetails: jest.fn(),
+  getMediaTrailer: jest.fn(),
   parseMediaRouteId: jest.fn((routeId: string) => ({ mediaItemId: routeId })),
 }));
 
@@ -76,6 +78,7 @@ jest.mock('@/lib/supabase/client', () => ({
 const mockGetDiscoverRail = jest.mocked(getDiscoverRail);
 const mockSearchTitles = jest.mocked(searchTitles);
 const mockGetMediaDetails = jest.mocked(getMediaDetails);
+const mockGetMediaTrailer = jest.mocked(getMediaTrailer);
 const mockCreateJournalEntry = jest.mocked(createJournalEntry);
 const mockDeleteJournalEntry = jest.mocked(deleteJournalEntry);
 const mockCreateList = jest.mocked(createList);
@@ -94,18 +97,24 @@ const mediaItem = {
 } satisfies NormalizedMediaItem;
 
 const journalEntry = {
+  effective_status: 'completed',
   completed_on: '2026-07-13',
   contains_spoilers: false,
   created_at: '2026-07-13T10:00:00.000Z',
+  has_active_plan: false,
   id: 'entry-1',
   last_activity_at: '2026-07-13T10:00:00.000Z',
+  legacy_bridge_statement_at: null,
+  legacy_plan_resolution_statement_at: null,
   media_item_id: 'media-1',
+  planned_for: null,
   rating: 4.5,
   review_body: null,
   review_headline: null,
   started_on: null,
   status: 'completed',
   updated_at: '2026-07-13T10:00:00.000Z',
+  undated_completed_count: 0,
   user_id: 'user-1',
 } satisfies JournalEntry;
 
@@ -151,6 +160,7 @@ function createWrapper(queryClient: QueryClient) {
 }
 
 afterEach(async () => {
+  jest.useRealTimers();
   await act(async () => {
     testQueryClients.forEach((queryClient) => queryClient.clear());
   });
@@ -173,6 +183,146 @@ describe('data query hooks', () => {
     expect(mockSearchTitles).not.toHaveBeenCalled();
   });
 
+  it('waits 450ms after input settles before starting a search', async () => {
+    jest.useFakeTimers();
+    mockSearchTitles.mockResolvedValue({
+      results: [mediaItem],
+      page: 1,
+      totalPages: 1,
+    });
+    const queryClient = createTestQueryClient();
+
+    const { result, rerender } = await renderHook(
+      ({ query }: { query: string }) => useSearchTitles(query),
+      {
+        initialProps: { query: '' },
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    await act(async () => {
+      rerender({ query: 'du' });
+    });
+
+    expect(result.current.isDebouncing).toBe(true);
+    expect(mockSearchTitles).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(449);
+    });
+    expect(mockSearchTitles).not.toHaveBeenCalled();
+
+    await act(async () => {
+      jest.advanceTimersByTime(1);
+    });
+    await waitFor(() => expect(mockSearchTitles).toHaveBeenCalledTimes(1));
+    jest.useRealTimers();
+  });
+
+  it('does not allow an older response to replace a newer query', async () => {
+    jest.useFakeTimers();
+    let resolveOld: ((value: { results: NormalizedMediaItem[]; page: number; totalPages: number }) => void) | undefined;
+    let resolveNew: ((value: { results: NormalizedMediaItem[]; page: number; totalPages: number }) => void) | undefined;
+    let oldSignal: AbortSignal | undefined;
+    let newSignal: AbortSignal | undefined;
+    mockSearchTitles.mockImplementation(({ query, signal }) => {
+      if (query === 'du') {
+        oldSignal = signal;
+        return new Promise((resolve) => {
+          resolveOld = resolve;
+        });
+      }
+
+      newSignal = signal;
+      return new Promise((resolve) => {
+        resolveNew = resolve;
+      });
+    });
+    const queryClient = createTestQueryClient();
+    const { result, rerender } = await renderHook(
+      ({ query }: { query: string }) => useSearchTitles(query),
+      {
+        initialProps: { query: 'du' },
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    expect(mockSearchTitles).toHaveBeenCalledWith({
+      mediaType: 'all',
+      page: 1,
+      query: 'du',
+      signal: expect.anything(),
+    });
+    await act(async () => {
+      rerender({ query: 'dun' });
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(450);
+    });
+    expect(mockSearchTitles).toHaveBeenCalledWith({
+      mediaType: 'all',
+      page: 1,
+      query: 'dun',
+      signal: expect.anything(),
+    });
+    expect(oldSignal?.aborted).toBe(true);
+    expect(newSignal?.aborted).toBe(false);
+
+    await act(async () => {
+      resolveNew?.({ results: [{ ...mediaItem, title: 'Dun' }], page: 1, totalPages: 1 });
+    });
+    await waitFor(() => expect(result.current.data?.results[0]?.title).toBe('Dun'));
+
+    await act(async () => {
+      resolveOld?.({ results: [{ ...mediaItem, title: 'Dune (old)' }], page: 1, totalPages: 1 });
+    });
+    expect(result.current.data?.results[0]?.title).toBe('Dun');
+    jest.useRealTimers();
+  });
+
+  it('keeps the Games filter inside the existing debounce and cancellation guard', async () => {
+    jest.useFakeTimers();
+    let oldSignal: AbortSignal | undefined;
+    mockSearchTitles.mockImplementation(({ query, signal }) => {
+      if (query === 'ze') {
+        oldSignal = signal;
+      }
+
+      return new Promise(() => undefined);
+    });
+    const queryClient = createTestQueryClient();
+    const { rerender } = await renderHook(
+      ({ query }: { query: string }) => useSearchTitles(query, 'game'),
+      {
+        initialProps: { query: 'ze' },
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    expect(mockSearchTitles).toHaveBeenCalledWith({
+      mediaType: 'game',
+      page: 1,
+      query: 'ze',
+      signal: expect.anything(),
+    });
+
+    await act(async () => {
+      rerender({ query: 'zel' });
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(450);
+    });
+
+    expect(oldSignal?.aborted).toBe(true);
+    await waitFor(() => expect(mockSearchTitles).toHaveBeenCalledWith({
+      mediaType: 'game',
+      page: 1,
+      query: 'zel',
+      signal: expect.anything(),
+    }));
+    jest.useRealTimers();
+  });
+
   it('returns search results and normalizes the query input', async () => {
     mockSearchTitles.mockResolvedValue({
       results: [mediaItem],
@@ -193,6 +343,7 @@ describe('data query hooks', () => {
       mediaType: 'movie',
       page: 1,
       query: 'dune',
+      signal: expect.anything(),
     });
   });
 
@@ -274,6 +425,37 @@ describe('data query hooks', () => {
 
     expect(result.current.data?.item).toEqual(mediaItem);
     expect(mockGetMediaDetails).toHaveBeenCalledWith({ mediaItemId: 'media-1' });
+  });
+
+  it('loads and caches a TMDB trailer only when a source id is present', async () => {
+    mockGetMediaTrailer.mockResolvedValue({
+      trailer: {
+        key: 'trailer123',
+        name: 'Official Trailer',
+        site: 'YouTube',
+      },
+    });
+    const queryClient = createTestQueryClient();
+
+    const { result, rerender } = await renderHook(
+      ({ sourceId }: { sourceId?: string }) => useMediaTrailer(sourceId),
+      {
+        initialProps: { sourceId: undefined },
+        wrapper: createWrapper(queryClient),
+      },
+    );
+
+    expect(result.current.fetchStatus).toBe('idle');
+    expect(mockGetMediaTrailer).not.toHaveBeenCalled();
+
+    await rerender({ sourceId: 'movie:123' });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(result.current.data?.trailer?.key).toBe('trailer123');
+    expect(mockGetMediaTrailer).toHaveBeenCalledWith({
+      source: 'tmdb',
+      sourceId: 'movie:123',
+    });
   });
 });
 

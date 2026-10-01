@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Revit — Share Links Preview</title>
+    <style>
+      :root {
+        --black: #0d0b09;
+        --surface: #171310;
+        --surface-2: #211a15;
+        --line: #3c3025;
+        --line-soft: #2a211a;
+        --paper: #fbf6ec;
+        --muted: #b8a48a;
+        --quiet: #c6b08f;
+        --gold: #d7a94d;
+        --gold-soft: #e8c77d;
+        --teal: #4d9188;
+        --red: #b94b3b;
+        --phone-width: 314px;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--paper);
+        background: var(--black);
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        background:
+          radial-gradient(circle at 18% 12%, rgba(215, 169, 77, 0.13), transparent 28rem),
+          radial-gradient(circle at 88% 72%, rgba(77, 145, 136, 0.1), transparent 25rem),
+          var(--black);
+      }
+
+      button { font: inherit; }
+
+      .page {
+        max-width: 1540px;
+        margin: 0 auto;
+        padding: 28px clamp(18px, 4vw, 64px) 72px;
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--paper);
+        font-size: 18px;
+        font-weight: 760;
+        letter-spacing: -0.025em;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 29px;
+        height: 29px;
+        color: var(--black);
+        background: var(--gold);
+        border-radius: 8px;
+      }
+
+      .brand-mark svg { width: 17px; height: 17px; }
+
+      .preview-tag {
+        padding: 7px 10px;
+        color: var(--gold-soft);
+        font-size: 12px;
+        font-weight: 700;
+        background: rgba(215, 169, 77, 0.11);
+        border: 1px solid rgba(215, 169, 77, 0.25);
+        border-radius: 999px;
+      }
+
+      .intro {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+        gap: 52px;
+        align-items: end;
+        padding: clamp(42px, 8vw, 104px) 0 56px;
+      }
+
+      h1 {
+        max-width: 730px;
+        margin: 0;
+        font-size: clamp(44px, 6.4vw, 86px);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+      }
+
+      .intro-copy {
+        margin: 22px 0 0;
+        max-width: 565px;
+        color: var(--muted);
+        font-size: 17px;
+        line-height: 1.65;
+      }
+
+      .spec {
+        display: grid;
+        gap: 1px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--line);
+      }
+
+      .spec-row {
+        display: grid;
+        grid-template-columns: 106px 1fr;
+        gap: 12px;
+        padding: 14px 16px;
+        background: rgba(23, 19, 16, 0.92);
+      }
+
+      .spec-row strong { color: var(--gold-soft); font-size: 12px; }
+      .spec-row span { color: var(--muted); font-size: 13px; line-height: 1.45; }
+
+      .flow-nav {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 12px 0 20px;
+        scrollbar-width: none;
+      }
+
+      .flow-nav::-webkit-scrollbar { display: none; }
+
+      .flow-nav button {
+        flex: 0 0 auto;
+        min-height: 42px;
+        padding: 0 14px;
+        color: var(--muted);
+        cursor: pointer;
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        transition: 160ms ease;
+      }
+
+      .flow-nav button:hover, .flow-nav button:focus-visible {
+        color: var(--paper);
+        border-color: var(--gold-soft);
+        outline: none;
+      }
+
+      .flow-nav button.is-active {
+        color: var(--black);
+        font-weight: 760;
+        background: var(--gold);
+        border-color: var(--gold);
+      }
+
+      .screen-board {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 22px;
+        align-items: start;
+      }
+
+      .screen-case {
+        min-width: 0;
+        transition: opacity 180ms ease, transform 180ms ease;
+      }
+
+      .screen-case.is-hidden { display: none; }
+
+      .screen-label {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin: 0 0 11px;
+      }
+
+      .screen-label h2 {
+        margin: 0;
+        color: var(--paper);
+        font-size: 15px;
+        letter-spacing: -0.02em;
+      }
+
+      .screen-label span { color: var(--quiet); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+
+      .screen-note { margin: 10px auto 0; width: min(100%, var(--phone-width)); color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+      .phone {
+        position: relative;
+        width: min(100%, var(--phone-width));
+        min-height: 634px;
+        margin: 0 auto;
+        overflow: hidden;
+        background: var(--black);
+        border: 1px solid #564535;
+        border-radius: 34px;
+        box-shadow: 0 22px 48px rgba(0, 0, 0, 0.43), inset 0 0 0 6px #17120e;
+      }
+
+      .phone::before {
+        position: absolute;
+        z-index: 3;
+        top: 10px;
+        left: 50%;
+        width: 92px;
+        height: 21px;
+        content: "";
+        background: #090806;
+        border-radius: 999px;
+        transform: translateX(-50%);
+      }
+
+      .app {
+        min-height: 634px;
+        padding: 38px 16px 20px;
+        background: linear-gradient(180deg, #15110e 0%, var(--black) 32%);
+      }
+
+      .statusbar {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 19px;
+        color: var(--muted);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      .back-row, .app-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .icon-btn {
+        display: inline-grid;
+        place-items: center;
+        width: 39px;
+        height: 39px;
+        color: var(--paper);
+        background: #201914;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+      }
+
+      .icon-btn svg { width: 19px; height: 19px; }
+      .app-bar .icon-btn { background: transparent; border-color: transparent; }
+
+      .poster-hero {
+        position: relative;
+        height: 224px;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #46311c;
+      }
+
+      .poster-hero img, .mini-poster img, .list-poster img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .poster-hero::after { position: absolute; inset: 0; content: ""; background: linear-gradient(180deg, transparent 42%, rgba(13, 11, 9, 0.76)); }
+
+      .media-kicker, .shared-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 8px;
+        color: var(--gold-soft);
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(13, 11, 9, 0.72);
+        border: 1px solid rgba(251, 246, 236, 0.18);
+        border-radius: 999px;
+      }
+
+      .poster-hero .media-kicker { position: absolute; z-index: 1; top: 13px; left: 13px; }
+
+      .media-title { margin: 17px 0 3px; font-size: 25px; line-height: 1.05; letter-spacing: -0.045em; }
+      .meta { color: var(--muted); font-size: 12px; }
+      .summary { margin: 13px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+
+      .my-journal {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--line-soft);
+      }
+
+      .my-journal strong { display: block; font-size: 11px; }
+      .my-journal span { display: block; margin-top: 2px; color: var(--quiet); font-size: 11px; }
+      .journal-dot { width: 9px; height: 9px; background: var(--teal); border-radius: 50%; }
+
+      .action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+      .button {
+        min-height: 43px;
+        padding: 0 12px;
+        color: var(--black);
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        background: var(--gold);
+        border: 0;
+        border-radius: 8px;
+      }
+
+      .button.secondary { color: var(--paper); background: var(--surface); border: 1px solid var(--line); }
+      .button.full { width: 100%; }
+      .button:focus-visible { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
+
+      .share-sheet {
+        position: absolute;
+        z-index: 5;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        padding: 17px 16px 20px;
+        background: #251d17;
+        border-top: 1px solid #5a4634;
+        border-radius: 22px 22px 0 0;
+        box-shadow: 0 -16px 34px rgba(0, 0, 0, 0.42);
+      }
+
+      .sheet-handle { width: 35px; height: 4px; margin: 0 auto 14px; background: #71604e; border-radius: 999px; }
+      .sheet-title { margin: 0; font-size: 14px; }
+      .sheet-copy { margin: 4px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+      .share-apps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+      .share-app { display: grid; justify-items: center; gap: 6px; color: var(--muted); font-size: 9px; }
+      .share-icon { display: grid; place-items: center; width: 40px; height: 40px; color: var(--paper); background: #3a2c22; border: 1px solid #544131; border-radius: 12px; }
+      .share-icon svg { width: 18px; height: 18px; }
+
+      .read-only-strip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 -16px 15px;
+        padding: 10px 16px;
+        color: var(--gold-soft);
+        font-size: 11px;
+        font-weight: 700;
+        background: rgba(215, 169, 77, 0.1);
+        border-bottom: 1px solid rgba(215, 169, 77, 0.16);
+      }
+
+      .read-only-strip svg { width: 15px; height: 15px; }
+
+      .signin-card {
+        margin-top: 15px;
+        padding: 14px;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+
+      .signin-card strong { display: block; font-size: 13px; }
+      .signin-card p { margin: 4px 0 12px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+
+      .list-cover {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 4px;
+        height: 146px;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #312418;
+      }
+
+      .list-cover .wide { grid-row: span 2; }
+      .list-cover img { width: 100%; height: 100%; object-fit: cover; }
+      .list-cover .cover-tile { overflow: hidden; background: #594024; }
+
+      .list-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin: 14px 0 3px; }
+      .list-heading h3 { margin: 0; font-size: 23px; line-height: 1.05; letter-spacing: -0.04em; }
+      .count { flex: 0 0 auto; padding: 5px 7px; color: var(--gold-soft); font-size: 10px; font-weight: 800; background: #2a2119; border-radius: 999px; }
+
+      .list-description { margin: 7px 0 14px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+      .list-items-title { margin: 0 0 8px; color: var(--paper); font-size: 12px; }
+
+      .list-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        border-top: 1px solid var(--line-soft);
+      }
+
+      .mini-poster { width: 28px; height: 41px; overflow: hidden; background: #46311c; border-radius: 5px; }
+      .item-title { min-width: 0; flex: 1; font-size: 12px; font-weight: 720; }
+      .item-meta { margin-top: 3px; color: var(--quiet); font-size: 10px; }
+      .chevron { color: var(--quiet); }
+      .chevron svg { width: 15px; height: 15px; }
+
+      .owner-list { padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+      .owner-list h3 { margin: 0; font-size: 16px; }
+      .owner-list p { margin: 5px 0 13px; color: var(--muted); font-size: 11px; }
+      .owner-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      .owner-actions button { min-height: 36px; font-size: 11px; }
+
+      .note {
+        display: flex;
+        gap: 10px;
+        margin-top: 47px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line-soft);
+      }
+
+      .note svg { flex: 0 0 auto; width: 18px; height: 18px; color: var(--gold); }
+      .note p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+      .note strong { color: var(--paper); }
+
+      .states {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr 1fr 1fr;
+        gap: 1px;
+        margin-top: 52px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--line);
+      }
+
+      .state { min-height: 160px; padding: 20px; background: var(--surface); }
+      .state svg { width: 21px; height: 21px; color: var(--gold); }
+      .state h2 { margin: 18px 0 6px; font-size: 16px; letter-spacing: -0.02em; }
+      .state p { max-width: 42ch; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+      .state .button { min-height: 36px; margin-top: 14px; }
+      .loading-lines { display: grid; gap: 7px; margin-top: 17px; }
+      .loading-lines span { display: block; height: 8px; background: #3a2c22; border-radius: 999px; }
+      .loading-lines span:nth-child(1) { width: 76%; }
+      .loading-lines span:nth-child(2) { width: 92%; }
+      .loading-lines span:nth-child(3) { width: 58%; }
+
+      @media (max-width: 1240px) {
+        .screen-board { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 22px; }
+      }
+
+      @media (max-width: 720px) {
+        .page { padding: 20px 16px 48px; }
+        .topbar { padding-bottom: 19px; }
+        .intro { grid-template-columns: 1fr; gap: 28px; padding: 45px 0 26px; }
+        h1 { font-size: clamp(42px, 15vw, 62px); }
+        .intro-copy { font-size: 15px; }
+        .spec-row { grid-template-columns: 90px 1fr; }
+        .screen-board { grid-template-columns: 1fr; }
+        .states { grid-template-columns: 1fr; margin-top: 38px; }
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      THESIS: Sharing should feel like handing someone a ticket into your screening room, without handing them your private Journal.
+      OWN-WORLD: Revit theatre-black surfaces, parchment type, derived poster collage, and rare projection-gold actions.
+      STORY: A person sees how a title or list is shared, what a guest can do, and why the owner lands back in their editable list.
+      FIRST VIEWPORT: A dark, editorial board introduces the privacy contract, then four compact Revit phones show the full flow side by side.
+      FORM: Established Revit operating surface; seed key: share-links-established-world.
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+    -->
+    <main class="page">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 4h14v16H5z"/><path d="m9 8 6 4-6 4z" fill="currentColor" stroke="none"/></svg></span>
+          Revit
+        </div>
+        <span class="preview-tag">Share link preview</span>
+      </header>
+
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <h1 id="page-title">A link opens the room.<br />Not the diary.</h1>
+          <p class="intro-copy">A small prototype for sharing Revit title details and live, read-only lists. The sender’s Journal, ratings, Notes, and private list notes never travel with the link.</p>
+        </div>
+        <aside class="spec" aria-label="Share link rules">
+          <div class="spec-row"><strong>Title link</strong><span>Canonical Revit route. No per-title key is stored.</span></div>
+          <div class="spec-row"><strong>List link</strong><span>One persistent random key for each private list.</span></div>
+          <div class="spec-row"><strong>Guest view</strong><span>Read-only first, then sign in only to save a title.</span></div>
+        </aside>
+      </section>
+
+      <nav class="flow-nav" aria-label="Preview screens">
+        <button class="is-active" type="button" data-flow="all" aria-pressed="true">All screens</button>
+        <button type="button" data-flow="title-owner" aria-pressed="false">Title sharing</button>
+        <button type="button" data-flow="title-guest" aria-pressed="false">Guest title</button>
+        <button type="button" data-flow="list-guest" aria-pressed="false">Shared list</button>
+        <button type="button" data-flow="list-owner" aria-pressed="false">Owner return</button>
+      </nav>
+
+      <section class="screen-board" aria-label="Share flow mockups">
+        <article class="screen-case" data-screen="title-owner">
+          <div class="screen-label"><h2>Share a title</h2><span>Owner</span></div>
+          <div class="phone">
+            <div class="app">
+              <div class="statusbar"><span>9:41</span><span>●●● 5G ▰</span></div>
+              <div class="back-row">
+                <span class="icon-btn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></span>
+                <span class="icon-btn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></span>
+              </div>
+              <div class="poster-hero">
+                <img src="https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg" alt="Dune: Part Two poster" />
+                <span class="media-kicker">Movie · 2024</span>
+              </div>
+              <h3 class="media-title">Dune: Part Two</h3>
+              <div class="meta">2h 46m · Adventure · Science Fiction</div>
+              <div class="my-journal"><span class="journal-dot"></span><div><strong>Your Journal</strong><span>Watched · rated 4.5</span></div></div>
+              <div class="action-row"><button class="button">Log a rewatch</button><button class="button secondary">Share</button></div>
+            </div>
+            <div class="share-sheet" aria-label="Native share sheet preview">
+              <div class="sheet-handle"></div>
+              <p class="sheet-title">Share Dune: Part Two</p>
+              <p class="sheet-copy">revit://title/tmdb%3Amovie%3A693134</p>
+              <div class="share-apps">
+                <div class="share-app"><span class="share-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V3m0 0L7 8m5-5 5 5M5 14v5h14v-5"/></svg></span><span>Messages</span></div>
+                <div class="share-app"><span class="share-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg></span><span>Mail</span></div>
+                <div class="share-app"><span class="share-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="9"/></svg></span><span>Copy</span></div>
+                <div class="share-app"><span class="share-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 12h8M12 8v8"/><circle cx="12" cy="12" r="9"/></svg></span><span>More</span></div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen-case" data-screen="title-guest">
+          <div class="screen-label"><h2>Open a title link</h2><span>Signed out</span></div>
+          <div class="phone">
+            <div class="app">
+              <div class="statusbar"><span>9:41</span><span>●●● 5G ▰</span></div>
+              <div class="back-row"><span class="icon-btn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></span><span class="shared-badge">Shared title</span></div>
+              <div class="poster-hero">
+                <img src="https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg" alt="Dune: Part Two poster" />
+                <span class="media-kicker">Movie · 2024</span>
+              </div>
+              <h3 class="media-title">Dune: Part Two</h3>
+              <div class="meta">2h 46m · Adventure · Science Fiction</div>
+              <p class="summary">Paul Atreides unites with Chani and the Fremen while seeking vengeance against the conspirators who destroyed his family.</p>
+              <div class="signin-card">
+                <strong>Make it yours</strong>
+                <p>Sign in to plan, log, or save Dune: Part Two to one of your own lists. We’ll bring you back here afterward.</p>
+                <button class="button full">Sign in to save</button>
+              </div>
+              <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><p><strong>Private by default.</strong> The sender’s Journal and ratings are not shown here.</p></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen-case" data-screen="list-guest">
+          <div class="screen-label"><h2>Open a shared list</h2><span>Signed out</span></div>
+          <div class="phone">
+            <div class="app">
+              <div class="statusbar"><span>9:41</span><span>●●● 5G ▰</span></div>
+              <div class="app-bar"><span class="icon-btn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></span><span class="shared-badge">Shared list</span></div>
+              <div class="list-cover" aria-label="Derived cover from titles in this list">
+                <div class="cover-tile wide"><img src="https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg" alt="" /></div>
+                <div class="cover-tile"><img src="https://image.tmdb.org/t/p/w500/8cdWjvZ8bI7bP1K2dO0ZrH1lA1.jpg" alt="" /></div>
+                <div class="cover-tile"><img src="https://image.tmdb.org/t/p/w500/9Gtg2DzBhmYamXBS1hKAhiwbBKS.jpg" alt="" /></div>
+              </div>
+              <div class="list-heading"><h3>Worlds worth getting lost in</h3><span class="count">12 titles</span></div>
+              <p class="list-description">Big worlds, strange journeys, and films that keep echoing after the credits.</p>
+              <h4 class="list-items-title">Titles in this list</h4>
+              <div class="list-item"><span class="mini-poster"><img src="https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg" alt="" /></span><div class="item-title">Dune: Part Two<div class="item-meta">Movie · 2024</div></div><span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span></div>
+              <div class="list-item"><span class="mini-poster"><img src="https://image.tmdb.org/t/p/w500/8cdWjvZ8bI7bP1K2dO0ZrH1lA1.jpg" alt="" /></span><div class="item-title">The Lord of the Rings<div class="item-meta">Movie · 2001</div></div><span class="chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></span></div>
+              <div class="signin-card"><strong>Want to save a title?</strong><p>Sign in to add any title to your own Journal or lists. We’ll bring you back here afterward.</p><button class="button full">Sign in to save titles</button></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen-case" data-screen="list-owner">
+          <div class="screen-label"><h2>Owner opens their link</h2><span>Editable list</span></div>
+          <div class="phone">
+            <div class="app">
+              <div class="statusbar"><span>9:41</span><span>●●● 5G ▰</span></div>
+              <div class="app-bar"><span class="icon-btn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></span><span class="icon-btn" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg></span></div>
+              <div class="list-cover" aria-label="Derived cover from titles in this list">
+                <div class="cover-tile wide"><img src="https://image.tmdb.org/t/p/w500/1pdfLvkbY9ohJlCjQH2CZjjYVvJ.jpg" alt="" /></div>
+                <div class="cover-tile"><img src="https://image.tmdb.org/t/p/w500/8cdWjvZ8bI7bP1K2dO0ZrH1lA1.jpg" alt="" /></div>
+                <div class="cover-tile"><img src="https://image.tmdb.org/t/p/w500/9Gtg2DzBhmYamXBS1hKAhiwbBKS.jpg" alt="" /></div>
+              </div>
+              <div class="owner-list">
+                <h3>Worlds worth getting lost in</h3>
+                <p>12 titles · Updated today · Your list</p>
+                <div class="owner-actions"><button class="button secondary">Edit list</button><button class="button">Add items</button></div>
+              </div>
+              <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><p><strong>One live link.</strong> Changes you make here appear when a recipient next opens the shared list.</p></div>
+            </div>
+          </div>
+          <p class="screen-note">The shared URL resolves directly to this editable list for its owner.</p>
+        </article>
+      </section>
+
+      <section class="states" aria-label="Essential shared-link states">
+        <article class="state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 5h14v14H5z"/><path d="m8 15 2.5-3 2.2 2 1.5-2 2.8 3"/></svg><h2>Empty, still shareable</h2><p>A live shared list with no titles says exactly that: “No titles added yet.” Nothing private fills the gap.</p></article>
+        <article class="state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v4m0 10v4M3 12h4m10 0h4M5.6 5.6l2.8 2.8m7.2 7.2 2.8 2.8m0-12.8-2.8 2.8m-7.2 7.2-2.8 2.8"/></svg><h2>Opening the list</h2><p>The shared screen holds its shape while Revit safely resolves the live list.</p><div class="loading-lines" aria-label="Loading shared list"><span></span><span></span><span></span></div></article>
+        <article class="state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m9.5 9.5 5 5m0-5-5 5"/></svg><h2>Link unavailable</h2><p>Malformed, deleted, and unknown links share one calm state. Revit does not disclose whether a private list ever existed.</p></article>
+        <article class="state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 4v9m0 4h.01"/><path d="M5.5 19h13L12 4z"/></svg><h2>Try again</h2><p>When the network is unavailable, the shared screen keeps its last content when possible and offers a clear retry.</p><button class="button secondary" type="button">Retry</button></article>
+      </section>
+    </main>
+    <script>
+      const buttons = document.querySelectorAll('[data-flow]');
+      const cases = document.querySelectorAll('[data-screen]');
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          const selected = button.dataset.flow;
+          buttons.forEach((item) => {
+            const isActive = item === button;
+            item.classList.toggle('is-active', isActive);
+            item.setAttribute('aria-pressed', String(isActive));
+          });
+          cases.forEach((item) => {
+            const match = selected === 'all' || item.dataset.screen === selected;
+            item.classList.toggle('is-hidden', !match);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

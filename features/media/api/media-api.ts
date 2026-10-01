@@ -17,7 +17,24 @@ export type MediaDetailsResult = {
   item: NormalizedMediaItem;
 };
 
+export type MediaTrailer = {
+  key: string;
+  name: string;
+  site: 'YouTube';
+};
+
+export type MediaTrailerResult = {
+  trailer: MediaTrailer | null;
+};
+
 export function createMediaRouteId(item: Pick<NormalizedMediaItem, 'id' | 'source' | 'sourceId'>) {
+  // IGDB ids are provider-local and can overlap with TMDB ids. Keep the
+  // provider in the route even when this title already has a persisted row so
+  // list navigation can never resolve a game as a different media type.
+  if (item.source === 'igdb') {
+    return `${item.source}:${item.sourceId}`;
+  }
+
   if (item.id) {
     return item.id;
   }
@@ -56,6 +73,28 @@ export async function getMediaDetails(
 
   if (!data) {
     throw new Error('No media details were returned.');
+  }
+
+  return data;
+}
+
+export async function getMediaTrailer(input: {
+  source: 'tmdb';
+  sourceId: string;
+}): Promise<MediaTrailerResult> {
+  const { data, error } = await supabase.functions.invoke<MediaTrailerResult>(
+    'media-trailer',
+    {
+      body: input,
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error('No trailer data was returned.');
   }
 
   return data;

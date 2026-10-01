@@ -1,4 +1,4 @@
-import { isMediaType } from '@/constants/media';
+import { isMediaType, type MediaType } from '@/constants/media';
 import type {
   ListCoverMedia,
   ListItemMedia,
@@ -156,6 +156,18 @@ export function toUserListSummary(
       return toListCoverMedia(item.media_items);
     })
     .slice(0, coverItemLimit);
+  const mediaTypeCounts = listItems.reduce<Record<MediaType, number>>(
+    (counts, item) => {
+      if (!item.media_items) {
+        throw new Error(`List item ${item.id} is missing media item metadata.`);
+      }
+
+      const media = toListItemMedia(item.media_items);
+      counts[media.mediaType] += 1;
+      return counts;
+    },
+    { anime: 0, game: 0, movie: 0, series: 0 },
+  );
 
   return {
     coverItems,
@@ -163,6 +175,7 @@ export function toUserListSummary(
     description: row.description,
     id: row.id,
     isDefault: row.is_default,
+    mediaTypeCounts,
     itemCount: listItems.length,
     name: row.name,
     updatedAt: row.updated_at,

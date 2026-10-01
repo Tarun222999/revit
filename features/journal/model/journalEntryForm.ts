@@ -4,6 +4,7 @@ import {
   REVIEW_HEADLINE_MAX_LENGTH,
 } from '@/constants/reviews';
 import type { JournalEntry, JournalEntryFormValues } from '@/features/journal/types';
+import { isFutureReleaseDate } from '@/features/journal/model/journalIntentForm';
 
 export type JournalEntryFormErrors = Partial<
   Record<keyof JournalEntryFormValues, string>
@@ -22,13 +23,7 @@ export function todayString() {
   return new Date().toISOString().slice(0, ISO_DATE_LENGTH);
 }
 
-export function isFutureReleaseDate(releaseDate?: string | null) {
-  if (!releaseDate || !ISO_DATE_INPUT_PATTERN.test(releaseDate)) {
-    return false;
-  }
-
-  return releaseDate > todayString();
-}
+export { isFutureReleaseDate } from '@/features/journal/model/journalIntentForm';
 
 export function canRateOrReviewReleaseDate(releaseDate?: string | null) {
   return !isFutureReleaseDate(releaseDate);

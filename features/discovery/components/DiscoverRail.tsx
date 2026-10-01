@@ -4,7 +4,6 @@ import { router } from 'expo-router';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
-import { LoadingState } from '@/components/feedback/LoadingState';
 import { DiscoverPosterCard } from '@/features/discovery/components/DiscoverPosterCard';
 import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
 import {
@@ -20,11 +19,9 @@ type DiscoverRailProps = {
   mode: DiscoveryMode;
   mediaType: DiscoveryMediaType;
   onSeeAll?: (mode: DiscoveryMode, mediaType: DiscoveryMediaType) => void;
+  queryEnabled?: boolean;
 };
 
-const RAIL_CARD_WIDTH = 112;
-const RAIL_CARD_GAP = 12;
-const RAIL_ITEM_LENGTH = RAIL_CARD_WIDTH + RAIL_CARD_GAP;
 const RAIL_RESULT_LIMIT = 10;
 const RAIL_INITIAL_RENDER_COUNT = 5;
 const RAIL_MAX_RENDER_BATCH = 5;
@@ -45,6 +42,29 @@ function RailSeparator() {
   return <View className="w-3" />;
 }
 
+function DiscoverRailSkeleton() {
+  return (
+    <View
+      accessibilityLabel="Loading discovery titles"
+      accessibilityRole="progressbar"
+      className="flex-row gap-3">
+      {[0, 1, 2, 3].map((index) => (
+        <View className={index === 0 ? 'w-32 gap-2' : 'mt-7 w-24 gap-2'} key={index}>
+          <View
+            className={
+              index === 0
+                ? 'h-44 rounded-app bg-archive-800'
+                : 'h-36 rounded-app bg-archive-800'
+            }
+          />
+          <View className="h-3 rounded-full bg-archive-800" />
+          <View className="h-2 w-2/3 rounded-full bg-archive-800" />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /**
  * Renders one horizontal discovery shelf for a mode/media pair.
  *
@@ -59,8 +79,9 @@ export function DiscoverRail({
   mode,
   mediaType,
   onSeeAll,
+  queryEnabled = true,
 }: DiscoverRailProps) {
-  const railQuery = useDiscoverRail(mode, mediaType);
+  const railQuery = useDiscoverRail(mode, mediaType, 1, queryEnabled);
   const results = useMemo(
     () =>
       dedupeMediaItems(railQuery.data?.results ?? []).slice(
@@ -74,17 +95,13 @@ export function DiscoverRail({
     [],
   );
   const renderItem = useCallback(
-    ({ item }: { item: NormalizedMediaItem }) => (
-      <DiscoverPosterCard item={item} onPress={() => openRailTitleDetails(item)} />
+    ({ item, index }: { item: NormalizedMediaItem; index: number }) => (
+      <DiscoverPosterCard
+        emphasis={index === 0 ? 'lead' : 'standard'}
+        item={item}
+        onPress={() => openRailTitleDetails(item)}
+      />
     ),
-    [],
-  );
-  const getItemLayout = useCallback(
-    (_: ArrayLike<NormalizedMediaItem> | null | undefined, index: number) => ({
-      length: RAIL_ITEM_LENGTH,
-      offset: RAIL_ITEM_LENGTH * index,
-      index,
-    }),
     [],
   );
 
@@ -95,7 +112,9 @@ export function DiscoverRail({
 
         {onSeeAll ? (
           <Pressable
+            accessibilityLabel={`See all ${title}`}
             accessibilityRole="button"
+            className="min-h-11 justify-center px-2"
             onPress={() => onSeeAll(mode, mediaType)}>
             <Text className="text-sm font-semibold text-gold-300">
               See all
@@ -104,8 +123,8 @@ export function DiscoverRail({
         ) : null}
       </View>
 
-      {railQuery.isLoading ? (
-        <LoadingState message={`Loading ${title.toLowerCase()}`} />
+      {railQuery.isLoading && results.length === 0 ? (
+        <DiscoverRailSkeleton />
       ) : null}
 
       {railQuery.isError ? (
@@ -127,7 +146,6 @@ export function DiscoverRail({
         <FlatList
           horizontal
           data={results}
-          getItemLayout={getItemLayout}
           initialNumToRender={RAIL_INITIAL_RENDER_COUNT}
           ItemSeparatorComponent={RailSeparator}
           keyExtractor={keyExtractor}

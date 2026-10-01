@@ -45,8 +45,8 @@ jest.mock('@/lib/supabase/client', () => ({
 }));
 
 jest.mock('@/features/media/components/TitleDetailsScreen', () => ({
-  TitleDetailsScreen: ({ titleId }: { titleId?: string }) =>
-    require('react').createElement(require('react-native').Text, null, `Title route: ${titleId}`),
+  TitleDetailsScreen: ({ journalCapture, journalReturn, titleId }: { journalCapture?: string; journalReturn?: boolean; titleId?: string }) =>
+    require('react').createElement(require('react-native').Text, null, `Title route: ${titleId} / ${journalCapture} / ${journalReturn}`),
 }));
 
 jest.mock('@/features/lists/components/ListDetailsScreen', () => ({
@@ -55,11 +55,11 @@ jest.mock('@/features/lists/components/ListDetailsScreen', () => ({
 }));
 
 jest.mock('@/features/journal/components/JournalEntryModalScreen', () => ({
-  JournalEntryModalScreen: ({ entryId, mediaItemId }: { entryId?: string; mediaItemId?: string }) =>
+  JournalEntryModalScreen: ({ eventId, intent, mediaItemId, returnToJournal, source }: { eventId?: string; intent?: string; mediaItemId?: string; returnToJournal?: boolean; source?: string }) =>
     require('react').createElement(
       require('react-native').Text,
       null,
-      `Journal modal route: ${entryId} / ${mediaItemId}`,
+      `Journal modal route: ${eventId} / ${mediaItemId} / ${intent} / ${source} / ${returnToJournal}`,
     ),
 }));
 
@@ -128,6 +128,8 @@ function setAuthState({
   loading?: boolean;
 } = {}) {
   mockAuth.mockReturnValue({
+    error: null,
+    retrySession: jest.fn(),
     session: null,
     signOut: jest.fn(),
     user,
@@ -135,11 +137,16 @@ function setAuthState({
   });
 }
 
-function setProfileState(data?: object, isLoading = false) {
+function setProfileState(data: object | null = null, isLoading = false) {
   mockCurrentProfile.mockReturnValue({
     data,
+    error: null,
+    isError: false,
     isLoading,
-  } as ReturnType<typeof useCurrentProfile>);
+    isPending: isLoading,
+    isSuccess: !isLoading,
+    refetch: jest.fn(),
+  } as unknown as ReturnType<typeof useCurrentProfile>);
 }
 
 describe('auth route boundaries', () => {
@@ -161,16 +168,36 @@ describe('auth route boundaries', () => {
     await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith('/welcome'));
   });
 
-  it('keeps public legal and support routes available without a session', async () => {
-    mockUsePathname.mockReturnValue('/legal/privacy');
+  it.each([
+    '/legal/privacy',
+    '/legal/terms',
+    '/legal/credits',
+    '/support',
+  ])('keeps the public route %s available without a session', async (pathname) => {
+    mockUsePathname.mockReturnValue(pathname);
 
     await render(
       <AuthGate>
-        <Text>Privacy policy</Text>
+        <Text>Public information</Text>
       </AuthGate>,
     );
 
-    expect(screen.getByText('Privacy policy')).toBeTruthy();
+    expect(screen.getByText('Public information')).toBeTruthy();
+    expect(mockRouterReplace).not.toHaveBeenCalled();
+  });
+
+  it('keeps public legal content available for a signed-in user with a profile', async () => {
+    mockUsePathname.mockReturnValue('/legal/credits');
+    setAuthState({ user: authUser });
+    setProfileState({ id: 'profile-1' });
+
+    await render(
+      <AuthGate>
+        <Text>Signed-in legal content</Text>
+      </AuthGate>,
+    );
+
+    expect(screen.getByText('Signed-in legal content')).toBeTruthy();
     expect(mockRouterReplace).not.toHaveBeenCalled();
   });
 
@@ -290,11 +317,17 @@ describe('route parameter boundaries', () => {
   });
 
   it('passes a title id from the route to the title details screen', async () => {
-    mockUseLocalSearchParams.mockReturnValue({ id: 'tmdb-movie-123' });
+    mockUseLocalSearchParams.mockReturnValue({
+      id: 'tmdb-movie-123',
+      journalCapture: 'log',
+      journalReturn: 'true',
+    });
 
     await render(<TitleDetailsRoute />);
 
-    expect(screen.getByText('Title route: tmdb-movie-123')).toBeTruthy();
+    expect(
+      screen.getByText('Title route: tmdb-movie-123 / log / true'),
+    ).toBeTruthy();
   });
 
   it('passes a list id from the route to the list details screen', async () => {
@@ -305,15 +338,22 @@ describe('route parameter boundaries', () => {
     expect(screen.getByText('List route: list-123')).toBeTruthy();
   });
 
-  it('passes modal entry and media ids from the route', async () => {
+  it('passes modal intent, event, media, and source from the route', async () => {
     mockUseLocalSearchParams.mockReturnValue({
-      entryId: 'entry-123',
+      eventId: 'event-123',
+      intent: 'edit_event',
       mediaItemId: 'media-123',
+      returnToJournal: 'true',
+      source: 'history',
     });
 
     await render(<JournalEntryModalRoute />);
 
-    expect(screen.getByText('Journal modal route: entry-123 / media-123')).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Journal modal route: event-123 / media-123 / edit_event / history / true',
+      ),
+    ).toBeTruthy();
   });
 
   it('keeps the profile route focused on the profile screen', async () => {

@@ -1,30 +1,26 @@
-import { router } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  View,
-} from 'react-native';
+import { router } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
 
-import { EmptyState } from '@/components/feedback/EmptyState';
-import { ErrorState } from '@/components/feedback/ErrorState';
-import { LoadingState } from '@/components/feedback/LoadingState';
-import { Screen } from '@/components/ui/Screen';
-import { DiscoverPosterCard } from '@/features/discovery/components/DiscoverPosterCard';
-import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
+import { EmptyState } from "@/components/feedback/EmptyState";
+import { ErrorState } from "@/components/feedback/ErrorState";
+import { LoadingState } from "@/components/feedback/LoadingState";
+import { Screen } from "@/components/ui/Screen";
+import { DiscoverPosterCard } from "@/features/discovery/components/DiscoverPosterCard";
+import { useAppCapabilities } from "@/features/capabilities/context/AppCapabilitiesProvider";
+import { useDiscoverRail } from "@/features/discovery/hooks/useDiscoverRail";
 import {
   dedupeMediaItems,
   mediaItemKey,
-} from '@/features/discovery/utils/dedupeMediaItems';
-import { createMediaRouteId } from '@/features/media/api/media-api';
+} from "@/features/discovery/utils/dedupeMediaItems";
+import { createMediaRouteId } from "@/features/media/api/media-api";
 import {
   isDiscoveryMediaType,
   isDiscoveryMode,
   type DiscoveryMediaType,
   type DiscoveryMode,
-} from '@/types/discovery';
-import type { NormalizedMediaItem } from '@/types/media';
+} from "@/types/discovery";
+import type { NormalizedMediaItem } from "@/types/media";
 
 type DiscoverListingScreenProps = {
   mode?: string;
@@ -42,27 +38,29 @@ const LISTING_UPDATE_BATCH_MS = 80;
 const LISTING_WINDOW_SIZE = 7;
 
 const DISCOVERY_MODE_LABELS: Record<DiscoveryMode, string> = {
-  trending: 'Trending',
-  new_releases: 'New Releases',
-  top_rated: 'Top Rated',
+  trending: "Trending",
+  new_releases: "New Releases",
+  top_rated: "Top Rated",
 };
 
 const DISCOVERY_MEDIA_TYPE_LABELS: Record<DiscoveryMediaType, string> = {
-  movie: 'Movies',
-  series: 'Series',
-  anime: 'Anime',
+  movie: "Movies",
+  series: "Series",
+  anime: "Anime",
+  game: "Games",
 };
 
 const DISCOVERY_MODE_DESCRIPTIONS: Record<DiscoveryMode, string> = {
-  trending: 'Fresh activity from the wider entertainment shelf.',
-  new_releases: 'Recent releases gathered for quick browsing.',
-  top_rated: 'High-rated titles surfaced for slower, pickier browsing.',
+  trending: "Fresh activity from the wider entertainment shelf.",
+  new_releases: "Recent releases gathered for quick browsing.",
+  top_rated: "High-rated titles surfaced for slower, pickier browsing.",
 };
 
 const DISCOVERY_MEDIA_TYPE_DESCRIPTIONS: Record<DiscoveryMediaType, string> = {
-  movie: 'Feature-length picks from TMDB.',
-  series: 'Series and episodic titles ready to inspect.',
-  anime: 'Anime-leaning series filtered from discovery data.',
+  movie: "Feature-length picks from TMDB.",
+  series: "Series and episodic titles ready to inspect.",
+  anime: "Anime-leaning series filtered from discovery data.",
+  game: "Games selected from the Revit catalog.",
 };
 
 function formatCachedAtTime(value?: string) {
@@ -77,8 +75,8 @@ function formatCachedAtTime(value?: string) {
   }
 
   return date.toLocaleTimeString([], {
-    hour: 'numeric',
-    minute: '2-digit',
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
@@ -152,10 +150,11 @@ function ListingHeader({
 
         <View className="gap-2">
           <Text className="text-3xl font-bold leading-10 text-archive-50">
-            {DISCOVERY_MODE_LABELS[mode]} {DISCOVERY_MEDIA_TYPE_LABELS[mediaType]}
+            {DISCOVERY_MODE_LABELS[mode]}{" "}
+            {DISCOVERY_MEDIA_TYPE_LABELS[mediaType]}
           </Text>
           <Text className="text-sm leading-5 text-archive-200">
-            {DISCOVERY_MODE_DESCRIPTIONS[mode]}{' '}
+            {DISCOVERY_MODE_DESCRIPTIONS[mode]}{" "}
             {DISCOVERY_MEDIA_TYPE_DESCRIPTIONS[mediaType]}
           </Text>
         </View>
@@ -203,7 +202,7 @@ function ListingEmptyContent({
           title="Unable to load discovery"
           message={getDiscoveryErrorMessage(
             error,
-            'Discovery data is unavailable right now.',
+            "Discovery data is unavailable right now.",
           )}
           onRetry={onRetry}
         />
@@ -233,7 +232,7 @@ function ListingLoadMoreError({
       title="Unable to load more"
       message={getDiscoveryErrorMessage(
         error,
-        'More discovery results are unavailable right now.',
+        "More discovery results are unavailable right now.",
       )}
       onRetry={onRetry}
     />
@@ -429,7 +428,32 @@ export function DiscoverListingScreen({
           title="Discovery shelf not found"
           message="This discovery collection is not available."
           actionLabel="Back to Discover"
-          onAction={() => router.replace('/(tabs)')}
+          onAction={() => router.replace("/(tabs)")}
+        />
+      </Screen>
+    );
+  }
+
+  return <CapabilityAwareDiscoverListing mode={mode} mediaType={mediaType} />;
+}
+
+function CapabilityAwareDiscoverListing({
+  mode,
+  mediaType,
+}: {
+  mode: DiscoveryMode;
+  mediaType: DiscoveryMediaType;
+}) {
+  const { gamesEnabled } = useAppCapabilities();
+
+  if (mediaType === "game" && !gamesEnabled) {
+    return (
+      <Screen className="justify-center">
+        <EmptyState
+          title="Games are not available"
+          message="This catalog is temporarily unavailable. Try again later."
+          actionLabel="Back to Discover"
+          onAction={() => router.replace("/(tabs)")}
         />
       </Screen>
     );

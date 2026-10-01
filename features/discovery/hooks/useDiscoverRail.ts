@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 
 import { getDiscoverRail } from '@/features/discovery/api/discover-api';
 import type { DiscoveryMediaType, DiscoveryMode } from '@/types/discovery';
@@ -13,8 +13,10 @@ export function useDiscoverRail(
   mode: DiscoveryMode,
   mediaType: DiscoveryMediaType,
   page = 1,
+  enabled = true,
 ) {
   return useQuery({
+    enabled,
     queryKey: discoverRailQueryKey(mode, mediaType, page),
     queryFn: () =>
       getDiscoverRail({
@@ -22,6 +24,7 @@ export function useDiscoverRail(
         mediaType,
         page,
       }),
+    placeholderData: keepPreviousData,
     staleTime: 5 * 60 * 1000,
   });
 }

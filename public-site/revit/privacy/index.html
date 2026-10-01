@@ -23,7 +23,7 @@
       <main class="main content">
         <p class="eyebrow">Revit</p>
         <h1>Privacy Policy</h1>
-        <p class="updated">Last updated: June 27, 2026</p>
+        <p class="updated">Last updated: September 13, 2026</p>
 
         <p class="lede">
           This Privacy Policy explains how Revit handles information when you
@@ -31,9 +31,9 @@
         </p>
         <p>
           Revit is a personal entertainment journal. It lets you search for
-          movies, series, and anime, add titles to your journal, track status,
-          rate titles, write short reviews, and organize titles into
-          mixed-media lists.
+          movies, series, anime, and games; plan and log watches or
+          playthroughs; rate titles; write personal notes; and organize titles
+          into mixed-media lists.
         </p>
 
         <h2>Information Revit Stores</h2>
@@ -42,9 +42,10 @@
           name, username, optional bio, and avatar path.
         </p>
         <p>
-          Revit stores your personal journal data, including saved titles,
-          statuses, ratings, short reviews, spoiler flags, completion dates,
-          custom lists, list items, and optional list notes.
+          Revit stores your personal Journal data, including saved titles,
+          plans, watch and playthrough history, statuses, ratings, personal
+          notes, custom lists, list items, and optional list notes. For games,
+          this can include your played-on platform choice.
         </p>
 
         <h2>Authentication And Account Data</h2>
@@ -59,15 +60,16 @@
           your account.
         </p>
 
-        <h2>Journal, Lists, And Reviews</h2>
+        <h2>Journal And Lists</h2>
         <p>
-          Your journal entries, ratings, reviews, list names, list descriptions,
-          and list notes are stored so Revit can show and manage your personal
-          entertainment history.
+          Your Journal lets you keep a title-level summary, an optional plan,
+          and dated watch or playthrough history. Revit stores these records,
+          ratings, personal notes, list names, list descriptions, and list
+          notes so it can show and manage your private entertainment history.
         </p>
         <p>
-          Revit v1 does not include public profiles, social feeds, follows,
-          comments, or likes.
+          Revit does not currently include public profiles, social feeds,
+          follows, comments, or likes.
         </p>
 
         <h2>Avatars And Storage</h2>
@@ -77,32 +79,58 @@
         </p>
         <p>
           Avatar files may be publicly accessible by direct URL so they can
-          render in the app. Your private journal entries and lists are not made
+          render in the app. Your private Journal records and lists are not made
           public by avatar storage.
         </p>
 
         <h2>Media Metadata</h2>
         <p>
-          Revit uses TMDB-backed metadata for movies, series, and anime. This
+          Revit uses TMDB-sourced metadata for movies, series, and anime. This
           may include title names, images, release information, descriptions,
           genres, and related title details.
         </p>
         <p>
-          Your personal activity, ratings, reviews, and lists are stored
-          separately from external media metadata.
+          When Games is available, Revit uses IGDB, operated by Twitch, for
+          public game metadata and imagery. Game search terms and public catalog
+          requests are processed through Revit's server-side Supabase Edge
+          Functions and may be sent to IGDB to return matching catalog results.
+          Revit does not intentionally send your email address, profile identity,
+          private Journal or play history, played-on platform choice, ratings,
+          notes, or lists to IGDB.
+        </p>
+
+        <h2>Feedback Reports</h2>
+        <p>
+          Signed-in users can report a problem or suggest an idea through Help
+          &amp; Feedback in Profile. Revit stores the message you enter, the report
+          category, whether you allow follow-up, your authenticated user ID, and
+          the submission time so the report can be privately reviewed.
+        </p>
+        <p>
+          Revit also attaches limited diagnostic context when available: app
+          version and build, platform and OS version, source screen, and a safe
+          error code for a contextual report. It does not attach Journal text,
+          screenshots, raw logs, request headers, passwords, one-time codes, or
+          access tokens. Feedback reports are not public and do not automatically
+          create a public post or a Linear issue.
         </p>
 
         <h2>How Data Is Used</h2>
         <p>
           Revit uses your data to provide the app experience, including
           authentication, profile display, search and title details, journal
-          management, calendar and timeline views, and mixed-media lists.
+          management, Timeline, Planner, and Calendar views, and mixed-media
+          lists.
         </p>
         <p>Revit does not sell your personal journal data.</p>
 
         <h2>Ads, Analytics, And Tracking</h2>
         <p>Revit does not currently include ads.</p>
-        <p>Revit does not currently include analytics or crash reporting tools.</p>
+        <p>
+          Revit does not currently include advertising, analytics, or crash
+          reporting tools. The limited diagnostic context described above is
+          collected only when a signed-in user chooses to submit feedback.
+        </p>
         <p>
           The public legal and support website is intended to be static and
           should not include tracking scripts, advertising scripts, login, forms,
@@ -116,20 +144,29 @@
           Functions.
         </p>
         <p>
-          Revit uses TMDB-backed integrations for entertainment metadata. Revit
-          does not send your private journal entries, ratings, reviews, or lists
-          to TMDB as part of normal app use.
+          Revit uses TMDB-sourced integrations for movie, series, and anime
+          metadata, and IGDB for game catalog metadata. Revit does not
+          intentionally send your private Journal records, ratings, notes, or
+          lists to either provider as part of normal catalog use.
         </p>
 
         <h2>Data Deletion</h2>
         <p>Revit supports in-app account deletion from the Profile account surface.</p>
         <p>
-          When account deletion succeeds, Revit removes the authenticated user
-          account and user-owned profile, journal, list, list item, and avatar
-          data.
+          When account deletion succeeds, Revit removes the live authenticated
+          user account and connected user-owned profile, Journal, play history,
+          list, list-item, and feedback-report database records, including
+          private game activity stored by Revit. The deletion flow also requests
+          removal of avatar files associated with the account before deleting
+          the account.
         </p>
         <p>
-          For account or data deletion questions, contact
+          This does not promise immediate removal of every storage-object version
+          or backup copy. Backup retention is managed by service providers and
+          its applicable duration has not yet been confirmed for public release.
+          Revit does not send private game-Journal data to IGDB for deletion
+          because it is not sent there as part of normal catalog use. For account
+          or data deletion questions, contact
           <a href="mailto:mt790191@gmail.com">mt790191@gmail.com</a>.
         </p>
 

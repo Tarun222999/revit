@@ -9,10 +9,12 @@ I built it to keep everything I watch in one place—from titles I plan to start
 ## Screenshots
 
 <p>
+  <img src="./publish-screenshots/discover-screen-v1.2.jpeg" alt="Revit Discover screen" width="180" />
+  <img src="./publish-screenshots/journal-screen-v1.2.jpeg" alt="Revit Journal screen" width="180" />
+  <img src="./publish-screenshots/planner-scanner-v1.2.jpeg" alt="Revit Journal Planner screen" width="180" />
+  <img src="./publish-screenshots/movie-detail-v1.2.jpeg" alt="Revit title details screen" width="180" />
   <img src="./publish-screenshots/auth-screen.jpeg" alt="Revit sign-in screen" width="180" />
-  <img src="./publish-screenshots/discover.jpeg" alt="Revit Discover screen" width="180" />
   <img src="./publish-screenshots/search.jpeg" alt="Revit Search screen" width="180" />
-  <img src="./publish-screenshots/journal.jpeg" alt="Revit Journal screen" width="180" />
   <img src="./publish-screenshots/lists.jpeg" alt="Revit Lists screen" width="180" />
   <img src="./publish-screenshots/rating.jpeg" alt="Revit rating screen" width="180" />
 </p>
@@ -22,12 +24,11 @@ I built it to keep everything I watch in one place—from titles I plan to start
 - Browse and search for movies, series, and anime
 - View posters, summaries, genres, and other title information
 - Sign in with Google
-- Add titles to a personal journal
-- Mark titles as Planned, In Progress, Completed, or Dropped
-- Rate titles from 0.5 to 5
-- Write short reviews and mark spoilers
-- Browse journal entries using Timeline and Calendar views
-- Filter and sort journal entries
+- Plan what to watch next, log watches, and track your current viewing state
+- Keep a private, dated watch history for each title, including rewatches
+- Rate titles from 0.5 to 5 and add private notes
+- Browse your Journal in Timeline, Planner, and Calendar views
+- Filter Timeline activity by media type, event type, rating, and date
 - Create lists containing different types of media
 - Update profile details and avatar
 - Access privacy, terms, and support pages
