@@ -5,10 +5,20 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { getCurrentProfile } from '@/features/profile/api/profile-api';
 import { supabase } from '@/lib/supabase/client';
+import {
+  clearPendingAuthReturnToSafely,
+  getPendingAuthDestination,
+  getPendingAuthReturnTo,
+  getStoredPendingAuthReturnTo,
+} from '@/features/auth/utils/pendingDestination';
 
 const handledAuthCodes = new Set<string>();
 
-export function AuthCallbackScreen() {
+export function AuthCallbackScreen({
+  returnTo,
+}: {
+  returnTo?: string | string[];
+}) {
   const params = useLocalSearchParams<{ code?: string; error_description?: string }>();
   const [message, setMessage] = useState('Finishing sign in...');
   const handledCodeRef = useRef<string | null>(null);
@@ -39,6 +49,9 @@ export function AuthCallbackScreen() {
         handledCodeRef.current = code;
         handledAuthCodes.add(code);
 
+        const canonicalReturnTo =
+          getPendingAuthReturnTo(returnTo) ?? await getStoredPendingAuthReturnTo();
+        const destination = getPendingAuthDestination(canonicalReturnTo ?? undefined);
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!mounted) {
@@ -63,7 +76,12 @@ export function AuthCallbackScreen() {
           return;
         }
 
-        router.replace(profile ? '/(tabs)' : '/(auth)/onboarding');
+        router.replace(profile
+          ? destination ?? '/(tabs)'
+          : canonicalReturnTo && destination
+            ? { pathname: '/(auth)/onboarding', params: { returnTo: canonicalReturnTo } }
+            : '/(auth)/onboarding');
+        if (profile && canonicalReturnTo) void clearPendingAuthReturnToSafely();
       } catch (callbackError) {
         if (!mounted) {
           return;
@@ -78,7 +96,7 @@ export function AuthCallbackScreen() {
     return () => {
       mounted = false;
     };
-  }, [params.code, params.error_description]);
+  }, [params.code, params.error_description, returnTo]);
 
   return (
     <Screen>
