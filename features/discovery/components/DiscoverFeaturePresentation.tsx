@@ -34,6 +34,7 @@ type DiscoverFeaturePresentationProps = {
   motionEnabled?: boolean;
   gamesEnabled?: boolean;
   onInteractionChange?: (interacting: boolean) => void;
+  onSettle?: (item: NormalizedMediaItem) => void;
 };
 
 function formatFeatureMetadata(item: NormalizedMediaItem) {
@@ -187,6 +188,7 @@ export function DiscoverFeaturePresentation({
   motionEnabled = false,
   gamesEnabled = true,
   onInteractionChange,
+  onSettle,
 }: DiscoverFeaturePresentationProps) {
   const [layers, setLayers] = useState({
     current: item,
@@ -230,7 +232,7 @@ export function DiscoverFeaturePresentation({
       {
         duration: 700,
         easing: Easing.inOut(Easing.quad),
-        reduceMotion: ReduceMotion.System,
+        reduceMotion: ReduceMotion.Never,
       },
       (finished) => {
         if (finished) runOnJS(complete)(version);
@@ -245,11 +247,18 @@ export function DiscoverFeaturePresentation({
     onInteractionChange?.(interaction.current.size > 0);
   };
   useEffect(() => {
-    if (!motionEnabled) {
+    if (!layers.current && interaction.current.size > 0) {
       interaction.current.clear();
       onInteractionChange?.(false);
     }
-  }, [motionEnabled, onInteractionChange]);
+  }, [layers.current, onInteractionChange]);
+  useEffect(
+    () => () => {
+      if (interaction.current.size > 0) onInteractionChange?.(false);
+      interaction.current.clear();
+    },
+    [onInteractionChange],
+  );
   useEffect(
     () => () => {
       generation.current += 1;
@@ -267,6 +276,7 @@ export function DiscoverFeaturePresentation({
     cancelAnimation(opacity);
     opacity.value = 0;
     setLayers({ current: target, previous: null });
+    if (mediaItemKey(target) !== currentKey) onSettle?.(target);
     return target;
   };
   const openVisibleTitle = () => {

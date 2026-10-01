@@ -5,6 +5,7 @@ on:
     branches:
       - develop
       - main
+      - v1.3.1
   push:
     branches:
       - develop

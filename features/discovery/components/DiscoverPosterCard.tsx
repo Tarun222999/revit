@@ -49,11 +49,12 @@ function DiscoverPosterCardComponent({
   const isListing = variant === 'listing';
   const progress = useSharedValue(focused ? 1 : 0);
   useEffect(() => {
+    cancelAnimation(progress);
     progress.value = motionEnabled
       ? withTiming(focused ? 1 : 0, {
           duration: 340,
           easing: Easing.bezier(0.22, 1, 0.36, 1),
-          reduceMotion: ReduceMotion.System,
+          reduceMotion: ReduceMotion.Never,
         })
       : focused
         ? 1

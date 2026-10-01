@@ -71,7 +71,18 @@ jest.mock('@/components/ui/PagerView', () => {
   };
 });
 jest.mock('@/features/discovery/components/DiscoverRail', () => ({
-  DiscoverRail: () => null,
+  DiscoverRail: ({ mode, mediaType, onInteractionChange }: {
+    mode: string;
+    mediaType: string;
+    onInteractionChange: (mediaType: string, active: boolean) => void;
+  }) => {
+    const { Text } = require('react-native');
+    return <Text
+      testID={`rail-${mode}-${mediaType}`}
+      onPressIn={() => onInteractionChange(mediaType, true)}
+      onPressOut={() => onInteractionChange(mediaType, false)}
+    >{mediaType}</Text>;
+  },
 }));
 jest.mock(
   '@/features/discovery/components/DiscoverFeaturePresentation',
@@ -154,6 +165,32 @@ describe('Discover screen visibility', () => {
     await act(() => jest.advanceTimersByTime(FEATURE_INTERVAL_MS - 1));
     expect(title(0)).toBe('Dune');
     await act(() => jest.advanceTimersByTime(1));
+    expect(title(0)).toBe('Severance');
+  });
+  it('keeps rail blockers independent and resumes on a fresh interval', async () => {
+    await render(<DiscoverScreen />);
+    await layout('trending');
+    await fireEvent(screen.getByTestId('rail-trending-movie'), 'pressIn');
+    await fireEvent(screen.getByTestId('rail-trending-series'), 'pressIn');
+    await fireEvent(screen.getByTestId('rail-trending-movie'), 'pressOut');
+    await act(() => jest.advanceTimersByTime(FEATURE_INTERVAL_MS * 2));
+    expect(title(0)).toBe('Dune');
+    await fireEvent(screen.getByTestId('rail-trending-series'), 'pressOut');
+    await act(() => jest.advanceTimersByTime(FEATURE_INTERVAL_MS - 1));
+    expect(title(0)).toBe('Dune');
+    await act(() => jest.advanceTimersByTime(1));
+    expect(title(0)).toBe('Severance');
+  });
+  it('keeps hero and rail blockers independent', async () => {
+    await render(<DiscoverScreen />);
+    await layout('trending');
+    await fireEvent(screen.getAllByTestId('hero-title')[0], 'pressIn');
+    await fireEvent(screen.getByTestId('rail-trending-movie'), 'pressIn');
+    await fireEvent(screen.getAllByTestId('hero-title')[0], 'pressOut');
+    await act(() => jest.advanceTimersByTime(FEATURE_INTERVAL_MS * 2));
+    expect(title(0)).toBe('Dune');
+    await fireEvent(screen.getByTestId('rail-trending-movie'), 'pressOut');
+    await act(() => jest.advanceTimersByTime(FEATURE_INTERVAL_MS));
     expect(title(0)).toBe('Severance');
   });
   it('stops for route blur, background, reduced motion and screen-reader use', async () => {

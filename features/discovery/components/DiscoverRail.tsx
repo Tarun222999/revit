@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, Text, View, type ViewToken } from 'react-native';
 import { router } from 'expo-router';
 
@@ -21,6 +21,7 @@ type DiscoverRailProps = {
   onSeeAll?: (mode: DiscoveryMode, mediaType: DiscoveryMediaType) => void;
   queryEnabled?: boolean;
   motionEnabled?: boolean;
+  onInteractionChange?: (mediaType: DiscoveryMediaType, active: boolean) => void;
 };
 
 const RAIL_RESULT_LIMIT = 10;
@@ -76,8 +77,26 @@ export function DiscoverRail({
   onSeeAll,
   queryEnabled = true,
   motionEnabled = false,
+  onInteractionChange,
 }: DiscoverRailProps) {
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
+  const interactions = useRef(new Set<string>());
+  const setInteraction = useCallback(
+    (reason: string, active: boolean) => {
+      const wasActive = interactions.current.size > 0;
+      if (active) interactions.current.add(reason);
+      else interactions.current.delete(reason);
+      const isActive = interactions.current.size > 0;
+      if (wasActive !== isActive) onInteractionChange?.(mediaType, isActive);
+    },
+    [mediaType, onInteractionChange],
+  );
+  const clearInteractions = useCallback(() => {
+    if (interactions.current.size === 0) return;
+    interactions.current.clear();
+    onInteractionChange?.(mediaType, false);
+  }, [mediaType, onInteractionChange]);
+  useEffect(() => () => clearInteractions(), [clearInteractions]);
   const onViewableItemsChanged = useRef(
     ({
       viewableItems,
@@ -104,6 +123,21 @@ export function DiscoverRail({
       ),
     [railQuery.data?.results],
   );
+  useEffect(() => {
+    if (results.length === 0) {
+      clearInteractions();
+      return;
+    }
+    const validKeys = new Set(results.map(mediaItemKey));
+    const wasActive = interactions.current.size > 0;
+    for (const reason of interactions.current) {
+      const separator = reason.indexOf(':');
+      if (separator !== -1 && !validKeys.has(reason.slice(separator + 1)))
+        interactions.current.delete(reason);
+    }
+    if (wasActive && interactions.current.size === 0)
+      onInteractionChange?.(mediaType, false);
+  }, [results, clearInteractions, mediaType, onInteractionChange]);
   const keyExtractor = useCallback(
     (item: NormalizedMediaItem) => mediaItemKey(item),
     [],
@@ -118,13 +152,23 @@ export function DiscoverRail({
       <DiscoverPosterCard
         focused={mediaItemKey(item) === selectedKey}
         motionEnabled={motionEnabled}
-        onFocus={() => setFocusedKey(mediaItemKey(item))}
-        onHoverIn={() => setFocusedKey(mediaItemKey(item))}
+        onFocus={() => {
+          setFocusedKey(mediaItemKey(item));
+          setInteraction(`focus:${mediaItemKey(item)}`, true);
+        }}
+        onBlur={() => setInteraction(`focus:${mediaItemKey(item)}`, false)}
+        onPressIn={() => setInteraction(`press:${mediaItemKey(item)}`, true)}
+        onPressOut={() => setInteraction(`press:${mediaItemKey(item)}`, false)}
+        onHoverIn={() => {
+          setFocusedKey(mediaItemKey(item));
+          setInteraction(`hover:${mediaItemKey(item)}`, true);
+        }}
+        onHoverOut={() => setInteraction(`hover:${mediaItemKey(item)}`, false)}
         item={item}
         onPress={() => openRailTitleDetails(item)}
       />
     ),
-    [selectedKey, motionEnabled],
+    [selectedKey, motionEnabled, setInteraction],
   );
 
   return (
@@ -164,7 +208,12 @@ export function DiscoverRail({
 
       {results.length > 0 ? (
         <FlatList
+          testID={`discover-rail-${mode}-${mediaType}`}
           horizontal
+          onScrollBeginDrag={() => setInteraction('drag', true)}
+          onScrollEndDrag={() => setInteraction('drag', false)}
+          onMomentumScrollBegin={() => setInteraction('momentum', true)}
+          onMomentumScrollEnd={() => setInteraction('momentum', false)}
           extraData={selectedKey}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}

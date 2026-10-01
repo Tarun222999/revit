@@ -6,12 +6,15 @@ import {
   screen,
 } from '@testing-library/react-native';
 import { AccessibilityInfo, AppState, Platform } from 'react-native';
-import { cancelAnimation, withTiming } from 'react-native-reanimated';
+import { cancelAnimation, ReduceMotion, withTiming } from 'react-native-reanimated';
 import { DiscoverFeaturePresentation } from '@/features/discovery/components/DiscoverFeaturePresentation';
+import { DiscoverModeBar } from '@/features/discovery/components/DiscoverModeBar';
+import { DiscoverPosterCard } from '@/features/discovery/components/DiscoverPosterCard';
 import { useDiscoverMotion } from '@/features/discovery/hooks/useDiscoverMotion';
 import {
   FEATURE_INTERVAL_MS,
   useFeaturedRotation,
+  useFeaturedRotationController,
 } from '@/features/discovery/hooks/useFeaturedRotation';
 import { getFeaturedTitles } from '@/features/discovery/model/featuredTitles';
 import type { NormalizedMediaItem } from '@/types/media';
@@ -156,6 +159,32 @@ describe('rotation lifecycle', () => {
 });
 
 describe('hero activation and cancellation', () => {
+  it('advances from the visible title after an interrupted dissolve', async () => {
+    jest.useFakeTimers();
+    function FeatureHarness() {
+      const [interacting, setInteracting] = require('react').useState(false);
+      const { item, settle } = useFeaturedRotationController([movie, series], !interacting);
+      return <DiscoverFeaturePresentation
+        item={item}
+        loading={false}
+        motionEnabled
+        onInteractionChange={setInteracting}
+        onSettle={settle}
+      />;
+    }
+    try {
+      await render(<FeatureHarness />);
+      await act(() => jest.advanceTimersByTime(FEATURE_INTERVAL_MS));
+      expect(screen.getByRole('button', { name: 'Open Severance' })).toBeTruthy();
+      await fireEvent(screen.getByRole('button'), 'hoverIn');
+      expect(screen.getByRole('button', { name: 'Open Dune' })).toBeTruthy();
+      await fireEvent(screen.getByRole('button'), 'hoverOut');
+      await act(() => jest.advanceTimersByTime(FEATURE_INTERVAL_MS));
+      expect(screen.getByRole('button', { name: 'Open Severance' })).toBeTruthy();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
   it('opens the dominant outgoing title during an interrupted dissolve in one action', async () => {
     const open = jest.fn();
     const view = await render(
@@ -211,6 +240,25 @@ describe('hero activation and cancellation', () => {
     await view.unmount();
     expect(cancelAnimation).toHaveBeenCalled();
   });
+  it('keeps held focus through motion suspension and clears it when the control disappears', async () => {
+    const changed = jest.fn();
+    const view = await render(
+      <DiscoverFeaturePresentation item={movie} loading={false} motionEnabled onInteractionChange={changed} />,
+    );
+    await fireEvent(screen.getByRole('button'), 'focus');
+    expect(changed).toHaveBeenLastCalledWith(true);
+    await view.rerender(
+      <DiscoverFeaturePresentation item={movie} loading={false} motionEnabled={false} onInteractionChange={changed} />,
+    );
+    await view.rerender(
+      <DiscoverFeaturePresentation item={movie} loading={false} motionEnabled onInteractionChange={changed} />,
+    );
+    expect(changed).toHaveBeenLastCalledWith(true);
+    await view.rerender(
+      <DiscoverFeaturePresentation item={null} loading={false} motionEnabled onInteractionChange={changed} />,
+    );
+    expect(changed).toHaveBeenLastCalledWith(false);
+  });
   it('reports focus and hover independently and keeps reduced motion static', async () => {
     const changed = jest.fn();
     await render(
@@ -227,6 +275,41 @@ describe('hero activation and cancellation', () => {
     expect(changed).toHaveBeenLastCalledWith(true);
     await fireEvent(hero, 'hoverOut');
     expect(changed).toHaveBeenLastCalledWith(false);
+  });
+});
+
+describe('live motion changes', () => {
+  beforeEach(() => jest.mocked(withTiming).mockClear());
+  it('snaps and cancels the mode underline when reduced motion turns on, then animates again', async () => {
+    const view = await render(
+      <DiscoverModeBar value="trending" onChange={jest.fn()} reducedMotion={false} />,
+    );
+    await view.rerender(
+      <DiscoverModeBar value="new_releases" onChange={jest.fn()} reducedMotion={false} />,
+    );
+    expect(withTiming).toHaveBeenLastCalledWith(1, expect.objectContaining({ reduceMotion: ReduceMotion.Never }));
+    const before = jest.mocked(withTiming).mock.calls.length;
+    jest.mocked(cancelAnimation).mockClear();
+    await view.rerender(
+      <DiscoverModeBar value="new_releases" onChange={jest.fn()} reducedMotion />,
+    );
+    expect(cancelAnimation).toHaveBeenCalled();
+    expect(withTiming).toHaveBeenCalledTimes(before);
+    await view.rerender(
+      <DiscoverModeBar value="top_rated" onChange={jest.fn()} reducedMotion={false} />,
+    );
+    expect(withTiming).toHaveBeenLastCalledWith(2, expect.objectContaining({ reduceMotion: ReduceMotion.Never }));
+  });
+  it('uses the live motion choice for hero and poster animations', async () => {
+    const hero = await render(<DiscoverFeaturePresentation item={movie} loading={false} motionEnabled />);
+    await hero.rerender(<DiscoverFeaturePresentation item={series} loading={false} motionEnabled />);
+    expect(withTiming).toHaveBeenLastCalledWith(0, expect.objectContaining({ reduceMotion: ReduceMotion.Never }), expect.any(Function));
+    const poster = await render(<DiscoverPosterCard item={movie} onPress={jest.fn()} focused={false} motionEnabled={false} />);
+    const before = jest.mocked(withTiming).mock.calls.length;
+    await poster.rerender(<DiscoverPosterCard item={movie} onPress={jest.fn()} focused motionEnabled={false} />);
+    expect(withTiming).toHaveBeenCalledTimes(before);
+    await poster.rerender(<DiscoverPosterCard item={movie} onPress={jest.fn()} focused motionEnabled />);
+    expect(withTiming).toHaveBeenLastCalledWith(1, expect.objectContaining({ reduceMotion: ReduceMotion.Never }));
   });
 });
 

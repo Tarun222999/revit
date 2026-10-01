@@ -9,7 +9,7 @@ import { DiscoverModeBar } from '@/features/discovery/components/DiscoverModeBar
 import { DiscoverRail } from '@/features/discovery/components/DiscoverRail';
 import { useDiscoverRail } from '@/features/discovery/hooks/useDiscoverRail';
 import { useDiscoverMotion } from '@/features/discovery/hooks/useDiscoverMotion';
-import { useFeaturedRotation } from '@/features/discovery/hooks/useFeaturedRotation';
+import { useFeaturedRotationController } from '@/features/discovery/hooks/useFeaturedRotation';
 import { getFeaturedTitles } from '@/features/discovery/model/featuredTitles';
 import { createMediaRouteId } from '@/features/media/api/media-api';
 import type { DiscoveryMediaType, DiscoveryMode } from '@/types/discovery';
@@ -54,6 +54,21 @@ function DiscoverModePage({
   const { reducedMotion, foreground, screenReader } = motionSettings;
   const [heroVisible, setHeroVisible] = useState(false);
   const [interacting, setInteracting] = useState(false);
+  const [activeRails, setActiveRails] = useState<Set<DiscoveryMediaType>>(
+    () => new Set(),
+  );
+  const onRailInteractionChange = useCallback(
+    (mediaType: DiscoveryMediaType, active: boolean) => {
+      setActiveRails((current) => {
+        if (current.has(mediaType) === active) return current;
+        const next = new Set(current);
+        if (active) next.add(mediaType);
+        else next.delete(mediaType);
+        return next;
+      });
+    },
+    [],
+  );
   const [scrolling, setScrolling] = useState(false);
   const heroBounds = useRef({ y: 0, height: 288 });
   const viewport = useRef({ height: 0, offset: 0 });
@@ -89,8 +104,19 @@ function DiscoverModePage({
     !reducedMotion &&
     !screenReader &&
     !interacting &&
+    activeRails.size === 0 &&
     !scrolling;
-  const selected = useFeaturedRotation(candidates, rotating);
+  const { item: selected, settle } = useFeaturedRotationController(
+    candidates,
+    rotating,
+  );
+  const onFeatureSettled = useCallback(
+    (item: NormalizedMediaItem) => {
+      settle(item);
+      onFeatureChange(item);
+    },
+    [settle, onFeatureChange],
+  );
   const retained = selected ?? (candidates === undefined ? fallback : null);
   const feature =
     retained?.mediaType === 'game' && !gamesEnabled ? null : retained;
@@ -126,6 +152,7 @@ function DiscoverModePage({
           gamesEnabled={gamesEnabled}
           motionEnabled={motionEnabled}
           onInteractionChange={setInteracting}
+          onSettle={onFeatureSettled}
           loading={candidates === undefined}
           onPress={(item) =>
             router.push(
@@ -143,6 +170,7 @@ function DiscoverModePage({
           onSeeAll={onSeeAll}
           queryEnabled={active}
           motionEnabled={motionEnabled}
+          onInteractionChange={onRailInteractionChange}
         />
       ))}
     </ScrollView>
@@ -176,6 +204,7 @@ export function DiscoverScreen({ onSeeAll }: DiscoverScreenProps) {
         </Text>
         <DiscoverModeBar
           gamesEnabled={gamesEnabled}
+          reducedMotion={motionSettings.reducedMotion}
           value={mode}
           onChange={(next) => {
             updateMode(next);

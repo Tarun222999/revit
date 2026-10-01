@@ -36,24 +36,30 @@ export function getDiscoverModeDescription(
 
 type DiscoverModeBarProps = {
   gamesEnabled?: boolean;
+  reducedMotion?: boolean;
   value: DiscoveryMode;
   onChange: (mode: DiscoveryMode) => void;
 };
 
 export function DiscoverModeBar({
   gamesEnabled = false,
+  reducedMotion = false,
   value,
   onChange,
 }: DiscoverModeBarProps) {
   const [width, setWidth] = useState(0);
   const position = useSharedValue(DISCOVERY_MODES.indexOf(value));
   useEffect(() => {
-    position.value = withTiming(DISCOVERY_MODES.indexOf(value), {
-      duration: 320,
-      reduceMotion: ReduceMotion.System,
-    });
+    cancelAnimation(position);
+    const next = DISCOVERY_MODES.indexOf(value);
+    position.value = reducedMotion
+      ? next
+      : withTiming(next, {
+          duration: 320,
+          reduceMotion: ReduceMotion.Never,
+        });
     return () => cancelAnimation(position);
-  }, [value, position]);
+  }, [value, reducedMotion, position]);
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [
       { translateX: (position.value * width) / DISCOVERY_MODES.length },

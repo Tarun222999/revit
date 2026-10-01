@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { mediaItemKey } from '@/features/discovery/utils/dedupeMediaItems';
 import { nextFeaturedKey } from '@/features/discovery/model/featuredTitles';
 import type { NormalizedMediaItem } from '@/types/media';
 
 export const FEATURE_INTERVAL_MS = 6500;
 
-export function useFeaturedRotation(
+export function useFeaturedRotationController(
   items: NormalizedMediaItem[] | undefined,
   enabled: boolean,
 ) {
@@ -32,5 +32,16 @@ export function useFeaturedRotation(
     // Identity changes restart the interval; metadata refreshes do not postpone rotation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, key, program]);
-  return item;
+  const settle = useCallback((visibleItem: NormalizedMediaItem) => {
+    previous.current = visibleItem;
+    setSelectedKey(mediaItemKey(visibleItem));
+  }, []);
+  return { item, settle };
+}
+
+export function useFeaturedRotation(
+  items: NormalizedMediaItem[] | undefined,
+  enabled: boolean,
+) {
+  return useFeaturedRotationController(items, enabled).item;
 }
