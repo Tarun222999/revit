@@ -16,6 +16,7 @@ import {
 import { useCurrentProfile } from '@/features/profile/hooks/useCurrentProfile';
 import { useOnlineStatus } from '@/lib/query/network';
 import { isPotentialTitleSharePath } from '@/features/sharing/model/titleShare';
+import { getSharedListAuthReturnTo, isPotentialListSharePath } from '@/features/sharing/model/listShare';
 import {
   isRequestTimeoutError,
   STARTUP_REQUEST_TIMEOUT_MS,
@@ -48,7 +49,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     pathname === '/legal/credits' ||
     pathname === '/support';
   const isPublicSharedTitleRoute = isPotentialTitleSharePath(pathname);
-  const isPublicRoute = isPublicInfoRoute || isPublicSharedTitleRoute;
+  const isPublicRoute = isPublicInfoRoute || isPublicSharedTitleRoute || isPotentialListSharePath(pathname);
   const isAuthRoute = isWelcomeRoute || isEmailCodeRoute || isCallbackRoute || isOnboardingRoute;
   const [storedReturnTo, setStoredReturnTo] = useState<string | null | undefined>(undefined);
 
@@ -69,7 +70,7 @@ export function AuthGate({ children }: PropsWithChildren) {
   }, []);
 
   const pendingReturnTo = useMemo(
-    () => getPendingAuthReturnTo(returnTo) ?? getSharedTitleAuthReturnTo(pathname) ?? storedReturnTo,
+    () => getPendingAuthReturnTo(returnTo) ?? getSharedTitleAuthReturnTo(pathname) ?? getSharedListAuthReturnTo(pathname) ?? storedReturnTo,
     [pathname, returnTo, storedReturnTo],
   );
   const pendingDestination = useMemo(
@@ -78,7 +79,7 @@ export function AuthGate({ children }: PropsWithChildren) {
   );
 
   useEffect(() => {
-    const restoredTitle = getSharedTitleAuthReturnTo(pathname);
+    const restoredTitle = getSharedTitleAuthReturnTo(pathname) ?? getSharedListAuthReturnTo(pathname);
 
     if (!profileQuery.data || !restoredTitle || restoredTitle !== storedReturnTo) {
       return;
@@ -163,7 +164,7 @@ export function AuthGate({ children }: PropsWithChildren) {
     if (profileQuery.isSuccess && profileQuery.data === null) {
       return !isOnboardingRoute
         ? pendingReturnTo
-          ? { pathname: '/onboarding', params: { returnTo: pendingReturnTo } }
+          ? { pathname: '/onboarding' as const, params: { returnTo: pendingReturnTo } }
           : '/onboarding'
         : null;
     }

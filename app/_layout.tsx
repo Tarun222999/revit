@@ -52,6 +52,7 @@ export default function RootLayout() {
                 <Stack.Screen name="title/[id]/history" options={{ title: 'Watch history' }} />
                 <Stack.Screen name="discover/[mode]/[mediaType]" options={{ title: 'Discovery' }} />
                 <Stack.Screen name="lists/[id]" options={{ title: 'List Details' }} />
+                <Stack.Screen name="shared/list/[key]" options={{ title: 'Shared list' }} />
                 <Stack.Screen name="profile" options={{ title: 'Profile' }} />
                 <Stack.Screen name="help-feedback" options={{ title: 'Help & Feedback' }} />
                 <Stack.Screen name="settings" options={{ title: 'Settings' }} />

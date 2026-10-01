@@ -1,11 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import {
+  AccessibilityInfo,
+  findNodeHandle,
+  Platform,
+  Pressable,
+  Text,
+  View,
+} from 'react-native';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { LoadingState } from '@/components/feedback/LoadingState';
-import { Button } from '@/components/ui/Button';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { CollectionSheet } from '@/features/lists/components/CollectionSheet';
@@ -31,6 +37,8 @@ import {
 import { hasDuplicateListName } from '@/features/lists/model/listPresentation';
 import type { UserListDetails, UserListItem } from '@/features/lists/types';
 import { createMediaRouteId } from '@/features/media/api/media-api';
+import { ListSharingPanel } from '@/features/sharing/components/ListSharingPanel';
+import { useListSharing } from '@/features/sharing/hooks/useListSharing';
 
 const EMPTY_VALUES: ListFormValues = { name: '', description: '' };
 function errorMessage(error: unknown, fallback: string) {
@@ -52,6 +60,7 @@ function openTitle(item: UserListItem) {
 export function ListDetailsScreen({ listId }: { listId?: string }) {
   const { loading: authLoading, user } = useAuth();
   const listQuery = useListDetails(user?.id, listId);
+  const sharing = useListSharing(user?.id, listId);
   const listsQuery = useUserLists(user?.id);
   const update = useUpdateList();
   const deletion = useDeleteList();
@@ -59,6 +68,22 @@ export function ListDetailsScreen({ listId }: { listId?: string }) {
   const noteMutation = useUpdateListItemNote();
   const [editing, setEditing] = useState(false);
   const [options, setOptions] = useState(false);
+  const optionsTrigger = useRef<View>(null);
+  const wasOptionsOpen = useRef(false);
+  useEffect(() => {
+    if (options) {
+      wasOptionsOpen.current = true;
+      return;
+    }
+    if (!wasOptionsOpen.current) return;
+    wasOptionsOpen.current = false;
+    if (Platform.OS === 'web') {
+      (optionsTrigger.current as unknown as { focus?: () => void })?.focus?.();
+    } else {
+      const node = findNodeHandle(optionsTrigger.current);
+      if (node) AccessibilityInfo.setAccessibilityFocus(node);
+    }
+  }, [options]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [values, setValues] = useState<ListFormValues>(EMPTY_VALUES);
   const [initialValues, setInitialValues] =
@@ -194,6 +219,7 @@ export function ListDetailsScreen({ listId }: { listId?: string }) {
           headerRight: () =>
             list && user ? (
               <Pressable
+                ref={optionsTrigger}
                 accessibilityRole="button"
                 accessibilityLabel="Collection options"
                 accessibilityState={{ expanded: options }}
@@ -234,7 +260,17 @@ export function ListDetailsScreen({ listId }: { listId?: string }) {
           <CollectionContents
             key={`${user.id}:${list.id}`}
             header={
-              <ListDetailsHeader list={list} onEdit={() => startEdit(list)} />
+              <ListDetailsHeader
+                list={list}
+                onEdit={() => startEdit(list)}
+                sharingLabel={
+                  sharing.isError || !sharing.data
+                    ? 'Sharing status unavailable'
+                    : sharing.data.shareKey
+                      ? 'Shared by link'
+                      : 'Only you'
+                }
+              />
             }
             list={list}
             itemErrorId={itemErrorId}
@@ -245,27 +281,19 @@ export function ListDetailsScreen({ listId }: { listId?: string }) {
             onRemoveItem={removeItem}
             onSaveNote={saveNote}
           />
-          {options ? (
-            <CollectionSheet
-              title="Collection options"
-              onClose={() => setOptions(false)}
-            >
-              <Button
-                title="Edit name & description"
-                variant="secondary"
-                onPress={() => startEdit(list)}
-              />
-              <Button
-                title="Delete list"
-                variant="danger"
-                onPress={() => {
-                  setOptions(false);
-                  setDeleteError(null);
-                  setConfirmingDelete(true);
-                }}
-              />
-            </CollectionSheet>
-          ) : null}
+          <ListSharingPanel
+            key={`sharing:${user.id}:${list.id}`}
+            userId={user.id}
+            listId={list.id}
+            visible={options}
+            onClose={() => setOptions(false)}
+            onEdit={() => startEdit(list)}
+            onDelete={() => {
+              setOptions(false);
+              setDeleteError(null);
+              setConfirmingDelete(true);
+            }}
+          />
           {editing ? (
             <CollectionSheet
               title="Edit list"

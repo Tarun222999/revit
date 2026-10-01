@@ -8,9 +8,11 @@ import type { UserListDetails } from '@/features/lists/types';
 export function ListDetailsHeader({
   list,
   onEdit,
+  sharingLabel = 'Only you',
 }: {
   list: UserListDetails;
   onEdit: () => void;
+  sharingLabel?: string;
 }) {
   return (
     <View className="gap-4 px-5 pt-4 pb-6">
@@ -25,7 +27,7 @@ export function ListDetailsHeader({
         />
       </View>
       <Text className="text-xs uppercase tracking-widest text-gold-300">
-        Your collection · Only you
+        Your collection · {sharingLabel}
       </Text>
       <Text className="text-4xl text-archive-50" style={collectionTitleStyle}>
         {list.name}
