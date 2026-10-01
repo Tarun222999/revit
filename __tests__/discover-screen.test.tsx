@@ -183,10 +183,10 @@ describe("Discover interactions", () => {
       />,
     );
 
-    expect(screen.getByTestId("discover-feature-backdrop").props.style).toEqual(
+    expect(screen.getByTestId("discover-feature-backdrop", { includeHiddenElements: true }).props.style).toEqual(
       StyleSheet.absoluteFillObject,
     );
-    expect(screen.getByTestId("discover-feature-poster").props.style).toEqual(
+    expect(screen.getByTestId("discover-feature-poster", { includeHiddenElements: true }).props.style).toEqual(
       StyleSheet.absoluteFillObject,
     );
 

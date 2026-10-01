@@ -1,4 +1,13 @@
-import { memo } from 'react';
+import { memo, useEffect } from 'react';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  interpolate,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Pressable, Text, View, type PressableProps } from 'react-native';
 
 import { MediaPoster } from '@/components/media/MediaPoster';
@@ -7,7 +16,8 @@ import { MEDIA_TYPE_LABELS } from '@/constants/media';
 import type { NormalizedMediaItem } from '@/types/media';
 
 type DiscoverPosterCardProps = PressableProps & {
-  emphasis?: 'lead' | 'standard';
+  focused?: boolean;
+  motionEnabled?: boolean;
   item: NormalizedMediaItem;
   onPress: () => void;
   variant?: 'rail' | 'listing';
@@ -29,14 +39,41 @@ function formatMetadata(item: NormalizedMediaItem) {
 
 function DiscoverPosterCardComponent({
   className,
-  emphasis = 'standard',
+  focused = true,
+  motionEnabled = false,
   item,
   onPress,
   variant = 'rail',
   ...props
 }: DiscoverPosterCardProps) {
   const isListing = variant === 'listing';
-  const isLead = emphasis === 'lead';
+  const progress = useSharedValue(focused ? 1 : 0);
+  useEffect(() => {
+    cancelAnimation(progress);
+    progress.value = motionEnabled
+      ? withTiming(focused ? 1 : 0, {
+          duration: 340,
+          easing: Easing.bezier(0.22, 1, 0.36, 1),
+          reduceMotion: ReduceMotion.Never,
+        })
+      : focused
+        ? 1
+        : 0;
+    return () => cancelAnimation(progress);
+  }, [focused, motionEnabled, progress]);
+  const focusStyle = useAnimatedStyle(() =>
+    isListing
+      ? {}
+      : {
+          opacity: interpolate(progress.value, [0, 1], [0.76, 1]),
+          transform: motionEnabled
+            ? [
+                { scale: interpolate(progress.value, [0, 1], [0.96, 1.035]) },
+                { translateY: interpolate(progress.value, [0, 1], [5, -3]) },
+              ]
+            : [],
+        },
+  );
   const metadata = formatMetadata(item);
 
   return (
@@ -46,23 +83,21 @@ function DiscoverPosterCardComponent({
       className={cn(
         isListing
           ? 'min-w-0 rounded-app border border-archive-700 bg-archive-800 p-2'
-          : isLead
-            ? 'w-32'
-            : 'mt-7 w-24',
+          : 'w-32 py-3',
         className,
       )}
       onPress={onPress}
       {...props}>
-      <View className="gap-2">
+      <Animated.View className="gap-2" style={focusStyle}>
         <MediaPoster
           imageUrl={item.imageUrl}
           size={isListing ? 'lg' : 'md'}
           className={
             isListing
               ? 'h-56 w-full'
-              : isLead
-                ? 'h-44 w-32'
-                : 'h-36 w-24'
+              : focused
+                ? 'h-44 w-32 border-gold-300'
+                : 'h-44 w-32'
           }
         />
 
@@ -89,7 +124,7 @@ function DiscoverPosterCardComponent({
             </Text>
           ) : null}
         </View>
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }

@@ -1,8 +1,14 @@
+import { useEffect, useState } from 'react';
+import Animated, {
+  cancelAnimation,
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { AppColors } from '@/constants/theme';
 import { Pressable, Text, View } from 'react-native';
-import {
-  DISCOVERY_MODES,
-  type DiscoveryMode,
-} from '@/types/discovery';
+import { DISCOVERY_MODES, type DiscoveryMode } from '@/types/discovery';
 
 const modeLabels: Record<DiscoveryMode, string> = {
   trending: 'Trending',
@@ -30,22 +36,58 @@ export function getDiscoverModeDescription(
 
 type DiscoverModeBarProps = {
   gamesEnabled?: boolean;
+  reducedMotion?: boolean;
   value: DiscoveryMode;
   onChange: (mode: DiscoveryMode) => void;
 };
 
 export function DiscoverModeBar({
   gamesEnabled = false,
+  reducedMotion = false,
   value,
   onChange,
 }: DiscoverModeBarProps) {
+  const [width, setWidth] = useState(0);
+  const position = useSharedValue(DISCOVERY_MODES.indexOf(value));
+  useEffect(() => {
+    cancelAnimation(position);
+    const next = DISCOVERY_MODES.indexOf(value);
+    position.value = reducedMotion
+      ? next
+      : withTiming(next, {
+          duration: 320,
+          reduceMotion: ReduceMotion.Never,
+        });
+    return () => cancelAnimation(position);
+  }, [value, reducedMotion, position]);
+  const indicatorStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: (position.value * width) / DISCOVERY_MODES.length },
+    ],
+  }));
   return (
     <View className="gap-3">
       <Text className="text-sm leading-5 text-archive-300">
         {getDiscoverModeDescription(value, gamesEnabled)}
       </Text>
 
-      <View accessibilityRole="tablist" className="flex-row border-b border-archive-700">
+      <View
+        accessibilityRole="tablist"
+        className="flex-row border-b border-archive-700"
+        onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              position: 'absolute',
+              bottom: 0,
+              height: 2,
+              width: width / DISCOVERY_MODES.length,
+              backgroundColor: AppColors.gold[400],
+            },
+            indicatorStyle,
+          ]}
+        />
         {DISCOVERY_MODES.map((mode) => (
           <Pressable
             accessibilityLabel={`${modeLabels[mode]} discovery mode`}
@@ -53,9 +95,7 @@ export function DiscoverModeBar({
             accessibilityState={{ selected: value === mode }}
             key={mode}
             onPress={() => onChange(mode)}
-            className={`min-h-11 flex-1 items-center justify-center border-b-2 px-1 ${
-              value === mode ? 'border-gold-400' : 'border-transparent'
-            }`}>
+            className="min-h-11 flex-1 items-center justify-center border-b-2 border-transparent px-1">
             <Text
               className={`text-center text-xs font-bold ${
                 value === mode ? 'text-archive-50' : 'text-archive-400'

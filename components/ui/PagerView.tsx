@@ -1,10 +1,5 @@
 import NativePagerView from 'react-native-pager-view';
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  type ReactNode,
-} from 'react';
+import { forwardRef, useImperativeHandle, useRef, type ReactNode } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 
 export type PagerViewRef = { setPage: (page: number) => void };
@@ -14,19 +9,28 @@ type Props = {
   children: ReactNode;
   initialPage?: number;
   onPageSelected?: (event: PageSelectedEvent) => void;
+  onPageScrollStateChanged?: (event: {
+    nativeEvent: { pageScrollState: 'idle' | 'dragging' | 'settling' };
+  }) => void;
   style?: StyleProp<ViewStyle>;
 };
 
-const PagerView = forwardRef<PagerViewRef, Props>(function PagerView(props, ref) {
-  const nativeRef = useRef<NativePagerView>(null);
+const PagerView = forwardRef<PagerViewRef, Props>(
+  function PagerView(props, ref) {
+    const nativeRef = useRef<NativePagerView>(null);
 
-  useImperativeHandle(ref, () => ({
-    setPage: (page) => {
-      nativeRef.current?.setPage(page);
-    },
-  }), []);
+    useImperativeHandle(
+      ref,
+      () => ({
+        setPage: (page) => {
+          nativeRef.current?.setPage(page);
+        },
+      }),
+      [],
+    );
 
-  return <NativePagerView ref={nativeRef} {...props} />;
-});
+    return <NativePagerView ref={nativeRef} {...props} />;
+  },
+);
 
 export default PagerView;

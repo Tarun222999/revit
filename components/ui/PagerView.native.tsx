@@ -9,11 +9,15 @@ import type { StyleProp, ViewStyle } from 'react-native';
 
 export type PagerViewRef = { setPage: (page: number) => void };
 export type PageSelectedEvent = { nativeEvent: { position: number } };
+export type PageScrollStateChangedEvent = {
+  nativeEvent: { pageScrollState: 'idle' | 'dragging' | 'settling' };
+};
 
 type Props = {
   children: ReactNode;
   initialPage?: number;
   onPageSelected?: (event: PageSelectedEvent) => void;
+  onPageScrollStateChanged?: (event: PageScrollStateChangedEvent) => void;
   style?: StyleProp<ViewStyle>;
 };
 
