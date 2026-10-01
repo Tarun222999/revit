@@ -16,7 +16,12 @@ import {
 } from '@/features/profile/api/profile-api';
 import { useCreateProfile } from '@/features/profile/hooks/useCreateProfile';
 import { getProfileErrorMessage } from '@/features/profile/utils/profileErrors';
-import { getPendingAuthDestination } from '@/features/auth/utils/pendingDestination';
+import {
+  clearPendingAuthReturnToSafely,
+  getPendingAuthDestination,
+  getPendingAuthReturnTo,
+  getStoredPendingAuthReturnTo,
+} from '@/features/auth/utils/pendingDestination';
 
 function ProfileTextInput({
   autoCapitalize = 'none',
@@ -143,6 +148,9 @@ export function OnboardingScreen({
 
     try {
       setIsSubmitting(true);
+      const canonicalReturnTo =
+        getPendingAuthReturnTo(returnTo) ?? await getStoredPendingAuthReturnTo();
+      const destination = getPendingAuthDestination(canonicalReturnTo ?? undefined);
       const avatarPath = selectedAvatar
         ? await uploadProfileAvatar({
             base64: selectedAvatar.base64,
@@ -160,7 +168,8 @@ export function OnboardingScreen({
         displayName,
         username: normalizedUsername,
       });
-      router.replace(getPendingAuthDestination(returnTo) ?? '/(tabs)');
+      router.replace(destination ?? '/(tabs)');
+      if (destination) void clearPendingAuthReturnToSafely();
     } catch (profileError) {
       const message = profileError instanceof Error ? profileError.message : 'Could not create your profile.';
 
@@ -184,9 +193,10 @@ export function OnboardingScreen({
 
     try {
       await signOut();
+      const canonicalReturnTo = getPendingAuthReturnTo(returnTo);
       router.replace({
         pathname: '/welcome',
-        params: typeof returnTo === 'string' ? { returnTo } : {},
+        params: canonicalReturnTo ? { returnTo: canonicalReturnTo } : {},
       });
     } catch (signOutError) {
       setError(getProfileErrorMessage(signOutError, 'Could not sign out.'));

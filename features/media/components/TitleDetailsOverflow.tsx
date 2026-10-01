@@ -21,6 +21,7 @@ type Props = {
 
 export function TitleDetailsOverflow({ item }: Props) {
   const [isOpen, setIsOpen] = useState(false);
+  const [shareAfterDismissal, setShareAfterDismissal] = useState(false);
   const triggerRef = useRef<View>(null);
   const shareRef = useRef<View>(null);
   const wasOpenRef = useRef(false);
@@ -58,8 +59,6 @@ export function TitleDetailsOverflow({ item }: Props) {
   }, [isOpen]);
 
   const share = async () => {
-    close();
-
     try {
       // The payload must contain only the canonical app URL—never title or
       // sender text, Journal data, or an internal media UUID.
@@ -74,6 +73,24 @@ export function TitleDetailsOverflow({ item }: Props) {
         ],
       );
     }
+  };
+
+  const requestShare = () => {
+    if (Platform.OS === 'ios') {
+      setShareAfterDismissal(true);
+      close();
+      return;
+    }
+
+    close();
+    void share();
+  };
+
+  const handleModalDismiss = () => {
+    if (!shareAfterDismissal) return;
+
+    setShareAfterDismissal(false);
+    void share();
   };
 
   return (
@@ -91,6 +108,7 @@ export function TitleDetailsOverflow({ item }: Props) {
 
       <Modal
         animationType="fade"
+        onDismiss={handleModalDismiss}
         onRequestClose={close}
         transparent
         visible={isOpen}>
@@ -105,7 +123,7 @@ export function TitleDetailsOverflow({ item }: Props) {
               accessibilityLabel="Share title"
               accessibilityRole="button"
               className="min-h-12 min-w-48 flex-row items-center gap-3 px-4 py-3"
-              onPress={share}>
+              onPress={requestShare}>
               <Ionicons color="#e8c77d" name="share-social-outline" size={20} />
               <Text className="text-base font-semibold text-archive-50">Share title</Text>
             </Pressable>

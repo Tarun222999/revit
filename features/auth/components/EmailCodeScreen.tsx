@@ -8,7 +8,13 @@ import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { sendEmailOtp, verifyEmailOtp } from '@/features/auth/api/email-auth-api';
 import { getCurrentProfile } from '@/features/profile/api/profile-api';
-import { getPendingAuthDestination } from '@/features/auth/utils/pendingDestination';
+import {
+  clearPendingAuthReturnToSafely,
+  getPendingAuthDestination,
+  getPendingAuthReturnTo,
+  getStoredPendingAuthReturnTo,
+  storePendingAuthReturnTo,
+} from '@/features/auth/utils/pendingDestination';
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -95,11 +101,8 @@ export function EmailCodeScreen({
     setLoading(true);
 
     try {
-      if (typeof returnTo === 'string' && getPendingAuthDestination(returnTo)) {
-        await sendEmailOtp(email, returnTo);
-      } else {
-        await sendEmailOtp(email);
-      }
+      await storePendingAuthReturnTo(returnTo);
+      await sendEmailOtp(email);
       setSent(true);
       setNotice('Check your email for a one-time code.');
     } catch (sendError) {
@@ -120,15 +123,18 @@ export function EmailCodeScreen({
     setLoading(true);
 
     try {
+      const canonicalReturnTo =
+        getPendingAuthReturnTo(returnTo) ?? await getStoredPendingAuthReturnTo();
+      const destination = getPendingAuthDestination(canonicalReturnTo ?? undefined);
       const session = await verifyEmailOtp(email, token);
       const userId = session?.user.id;
       const profile = userId ? await getCurrentProfile(userId) : null;
-      const destination = getPendingAuthDestination(returnTo);
       router.replace(profile
         ? destination ?? '/(tabs)'
-        : typeof returnTo === 'string' && destination
-          ? { pathname: '/(auth)/onboarding', params: { returnTo } }
+        : canonicalReturnTo && destination
+          ? { pathname: '/(auth)/onboarding', params: { returnTo: canonicalReturnTo } }
           : '/(auth)/onboarding');
+      if (profile && canonicalReturnTo) void clearPendingAuthReturnToSafely();
     } catch (verifyError) {
       setError(getEmailAuthErrorMessage(verifyError));
     } finally {

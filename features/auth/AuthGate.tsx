@@ -1,10 +1,18 @@
-import { router, usePathname } from 'expo-router';
+import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { ErrorState } from '@/components/feedback/ErrorState';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import {
+  clearPendingAuthReturnToSafely,
+  getPendingAuthDestination,
+  getPendingAuthReturnTo,
+  getStoredPendingAuthReturnTo,
+  getSharedTitleAuthReturnTo,
+  storePendingAuthReturnTo,
+} from '@/features/auth/utils/pendingDestination';
 import { useCurrentProfile } from '@/features/profile/hooks/useCurrentProfile';
 import { useOnlineStatus } from '@/lib/query/network';
 import { isPotentialTitleSharePath } from '@/features/sharing/model/titleShare';
@@ -15,6 +23,7 @@ import {
 
 export function AuthGate({ children }: PropsWithChildren) {
   const pathname = usePathname();
+  const { returnTo } = useGlobalSearchParams<{ returnTo?: string | string[] }>();
   const lastRedirectKeyRef = useRef<string | null>(null);
   const wasOnlineRef = useRef(true);
   const [resolutionTimedOut, setResolutionTimedOut] = useState(false);
@@ -41,6 +50,43 @@ export function AuthGate({ children }: PropsWithChildren) {
   const isPublicSharedTitleRoute = isPotentialTitleSharePath(pathname);
   const isPublicRoute = isPublicInfoRoute || isPublicSharedTitleRoute;
   const isAuthRoute = isWelcomeRoute || isEmailCodeRoute || isCallbackRoute || isOnboardingRoute;
+  const [storedReturnTo, setStoredReturnTo] = useState<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    let active = true;
+
+    void getStoredPendingAuthReturnTo()
+      .then((destination) => {
+        if (active) setStoredReturnTo(destination);
+      })
+      .catch(() => {
+        if (active) setStoredReturnTo(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const pendingReturnTo = useMemo(
+    () => getPendingAuthReturnTo(returnTo) ?? getSharedTitleAuthReturnTo(pathname) ?? storedReturnTo,
+    [pathname, returnTo, storedReturnTo],
+  );
+  const pendingDestination = useMemo(
+    () => getPendingAuthDestination(pendingReturnTo ?? undefined),
+    [pendingReturnTo],
+  );
+
+  useEffect(() => {
+    const restoredTitle = getSharedTitleAuthReturnTo(pathname);
+
+    if (!profileQuery.data || !restoredTitle || restoredTitle !== storedReturnTo) {
+      return;
+    }
+
+    setStoredReturnTo(null);
+    void clearPendingAuthReturnToSafely();
+  }, [pathname, profileQuery.data, storedReturnTo]);
   const isProfileLoading = Boolean(
     user &&
       !isCallbackRoute &&
@@ -102,6 +148,10 @@ export function AuthGate({ children }: PropsWithChildren) {
       return null;
     }
 
+    if (isAuthRoute && storedReturnTo === undefined) {
+      return null;
+    }
+
     if (!user) {
       return !isAuthRoute && !isPublicRoute ? '/welcome' : null;
     }
@@ -111,14 +161,18 @@ export function AuthGate({ children }: PropsWithChildren) {
     }
 
     if (profileQuery.isSuccess && profileQuery.data === null) {
-      return !isOnboardingRoute ? '/onboarding' : null;
+      return !isOnboardingRoute
+        ? pendingReturnTo
+          ? { pathname: '/onboarding', params: { returnTo: pendingReturnTo } }
+          : '/onboarding'
+        : null;
     }
 
     if (!profileQuery.data) {
       return null;
     }
 
-    return isAuthRoute ? '/(tabs)' : null;
+    return isAuthRoute ? pendingDestination ?? '/(tabs)' : null;
   }, [
     authLoading,
     hasStartupError,
@@ -126,9 +180,12 @@ export function AuthGate({ children }: PropsWithChildren) {
     isCallbackRoute,
     isOnboardingRoute,
     isPublicRoute,
+    pendingDestination,
+    pendingReturnTo,
     profileQuery.data,
     profileQuery.isSuccess,
     isProfileLoading,
+    storedReturnTo,
     user,
   ]);
 
@@ -138,19 +195,35 @@ export function AuthGate({ children }: PropsWithChildren) {
       return;
     }
 
-    const redirectKey = `${pathname}->${redirectTarget}`;
+    const redirectKey = `${pathname}->${JSON.stringify(redirectTarget)}`;
 
     if (lastRedirectKeyRef.current === redirectKey) {
       return;
     }
 
     lastRedirectKeyRef.current = redirectKey;
+    const needsOnboardingStorage = Boolean(
+      user &&
+        profileQuery.isSuccess &&
+        profileQuery.data === null &&
+        !isOnboardingRoute &&
+        pendingReturnTo,
+    );
+
+    if (needsOnboardingStorage && pendingReturnTo) {
+      void storePendingAuthReturnTo(pendingReturnTo)
+        .catch(() => undefined)
+        .then(() => router.replace(redirectTarget));
+      return;
+    }
+
     router.replace(redirectTarget);
-  }, [pathname, redirectTarget]);
+  }, [isOnboardingRoute, pathname, pendingReturnTo, profileQuery.data, profileQuery.isSuccess, redirectTarget, user]);
 
   const isResolvingAuthRoute =
     !hasStartupError &&
     ((authLoading && !isPublicRoute) ||
+    Boolean(isAuthRoute && storedReturnTo === undefined) ||
     isProfileLoading ||
     Boolean(user && profileQuery.data && isAuthRoute) ||
     Boolean(!user && !authLoading && !isAuthRoute && !isPublicRoute) ||

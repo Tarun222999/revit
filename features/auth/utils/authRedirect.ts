@@ -1,7 +1,10 @@
 import * as Linking from 'expo-linking';
 
-export function getAuthRedirectUrl(returnTo?: string) {
-  return Linking.createURL('/callback', {
-    queryParams: returnTo ? { returnTo } : undefined,
-  });
+/**
+ * This stays on the exact callback URL registered with Supabase Auth. A
+ * validated share destination is kept locally instead of widening redirect
+ * allow-lists to arbitrary callback query strings.
+ */
+export function getAuthRedirectUrl() {
+  return Linking.createURL('/callback');
 }

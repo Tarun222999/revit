@@ -5,7 +5,12 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { Screen } from '@/components/ui/Screen';
 import { getCurrentProfile } from '@/features/profile/api/profile-api';
 import { supabase } from '@/lib/supabase/client';
-import { getPendingAuthDestination } from '@/features/auth/utils/pendingDestination';
+import {
+  clearPendingAuthReturnToSafely,
+  getPendingAuthDestination,
+  getPendingAuthReturnTo,
+  getStoredPendingAuthReturnTo,
+} from '@/features/auth/utils/pendingDestination';
 
 const handledAuthCodes = new Set<string>();
 
@@ -44,6 +49,9 @@ export function AuthCallbackScreen({
         handledCodeRef.current = code;
         handledAuthCodes.add(code);
 
+        const canonicalReturnTo =
+          getPendingAuthReturnTo(returnTo) ?? await getStoredPendingAuthReturnTo();
+        const destination = getPendingAuthDestination(canonicalReturnTo ?? undefined);
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!mounted) {
@@ -68,12 +76,12 @@ export function AuthCallbackScreen({
           return;
         }
 
-        const destination = getPendingAuthDestination(returnTo);
         router.replace(profile
           ? destination ?? '/(tabs)'
-          : typeof returnTo === 'string' && destination
-            ? { pathname: '/(auth)/onboarding', params: { returnTo } }
+          : canonicalReturnTo && destination
+            ? { pathname: '/(auth)/onboarding', params: { returnTo: canonicalReturnTo } }
             : '/(auth)/onboarding');
+        if (profile && canonicalReturnTo) void clearPendingAuthReturnToSafely();
       } catch (callbackError) {
         if (!mounted) {
           return;

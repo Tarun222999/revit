@@ -5,8 +5,8 @@ import { supabase } from '@/lib/supabase/client';
 
 WebBrowser.maybeCompleteAuthSession();
 
-export async function signInWithGoogle(returnTo?: string) {
-  const redirectTo = getAuthRedirectUrl(returnTo);
+export async function signInWithGoogle() {
+  const redirectTo = getAuthRedirectUrl();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {

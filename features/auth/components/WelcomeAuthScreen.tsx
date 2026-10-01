@@ -20,7 +20,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Screen } from '@/components/ui/Screen';
 import { signInWithGoogle } from '@/features/auth/api/google-auth-api';
-import { getPendingAuthDestination } from '@/features/auth/utils/pendingDestination';
+import { storePendingAuthReturnTo } from '@/features/auth/utils/pendingDestination';
 import { useAppCapabilities } from '@/features/capabilities/context/AppCapabilitiesProvider';
 import { cn } from '@/lib/utils/cn';
 
@@ -321,10 +321,8 @@ export function WelcomeAuthScreen({
     setLoadingGoogle(true);
 
     try {
-      const canonicalReturnTo = getPendingAuthDestination(returnTo) ? returnTo : undefined;
-      const callbackUrl = await signInWithGoogle(
-        typeof canonicalReturnTo === 'string' ? canonicalReturnTo : undefined,
-      );
+      const canonicalReturnTo = await storePendingAuthReturnTo(returnTo);
+      const callbackUrl = await signInWithGoogle();
 
       if (!callbackUrl) {
         return;
@@ -345,7 +343,7 @@ export function WelcomeAuthScreen({
           ...(typeof errorDescription === 'string'
             ? { error_description: errorDescription }
             : {}),
-          ...(typeof canonicalReturnTo === 'string' ? { returnTo: canonicalReturnTo } : {}),
+          ...(canonicalReturnTo ? { returnTo: canonicalReturnTo } : {}),
         },
       });
     } catch (signInError) {

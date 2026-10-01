@@ -26,7 +26,10 @@ function loadPublicTitleMapper() {
 function loadThrottle() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('../supabase/functions/_shared/public-title-throttle') as {
-    createPublicTitleRequestThrottle: (now: () => number) => (request: Request) => boolean;
+    createPublicTitleRequestThrottle: (
+      now: () => number,
+      maxBuckets?: number,
+    ) => (request: Request) => boolean;
   };
 }
 
@@ -159,5 +162,32 @@ describe('public title resolver contract', () => {
       Array.from({ length: 30 }, () => true),
     );
     expect(throttle(clientRequest)).toBe(false);
+  });
+
+  it('evicts the oldest bucket when the isolate guard reaches its bounded capacity', () => {
+    const throttle = loadThrottle().createPublicTitleRequestThrottle(() => 1000, 2);
+    const firstClient = request('tmdb:movie:550', new Headers({ 'x-real-ip': '203.0.113.10' }));
+
+    expect(Array.from({ length: 30 }, () => throttle(firstClient))).toEqual(
+      Array.from({ length: 30 }, () => true),
+    );
+    expect(throttle(firstClient)).toBe(false);
+
+    expect(throttle(request('tmdb:movie:551', new Headers({ 'x-real-ip': '203.0.113.11' })))).toBe(true);
+    expect(throttle(request('tmdb:movie:552', new Headers({ 'x-real-ip': '203.0.113.12' })))).toBe(true);
+    expect(throttle(firstClient)).toBe(true);
+  });
+
+  it('removes expired buckets before accepting new clients', () => {
+    let currentTime = 1000;
+    const throttle = loadThrottle().createPublicTitleRequestThrottle(() => currentTime, 2);
+    const firstClient = request('tmdb:movie:550', new Headers({ 'x-real-ip': '203.0.113.10' }));
+
+    throttle(firstClient);
+    currentTime += 60_000;
+
+    expect(throttle(request('tmdb:movie:551', new Headers({ 'x-real-ip': '203.0.113.11' })))).toBe(true);
+    expect(throttle(request('tmdb:movie:552', new Headers({ 'x-real-ip': '203.0.113.12' })))).toBe(true);
+    expect(throttle(firstClient)).toBe(true);
   });
 });
