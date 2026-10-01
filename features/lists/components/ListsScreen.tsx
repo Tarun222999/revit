@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Text, View, useWindowDimensions } from 'react-native';
 
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { ErrorState } from '@/components/feedback/ErrorState';
@@ -10,6 +10,13 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Screen } from '@/components/ui/Screen';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { CollectionSheet } from '@/features/lists/components/CollectionSheet';
+import { useCollectionDismiss } from '@/features/lists/hooks/useCollectionDismiss';
+import {
+  hasDuplicateListName,
+  recentCollections,
+} from '@/features/lists/model/listPresentation';
+import { collectionTitleStyle } from '@/features/lists/components/ListCard';
 import { ListCard } from '@/features/lists/components/ListCard';
 import {
   getVisibleListFormErrors,
@@ -29,7 +36,9 @@ const EMPTY_LIST_FORM_VALUES: ListFormValues = {
 };
 
 function getListsErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : 'Unable to load your lists right now.';
+  return error instanceof Error
+    ? error.message
+    : 'Unable to load your lists right now.';
 }
 
 function getMutationErrorMessage(error: unknown) {
@@ -42,28 +51,9 @@ function getMutationErrorMessage(error: unknown) {
     return 'A list with this name already exists.';
   }
 
-  return error instanceof Error ? error.message : 'Unable to save this list right now.';
-}
-
-function getListStats(lists: UserListSummary[]) {
-  const itemCount = lists.reduce((total, list) => total + list.itemCount, 0);
-
-  return {
-    itemCount,
-    listCount: lists.length,
-  };
-}
-
-function getTitleCountLabel(count: number) {
-  return count === 1 ? '1 title' : `${count} titles`;
-}
-
-function ListExampleChip({ label }: { label: string }) {
-  return (
-    <View className="rounded-full border border-archive-600 px-3 py-2">
-      <Text className="text-sm font-semibold text-gold-300">{label}</Text>
-    </View>
-  );
+  return error instanceof Error
+    ? error.message
+    : 'Unable to save this list right now.';
 }
 
 function ListsLoadingState() {
@@ -90,31 +80,6 @@ function ListsLoadingState() {
   );
 }
 
-function ListsStats({ lists }: { lists: UserListSummary[] }) {
-  const stats = getListStats(lists);
-
-  return (
-    <View className="flex-row gap-3">
-      <Card className="min-w-0 flex-1 gap-1 p-3">
-        <Text className="text-xl font-bold text-archive-50">
-          {stats.listCount}
-        </Text>
-        <Text className="text-xs font-semibold text-archive-300">
-          Lists
-        </Text>
-      </Card>
-      <Card className="min-w-0 flex-1 gap-1 p-3">
-        <Text className="text-xl font-bold text-archive-50">
-          {stats.itemCount}
-        </Text>
-        <Text className="text-xs font-semibold text-archive-300">
-          Saved titles
-        </Text>
-      </Card>
-    </View>
-  );
-}
-
 function ListsLoadedContent({
   lists,
   onCreateList,
@@ -122,70 +87,60 @@ function ListsLoadedContent({
   lists: UserListSummary[];
   onCreateList: () => void;
 }) {
-  if (lists.length === 0) {
+  const { width, fontScale } = useWindowDimensions();
+  const columns = width < 350 || fontScale > 1.3 ? 1 : 2;
+  const [featured, ...shelf] = recentCollections(lists);
+  if (!featured)
     return (
-      <Card className="gap-5 p-5">
-        <View className="flex-row items-start gap-3">
-          <View className="h-12 w-12 items-center justify-center rounded-full bg-shelf-700">
-            <Ionicons color="#f4c95d" name="albums" size={22} />
-          </View>
-          <View className="min-w-0 flex-1 gap-1">
-            <Text className="text-xl font-bold text-archive-50">
-              Build your first collection
-            </Text>
-            <Text className="text-sm leading-5 text-archive-300">
-              Lists are for hand-picked shelves that mix supported titles
-              without changing the journal log.
-            </Text>
-          </View>
-        </View>
-
-        <View className="gap-3 rounded-app border border-archive-700 bg-archive-900 p-4">
-          <Text className="text-xs font-bold uppercase text-archive-300">
-            A few good starters
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            <ListExampleChip label="Favorites" />
-            <ListExampleChip label="Watch Next" />
-            <ListExampleChip label="Best Endings" />
-          </View>
-        </View>
-
-        <View className="gap-3">
-          <Button title="Create List" onPress={onCreateList} />
-          <Button
-            title="Find Titles"
-            variant="secondary"
-            onPress={() => router.push('/search')}
-          />
-        </View>
-      </Card>
+      <EmptyState
+        title="Start with an obsession."
+        message="A favorite genre, a feeling, a filmmaker. Make a home for the stories you love."
+        actionLabel="Make your first list"
+        onAction={onCreateList}
+      />
     );
-  }
-
   return (
-    <>
-      <ListsStats lists={lists} />
-
-      <View className="gap-3">
-        <View className="flex-row items-center justify-between gap-4">
-          <Text className="text-lg font-bold text-archive-50">
-            Your collections
-          </Text>
-          <Text className="text-sm font-semibold text-archive-300">
-            {getTitleCountLabel(getListStats(lists).itemCount)}
-          </Text>
-        </View>
-
-        {lists.map((list) => (
-          <ListCard
-            key={list.id}
-            list={list}
-            onPress={() => router.push(`/lists/${list.id}`)}
-          />
-        ))}
+    <View className="gap-5">
+      <View className="flex-row items-center justify-between gap-3">
+        <Text className="text-base font-semibold text-archive-50">
+          Your collections
+        </Text>
+        <Text className="text-sm text-archive-300">
+          {lists.length} {lists.length === 1 ? 'list' : 'lists'}
+        </Text>
       </View>
-    </>
+      <ListCard
+        featured
+        list={featured}
+        onPress={() => router.push(`/lists/${featured.id}`)}
+      />
+      {shelf.length ? (
+        <>
+          <Text className="text-base font-semibold text-archive-50">
+            On your shelf
+          </Text>
+          <View className="flex-row flex-wrap justify-between gap-y-6">
+            {shelf.map((list) => (
+              <View
+                key={list.id}
+                style={{ width: columns === 1 ? '100%' : '47%' }}
+              >
+                <ListCard
+                  list={list}
+                  onPress={() => router.push(`/lists/${list.id}`)}
+                />
+              </View>
+            ))}
+          </View>
+        </>
+      ) : null}
+      <View className="flex-row items-center gap-3 border-t border-archive-700 py-5">
+        <Ionicons name="lock-closed-outline" size={20} color="#e8c77d" />
+        <Text className="flex-1 text-sm leading-6 text-archive-300">
+          A little corner of your own. Your lists and notes are private.
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -207,6 +162,7 @@ export function ListsScreen() {
     [formErrors, hasSubmittedForm, touchedFields],
   );
   const isSubmitting = createListMutation.isPending;
+  const submitting = useRef(false);
 
   const resetForm = useCallback(() => {
     setIsCreatingList(false);
@@ -215,6 +171,14 @@ export function ListsScreen() {
     setHasSubmittedForm(false);
     setSubmitError(null);
   }, []);
+
+  const dismissCreate = useCollectionDismiss(
+    isCreatingList && Boolean(user) && !authLoading,
+    Boolean(formValues.name || formValues.description),
+    isSubmitting || submitting.current,
+    resetForm,
+  );
+  useEffect(resetForm, [resetForm, user?.id]);
 
   const startCreateList = useCallback(() => {
     setIsCreatingList(true);
@@ -232,7 +196,11 @@ export function ListsScreen() {
   }, []);
 
   const updateFormValue = useCallback(
-    <Key extends keyof ListFormValues>(key: Key, value: ListFormValues[Key]) => {
+    <Key extends keyof ListFormValues>(
+      key: Key,
+      value: ListFormValues[Key],
+    ) => {
+      if (submitting.current) return;
       setFormValues((currentValues) => ({
         ...currentValues,
         [key]: value,
@@ -246,10 +214,15 @@ export function ListsScreen() {
   const submitListForm = useCallback(async () => {
     setHasSubmittedForm(true);
 
-    if (!user || Object.keys(formErrors).length > 0) {
+    if (!user || submitting.current || Object.keys(formErrors).length > 0) {
       return;
     }
 
+    if (hasDuplicateListName(lists, formValues.name)) {
+      setSubmitError('A list with this name already exists.');
+      return;
+    }
+    submitting.current = true;
     setSubmitError(null);
 
     try {
@@ -263,10 +236,13 @@ export function ListsScreen() {
       router.push(`/lists/${list.id}`);
     } catch (error) {
       setSubmitError(getMutationErrorMessage(error));
+    } finally {
+      submitting.current = false;
     }
   }, [
     createListMutation,
     formErrors,
+    lists,
     formValues.description,
     formValues.name,
     resetForm,
@@ -276,29 +252,46 @@ export function ListsScreen() {
   return (
     <Screen scroll className="gap-5">
       {!isCreatingList ? (
-        <View className="items-end">
-          <Button
-            title="Create"
-            disabled={!user || authLoading}
-            className="min-h-10 px-4"
-            onPress={startCreateList}
-          />
+        <View className="gap-3">
+          <View className="flex-row flex-wrap items-center justify-between gap-3">
+            <Text
+              className="text-4xl text-archive-50"
+              style={collectionTitleStyle}
+            >
+              Lists
+            </Text>
+            <Button
+              title="New list"
+              disabled={!user || authLoading}
+              className="px-4"
+              onPress={startCreateList}
+            />
+          </View>
+          <Text className="text-sm leading-6 text-archive-300">
+            A place for every obsession.
+          </Text>
         </View>
       ) : null}
 
       {!authLoading && user && isCreatingList ? (
-        <ListForm
-          errors={visibleFormErrors}
-          hasSubmitted={hasSubmittedForm}
-          isSubmitting={isSubmitting}
-          submitError={submitError}
-          touchedFields={touchedFields}
-          values={formValues}
-          onBlurField={markFieldTouched}
-          onCancel={resetForm}
-          onChange={updateFormValue}
-          onSubmit={submitListForm}
-        />
+        <CollectionSheet
+          title="New list"
+          onClose={dismissCreate}
+          busy={isSubmitting}
+        >
+          <ListForm
+            errors={visibleFormErrors}
+            hasSubmitted={hasSubmittedForm}
+            isSubmitting={isSubmitting}
+            submitError={submitError}
+            touchedFields={touchedFields}
+            values={formValues}
+            onBlurField={markFieldTouched}
+            onCancel={dismissCreate}
+            onChange={updateFormValue}
+            onSubmit={submitListForm}
+          />
+        </CollectionSheet>
       ) : null}
 
       {authLoading ? <LoadingState message="Loading lists" /> : null}
@@ -310,7 +303,9 @@ export function ListsScreen() {
         />
       ) : null}
 
-      {!authLoading && user && listsQuery.isLoading ? <ListsLoadingState /> : null}
+      {!authLoading && user && listsQuery.isLoading ? (
+        <ListsLoadingState />
+      ) : null}
 
       {!authLoading && user && listsQuery.isError ? (
         <ErrorState
@@ -321,11 +316,8 @@ export function ListsScreen() {
         />
       ) : null}
 
-      {!authLoading && user && listsQuery.isSuccess && !isCreatingList ? (
-        <ListsLoadedContent
-          lists={lists}
-          onCreateList={startCreateList}
-        />
+      {!authLoading && user && listsQuery.isSuccess ? (
+        <ListsLoadedContent lists={lists} onCreateList={startCreateList} />
       ) : null}
     </Screen>
   );

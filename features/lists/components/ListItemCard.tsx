@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Pressable, Text, View, type GestureResponderEvent } from 'react-native';
-
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, Platform, Pressable, Text, View } from 'react-native';
 import { MediaPoster } from '@/components/media/MediaPoster';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { TextField } from '@/components/ui/TextField';
 import { MEDIA_TYPE_LABELS } from '@/constants/media';
+import { CollectionSheet } from '@/features/lists/components/CollectionSheet';
+import { useCollectionDismiss } from '@/features/lists/hooks/useCollectionDismiss';
 import type { UserListItem } from '@/features/lists/types';
 
 type ListItemCardProps = {
@@ -15,35 +16,8 @@ type ListItemCardProps = {
   mutationError?: string | null;
   onPress: () => void;
   onRemove: () => void;
-  onSaveNote: (note: string | null) => void;
+  onSaveNote: (note: string | null) => Promise<void>;
 };
-
-const dateFormatter = new Intl.DateTimeFormat('en', {
-  day: 'numeric',
-  month: 'short',
-});
-
-const LIST_ITEM_NOTE_MAX_LENGTH = 500;
-
-function formatDate(value: string) {
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return dateFormatter.format(date);
-}
-
-function getMetadata(item: UserListItem) {
-  const parts = [MEDIA_TYPE_LABELS[item.media.mediaType]];
-
-  if (item.media.year) {
-    parts.push(item.media.year);
-  }
-
-  return parts.join(' - ');
-}
 
 export function ListItemCard({
   isRemoving = false,
@@ -54,143 +28,187 @@ export function ListItemCard({
   onRemove,
   onSaveNote,
 }: ListItemCardProps) {
-  const [isEditingNote, setIsEditingNote] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [options, setOptions] = useState(false);
   const [note, setNote] = useState(item.note ?? '');
-  const addedAt = formatDate(item.createdAt);
-  const noteError =
-    note.length > LIST_ITEM_NOTE_MAX_LENGTH
-      ? `Note must be ${LIST_ITEM_NOTE_MAX_LENGTH} characters or fewer.`
-      : undefined;
-
-  useEffect(() => {
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const saving = useRef(false);
+  const busy = isSaving || isSavingNote;
+  const close = useCallback(() => {
+    setEditing(false);
+    setError(null);
+  }, []);
+  const dismiss = useCollectionDismiss(
+    editing,
+    note !== (item.note ?? ''),
+    busy || saving.current,
+    close,
+  );
+  const openNote = () => {
+    setOptions(false);
     setNote(item.note ?? '');
-  }, [item.note]);
-
-  const stopCardPress = (event: GestureResponderEvent) => {
-    event.stopPropagation();
+    setError(null);
+    setEditing(true);
   };
-
-  const saveNote = () => {
-    if (noteError) {
-      return;
+  const save = async () => {
+    if (saving.current || isSavingNote || note.length > 500) return;
+    saving.current = true;
+    setIsSaving(true);
+    setError(null);
+    try {
+      await onSaveNote(note.trim() || null);
+      close();
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : 'Unable to save this note. Try again.',
+      );
+    } finally {
+      saving.current = false;
+      setIsSaving(false);
     }
-
-    const trimmedNote = note.trim();
-    onSaveNote(trimmedNote.length > 0 ? trimmedNote : null);
-    setIsEditingNote(false);
   };
-
   return (
-    <Pressable accessibilityRole="button" onPress={onPress}>
-      <Card className="gap-3 p-3">
-        <View className="flex-row gap-3">
-          <MediaPoster imageUrl={item.media.imageUrl} size="sm" />
-
-          <View className="min-w-0 flex-1 gap-2">
-            <View className="gap-1">
-              <Text className="text-base font-bold text-archive-50" numberOfLines={2}>
-                {item.media.title}
-              </Text>
-              <Text className="text-sm text-archive-300" numberOfLines={1}>
-                {getMetadata(item)}
-              </Text>
-            </View>
-
-            <View className="flex-row flex-wrap gap-2">
-              <View className="rounded-full bg-archive-700 px-3 py-1">
-                <Text className="text-xs font-bold text-gold-300">
-                  {MEDIA_TYPE_LABELS[item.media.mediaType]}
-                </Text>
-              </View>
-              {addedAt ? (
-                <View className="rounded-full bg-archive-700 px-3 py-1">
-                  <Text className="text-xs font-bold text-archive-200">
-                    Added {addedAt}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-
-            {!isEditingNote && item.note ? (
-              <Text className="text-sm leading-5 text-archive-200" numberOfLines={3}>
-                {item.note}
-              </Text>
-            ) : null}
-          </View>
-        </View>
-
-        {isEditingNote ? (
-          <View className="gap-3" onStartShouldSetResponder={() => true}>
-            <TextField
-              className="min-h-24 py-3"
-              error={noteError}
-              label={`Note (${note.length}/${LIST_ITEM_NOTE_MAX_LENGTH})`}
-              maxLength={LIST_ITEM_NOTE_MAX_LENGTH}
-              multiline
-              onChangeText={setNote}
-              placeholder="Optional note for this list"
-              textAlignVertical="top"
-              value={note}
-            />
-            <View className="flex-row gap-3">
-              <View className="min-w-0 flex-1">
-                <Button
-                  disabled={isSavingNote}
-                  onPress={() => {
-                    setNote(item.note ?? '');
-                    setIsEditingNote(false);
-                  }}
-                  title="Cancel"
-                  variant="secondary"
-                />
-              </View>
-              <View className="min-w-0 flex-1">
-                <Button
-                  disabled={Boolean(noteError)}
-                  loading={isSavingNote}
-                  onPress={saveNote}
-                  title="Save Note"
-                />
-              </View>
-            </View>
-          </View>
-        ) : null}
-
-        {mutationError ? (
-          <Text className="text-sm leading-5 text-reel-400">{mutationError}</Text>
-        ) : null}
-
-        <View
-          className="flex-row flex-wrap justify-end gap-3 border-t border-archive-700 pt-3"
-          onStartShouldSetResponder={() => true}>
+    <View className="border-b border-archive-700 py-4">
+      <View className="flex-row items-start gap-3">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`View ${item.media.title} artwork and details`}
+          onPress={onPress}
+        >
+          <MediaPoster
+            imageUrl={item.media.imageUrl}
+            size="sm"
+            className="h-20 w-14 rounded-md"
+          />
+        </Pressable>
+        <View className="min-w-0 flex-1 gap-1">
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={item.note ? 'Edit list item note' : 'Add list item note'}
-            className="min-h-8 justify-center rounded-full border border-archive-600 px-3"
-            disabled={isRemoving || isSavingNote}
-            onPress={(event) => {
-              stopCardPress(event);
-              setIsEditingNote(true);
-            }}>
-            <Text className="text-xs font-semibold text-archive-200">
-              {item.note ? 'Edit Note' : 'Add Note'}
+            accessibilityLabel={`View ${item.media.title}`}
+            className="min-h-12 justify-center"
+            onPress={onPress}
+          >
+            <Text className="text-base font-semibold text-archive-50">
+              {item.media.title}
             </Text>
           </Pressable>
-
+          <Text className="text-sm text-archive-300">
+            {[MEDIA_TYPE_LABELS[item.media.mediaType], item.media.year]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
+          {item.note ? (
+            <Text
+              className="text-sm italic leading-6 text-archive-200"
+              numberOfLines={3}
+            >
+              {item.note}
+            </Text>
+          ) : null}
           <Pressable
             accessibilityRole="button"
-            className="min-h-9 justify-center rounded-full border border-reel-500 px-4"
+            accessibilityLabel={`${item.note ? 'Edit note' : 'Add note'} for ${item.media.title}`}
             disabled={isRemoving || isSavingNote}
-            onPress={(event) => {
-              stopCardPress(event);
-              onRemove();
-            }}>
-            <Text className="text-sm font-semibold text-reel-400">
-              {isRemoving ? 'Removing' : 'Remove'}
+            className="min-h-12 flex-row items-center gap-2"
+            onPress={openNote}
+          >
+            <Ionicons name="create-outline" color="#aa9473" size={15} />
+            <Text className="text-sm text-archive-300">
+              {item.note ? 'Edit note' : 'Add note'}
             </Text>
           </Pressable>
         </View>
-      </Card>
-    </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Options for ${item.media.title}`}
+          accessibilityState={{
+            expanded: options,
+            disabled: isRemoving || isSavingNote,
+          }}
+          disabled={isRemoving || isSavingNote}
+          className="h-12 w-12 items-center justify-center"
+          onPress={() => setOptions(true)}
+        >
+          <Ionicons name="ellipsis-horizontal" size={20} color="#aa9473" />
+        </Pressable>
+      </View>
+      {mutationError ? (
+        <Text accessibilityRole="alert" className="text-sm text-reel-300">
+          {mutationError}
+        </Text>
+      ) : null}
+      {options ? (
+        <CollectionSheet
+          title={item.media.title}
+          onClose={() => setOptions(false)}
+        >
+          <Button
+            title={item.note ? 'Edit note' : 'Add note'}
+            variant="secondary"
+            onPress={openNote}
+          />
+          <Button
+            title="Remove from this list"
+            variant="danger"
+            onPress={() => {
+              setOptions(false);
+              const message = `Remove ${item.media.title} and its note from this list? Your Journal and other lists stay as they are.`;
+              if (Platform.OS === 'web') {
+                if (window.confirm(message)) onRemove();
+                return;
+              }
+              Alert.alert('Remove this title?', message, [
+                { text: 'Keep title', style: 'cancel' },
+                {
+                  text: 'Remove from list',
+                  style: 'destructive',
+                  onPress: onRemove,
+                },
+              ]);
+            }}
+          />
+        </CollectionSheet>
+      ) : null}
+      {editing ? (
+        <CollectionSheet
+          title={item.note ? 'Edit note' : 'Add note'}
+          onClose={dismiss}
+          busy={busy}
+        >
+          <Text className="text-sm leading-6 text-archive-300">
+            {item.media.title} · A note just for this collection.
+          </Text>
+          <TextField
+            accessibilityLabel="Collection note"
+            autoFocus
+            multiline
+            textAlignVertical="top"
+            className="min-h-28"
+            label={`Your note (${note.length}/500)`}
+            value={note}
+            editable={!busy}
+            maxLength={500}
+            onChangeText={(value) => {
+              if (!saving.current && !isSavingNote) setNote(value);
+            }}
+          />
+          {error ? (
+            <Text accessibilityRole="alert" className="text-sm text-reel-300">
+              {error}
+            </Text>
+          ) : null}
+          <Button title="Save note" loading={busy} onPress={save} />
+          <Button
+            title="Cancel"
+            variant="secondary"
+            disabled={busy}
+            onPress={dismiss}
+          />
+        </CollectionSheet>
+      ) : null}
+    </View>
   );
 }

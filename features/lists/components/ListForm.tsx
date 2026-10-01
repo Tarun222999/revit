@@ -11,7 +11,9 @@ export type ListFormValues = {
 };
 
 export type ListFormErrors = Partial<Record<keyof ListFormValues, string>>;
-export type ListFormTouchedFields = Partial<Record<keyof ListFormValues, boolean>>;
+export type ListFormTouchedFields = Partial<
+  Record<keyof ListFormValues, boolean>
+>;
 
 type ListFormProps = {
   deleteError?: string | null;
@@ -19,7 +21,10 @@ type ListFormProps = {
   hasSubmitted?: boolean;
   isDeleting?: boolean;
   isSubmitting: boolean;
-  list?: Pick<UserListSummary | UserListDetails, 'description' | 'id' | 'name'> | null;
+  list?: Pick<
+    UserListSummary | UserListDetails,
+    'description' | 'id' | 'name'
+  > | null;
   onCancel: () => void;
   onBlurField?: (key: keyof ListFormValues) => void;
   onChange: <Key extends keyof ListFormValues>(
@@ -111,6 +116,8 @@ export function ListForm({
       ) : null}
 
       <TextField
+        accessibilityLabel="List name"
+        editable={!isSubmitting && !isDeleting}
         error={visibleErrors.name}
         label={`Name (${values.name.length}/${LIST_NAME_MAX_LENGTH})`}
         maxLength={LIST_NAME_MAX_LENGTH}
@@ -121,6 +128,8 @@ export function ListForm({
       />
 
       <TextField
+        accessibilityLabel="List description"
+        editable={!isSubmitting && !isDeleting}
         className="min-h-24 py-3"
         error={visibleErrors.description}
         label={`Description (${values.description.length}/${LIST_DESCRIPTION_MAX_LENGTH})`}
@@ -169,7 +178,8 @@ export function ListForm({
               Delete list
             </Text>
             <Text className="text-sm leading-5 text-archive-300">
-              This removes the collection only. Journal entries and media titles stay untouched.
+              This removes the collection only. Journal entries and media titles
+              stay untouched.
             </Text>
           </View>
           <Button
