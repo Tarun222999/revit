@@ -20,20 +20,34 @@ export function CollectionSheet({
   onClose,
   children,
   busy = false,
+  visible = true,
+  onDismiss,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   busy?: boolean;
+  visible?: boolean;
+  onDismiss?: () => void;
 }) {
   const heading = useRef<Text>(null);
   useEffect(() => {
-    AccessibilityInfo.announceForAccessibility(title);
-  }, [title]);
+    if (visible) AccessibilityInfo.announceForAccessibility(title);
+  }, [title, visible]);
+  useEffect(() => {
+    if (!visible || Platform.OS !== 'web' || typeof document === 'undefined')
+      return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busy) onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [visible, busy, onClose]);
   return (
     <Modal
       transparent
-      visible
+      visible={visible}
+      onDismiss={onDismiss}
       animationType="none"
       onRequestClose={() => {
         if (!busy) onClose();

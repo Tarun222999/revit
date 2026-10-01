@@ -190,6 +190,8 @@ describe('auth route boundaries', () => {
     '/support',
     '/title/tmdb:movie:550',
     '/title/tmdb:malformed',
+    `/shared/list/${'a'.repeat(64)}`,
+    '/shared/list/malformed',
   ])('keeps the public route %s available without a session', async (pathname) => {
     mockUsePathname.mockReturnValue(pathname);
 
@@ -249,6 +251,28 @@ describe('auth route boundaries', () => {
       'revit://title/tmdb%3Amovie%3A550',
     );
   });
+
+  it('carries a list through onboarding and restores its stored destination after sign-in', async () => {
+    const key = 'a'.repeat(64);
+    const returnTo = `revit://shared/list/${key}`;
+    mockUsePathname.mockReturnValue(`/shared/list/${key}`);
+    setAuthState({ user: authUser });
+    await render(<AuthGate><Text>Shared list</Text></AuthGate>);
+    await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({ pathname: '/onboarding', params: { returnTo } }));
+    expect(mockStoreReturnTo).toHaveBeenCalledWith('revit.pending-auth-return-to', returnTo);
+  });
+
+  it.each(['/welcome', '/email-code', '/onboarding'])(
+    'restores a stored shared list from %s for a signed-in profile', async (pathname) => {
+      const key = 'b'.repeat(64);
+      mockUsePathname.mockReturnValue(pathname);
+      mockGetStoredReturnTo.mockResolvedValue(`revit://shared/list/${key}`);
+      setAuthState({ user: authUser });
+      setProfileState({ id: authUser.id });
+      await render(<AuthGate><Text>Authentication</Text></AuthGate>);
+      await waitFor(() => expect(mockRouterReplace).toHaveBeenCalledWith({ pathname: '/shared/list/[key]', params: { key } }));
+    },
+  );
 
   it('sends a signed-in user with a profile to the tab shell when they are on auth routes', async () => {
     mockUsePathname.mockReturnValue('/welcome');

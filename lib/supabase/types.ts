@@ -9,6 +9,32 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      list_shares: {
+        Row: {
+          list_id: string
+          share_key: string | null
+          version: number
+        }
+        Insert: {
+          list_id: string
+          share_key?: string | null
+          version?: number
+        }
+        Update: {
+          list_id?: string
+          share_key?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "list_shares_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: true
+            referencedRelation: "lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback_reports: {
         Row: {
           app_version: string | null
@@ -398,6 +424,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      manage_list_sharing: {
+        Args: {
+          p_action: string
+          p_expected_version?: number
+          p_list_id: string
+          p_new_key?: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      resolve_shared_list: {
+        Args: {
+          p_games_enabled?: boolean
+          p_key: string
+          p_offset?: number
+          p_viewer_id?: string
+        }
+        Returns: Json
+      }
       igdb_acquire_request_slot: {
         Args: never
         Returns: {

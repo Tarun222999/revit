@@ -65,6 +65,9 @@ jest.mock('@/features/lists/hooks/useUserLists', () => ({
 jest.mock('@/features/lists/hooks/useListDetails', () => ({
   useListDetails: () => ({ data: mockDetails, isSuccess: true }),
 }));
+jest.mock('@/features/sharing/hooks/useListSharing', () => ({
+  useListSharing: () => ({ data: { version: 0, shareKey: null }, isFetching: false, refetch: jest.fn() }),
+}));
 jest.mock('@/features/lists/hooks/useListMutations', () => ({
   useCreateList: () => ({ isPending: false, mutateAsync: mockCreate }),
   useUpdateList: () => ({ isPending: false, mutateAsync: mockUpdate }),

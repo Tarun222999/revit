@@ -1,4 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  createListShareUrl,
+  parseListShareUrl,
+} from '@/features/sharing/model/listShare';
 
 import {
   parseTitleShareId,
@@ -7,10 +11,12 @@ import {
 
 const PENDING_AUTH_RETURN_TO_STORAGE_KEY = 'revit.pending-auth-return-to';
 
-type RouteDestination = {
-  pathname: '/title/[id]';
-  params: { id: string };
-};
+type RouteDestination =
+  | {
+      pathname: '/title/[id]';
+      params: { id: string };
+    }
+  | { pathname: '/shared/list/[key]'; params: { key: string } };
 
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -21,13 +27,11 @@ function canonicalTitleShareUrl(titleId: string) {
 }
 
 /**
- * Returns only a canonical title URL suitable for carrying through auth.
+ * Returns only a canonical title or list URL suitable for carrying through auth.
  * Keeping this representation canonical prevents an auth-route parameter
  * from becoming a general-purpose navigation target.
  */
-export function getPendingAuthReturnTo(
-  value: string | string[] | undefined,
-) {
+export function getPendingAuthReturnTo(value: string | string[] | undefined) {
   const destination = firstParam(value);
 
   if (!destination) return null;
@@ -35,7 +39,11 @@ export function getPendingAuthReturnTo(
   try {
     return canonicalTitleShareUrl(parseTitleShareUrl(destination).id);
   } catch {
-    return null;
+    try {
+      return createListShareUrl(parseListShareUrl(destination));
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -45,7 +53,9 @@ export function getSharedTitleAuthReturnTo(pathname: string) {
   if (!match) return null;
 
   try {
-    return canonicalTitleShareUrl(parseTitleShareId(decodeURIComponent(match[1])).id);
+    return canonicalTitleShareUrl(
+      parseTitleShareId(decodeURIComponent(match[1])).id,
+    );
   } catch {
     return null;
   }
@@ -71,8 +81,12 @@ export async function storePendingAuthReturnTo(
 
 export async function getStoredPendingAuthReturnTo() {
   try {
-    const destination = await AsyncStorage.getItem(PENDING_AUTH_RETURN_TO_STORAGE_KEY);
-    const canonicalDestination = getPendingAuthReturnTo(destination ?? undefined);
+    const destination = await AsyncStorage.getItem(
+      PENDING_AUTH_RETURN_TO_STORAGE_KEY,
+    );
+    const canonicalDestination = getPendingAuthReturnTo(
+      destination ?? undefined,
+    );
 
     if (!canonicalDestination && destination) {
       await AsyncStorage.removeItem(PENDING_AUTH_RETURN_TO_STORAGE_KEY);
@@ -94,7 +108,7 @@ export function clearPendingAuthReturnToSafely() {
 }
 
 /**
- * Limits auth continuation to title-share URLs. This prevents the return
+ * Limits auth continuation to approved share URLs. This prevents the return
  * parameter from becoming an open navigation target.
  */
 export function getPendingAuthDestination(
@@ -107,6 +121,13 @@ export function getPendingAuthDestination(
     const title = parseTitleShareUrl(destination);
     return { pathname: '/title/[id]', params: { id: title.id } };
   } catch {
-    return null;
+    try {
+      return {
+        pathname: '/shared/list/[key]',
+        params: { key: parseListShareUrl(destination) },
+      };
+    } catch {
+      return null;
+    }
   }
 }

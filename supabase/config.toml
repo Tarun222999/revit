@@ -10,6 +10,12 @@ verify_jwt = false
 [functions.public-title]
 verify_jwt = false
 
+[functions.shared-list]
+verify_jwt = false
+
+[functions.list-sharing]
+verify_jwt = false # Handler verifies the session using requireAuth before any operation.
+
 [api]
 enabled = true
 # Port to use for the API URL.
